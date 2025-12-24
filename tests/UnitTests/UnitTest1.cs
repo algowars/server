@@ -12,4 +12,12 @@ public class Tests
     {
         Assert.Pass();
     }
+
+    [Test]
+    public void Test2()
+    {
+        int result = 1 + 2;
+        
+        Assert.That(result, Is.EqualTo(3));
+    }
 }
