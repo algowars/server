@@ -7,5 +7,5 @@ public sealed class LanguageVersion : BaseEntity<int>
     public string? InitialCode { get; init; }
 
     public int ProgrammingLanguageId { get; init; }
-    public ProgrammingLanguage ProgrammingLanguage { get; init; }
+    public ProgrammingLanguage? ProgrammingLanguage { get; init; }
 }
