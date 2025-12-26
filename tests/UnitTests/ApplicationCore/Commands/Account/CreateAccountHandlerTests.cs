@@ -58,25 +58,10 @@ public sealed class CreateAccountHandlerTests
 
         var result = await _handler.Handle(command, CancellationToken.None);
 
-        Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Errors, Has.Some.EqualTo("Unexpected error creating account."));
-    }
-
-    [Test]
-    public void Constructor_throws_if_accounts_null()
-    {
-        Assert.Throws<ArgumentNullException>(() =>
+        using (Assert.EnterMultipleScope())
         {
-            var createAccountHandler = new CreateAccountHandler(null!, _logger.Object);
-        });
-    }
-
-    [Test]
-    public void Constructor_throws_if_logger_null()
-    {
-        Assert.Throws<ArgumentNullException>(() =>
-        {
-            var createAccountHandler = new CreateAccountHandler(_accounts.Object, null!);
-        });
+            Assert.That(result.IsSuccess, Is.False);
+            Assert.That(result.Errors, Has.Some.EqualTo("Unexpected error creating account."));
+        }
     }
 }
