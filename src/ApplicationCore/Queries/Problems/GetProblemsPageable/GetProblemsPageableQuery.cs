@@ -1,6 +1,7 @@
+using ApplicationCore.Common.Pagination;
+using ApplicationCore.Dtos.Problems;
+
 namespace ApplicationCore.Queries.Problems.GetProblemsPageable;
 
-public class GetProblemsPageableQuery
-{
-    
-}
+public sealed record GetProblemsPageableQuery(PaginationRequest Pagination)
+    : IQuery<PaginatedResult<ProblemDto>>;

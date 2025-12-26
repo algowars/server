@@ -2,7 +2,7 @@ using ApplicationCore.Dtos.Languages;
 using ApplicationCore.Interfaces.Repositories;
 using Ardalis.Result;
 
-namespace ApplicationCore.Queries.Accounts.GetAvailableLanguages;
+namespace ApplicationCore.Queries.Problems.GetAvailableLanguages;
 
 public sealed class GetAvailableLanguagesHandler(IProblemRepository problemRepository)
     : IQueryHandler<GetAvailableLanguagesQuery, IEnumerable<ProgrammingLanguageDto>>
