@@ -12,8 +12,8 @@ public sealed class ProblemSetup
     public Problem? Problem { get; init; }
 
     public required string InitialCode { get; init; }
-    
-    public string FunctionName { get; init; }
+
+    public string? FunctionName { get; init; }
 
     public LanguageVersion? LanguageVersion { get; init; }
 
