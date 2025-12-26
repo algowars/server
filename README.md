@@ -1,3 +1,3 @@
 # Algowars Server
 
-![badge](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/<user>/<gist-id>/raw/<gist-filename>)
+[![ci](https://github.com/algowars/server/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/algowars/server/actions/workflows/ci.yml)
