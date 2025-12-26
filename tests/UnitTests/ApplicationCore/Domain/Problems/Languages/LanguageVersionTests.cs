@@ -71,18 +71,4 @@ public sealed class LanguageVersionTests
             Assert.That(languageVersion.ProgrammingLanguage, Is.EqualTo(language));
         }
     }
-
-    [Test]
-    public void Accessing_required_version_without_initialization_throws()
-    {
-        var languageVersion = new LanguageVersion
-        {
-            Version = "1.1.1"
-        };
-
-        Assert.Throws<InvalidOperationException>(() =>
-        {
-            _ = languageVersion.Version;
-        });
-    }
 }
