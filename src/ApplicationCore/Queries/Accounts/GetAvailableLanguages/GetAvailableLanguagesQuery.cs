@@ -1,3 +1,5 @@
+using ApplicationCore.Dtos.Languages;
+
 namespace ApplicationCore.Queries.Accounts.GetAvailableLanguages;
 
-public record GetAvailableLanguagesQuery();
+public sealed record GetAvailableLanguagesQuery() : IQuery<IEnumerable<ProgrammingLanguageDto>>;
