@@ -19,8 +19,8 @@ public sealed class AccountTests
     [Test]
     public void Optional_properties_can_be_set()
     {
-        string sub = "auth0|123";
-        string imageUrl = "https://example.com/avatar.png";
+        const string sub = "auth0|123";
+        const string imageUrl = "https://example.com/avatar.png";
         var createdOn = DateTime.UtcNow;
 
         var account = new Account
