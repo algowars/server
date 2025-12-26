@@ -1,6 +1,5 @@
+using ApplicationCore.Dtos.Accounts;
+
 namespace ApplicationCore.Queries.Accounts.GetProfileSettings;
 
-public class GetProfileSettingsQuery
-{
-    
-}
+public sealed record GetProfileSettingsQuery(string Sub) : IQuery<ProfileSettingsDto>;
