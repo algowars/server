@@ -54,7 +54,7 @@ jobs:
           ${{ runner.temp }}\scanner\dotnet-sonarscanner begin `
             /k:"algowars_server" `
             /o:"algowars" `
-            /d:sonar.token="$env:SONAR_TOKEN"
+            /d:sonar.token="$env:SONAR_TOKEN" `
             /d:sonar.cs.cobertura.reportsPaths="TestResults-*/**/coverage.cobertura.xml"
 
           dotnet build
