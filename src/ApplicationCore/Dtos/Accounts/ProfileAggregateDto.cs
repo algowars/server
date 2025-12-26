@@ -1,6 +1,3 @@
 namespace ApplicationCore.Dtos.Accounts;
 
-public interface ProfileAggregateDto
-{
-    
-}
+public sealed record ProfileAggregateDto(AccountDto Profile);

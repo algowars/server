@@ -1,6 +1,5 @@
+using ApplicationCore.Dtos.Accounts;
+
 namespace ApplicationCore.Queries.Accounts.GetProfileAggregate;
 
-public class GetProfileAggregateQuery
-{
-    
-}
+public record GetProfileAggregateQuery(string Username) : IQuery<ProfileAggregateDto>;
