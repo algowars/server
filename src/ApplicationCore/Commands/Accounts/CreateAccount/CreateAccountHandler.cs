@@ -30,7 +30,6 @@ public sealed partial class CreateAccountHandler(
         try
         {
             await accounts.AddAsync(account, cancellationToken);
-            await accounts.SaveChangesAsync(cancellationToken);
         }
         catch (Exception ex)
         {

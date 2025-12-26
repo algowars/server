@@ -18,8 +18,6 @@ public interface IAccountRepository
 
     Task<AccountModel?> GetBySubAsync(string sub, CancellationToken cancellationToken);
 
-    Task<int> SaveChangesAsync(CancellationToken cancellationToken);
-
     Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken);
 
     Task<AccountModel?> GetProfileSettingsBySubAsync(

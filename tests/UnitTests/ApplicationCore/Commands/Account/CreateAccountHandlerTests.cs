@@ -27,25 +27,24 @@ public sealed class CreateAccountHandlerTests
         _accounts
             .Setup(a => a.AddAsync(It.IsAny<AccountModel>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
-        _accounts
-            .Setup(a => a.SaveChangesAsync(It.IsAny<CancellationToken>()))
-            .Returns(() => Task.CompletedTask);
 
         var command = new CreateAccountCommand("user1", "sub1", "http://image.url");
 
         var result = await _handler.Handle(command, CancellationToken.None);
 
-        Assert.That(result.IsSuccess, Is.True);
-        Assert.That(result.Value, Is.Not.EqualTo(Guid.Empty));
-        _accounts.Verify(
-            a =>
-                a.AddAsync(
-                    It.Is<AccountModel>(acc => acc.Username == "user1" && acc.Sub == "sub1"),
-                    It.IsAny<CancellationToken>()
-                ),
-            Times.Once
-        );
-        _accounts.Verify(a => a.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(result.IsSuccess, Is.True);
+            Assert.That(result.Value, Is.Not.EqualTo(Guid.Empty));
+            _accounts.Verify(
+                a =>
+                    a.AddAsync(
+                        It.Is<AccountModel>(acc => acc.Username == "user1" && acc.Sub == "sub1"),
+                        It.IsAny<CancellationToken>()
+                    ),
+                Times.Once
+            );
+        }
     }
 
     [Test]
