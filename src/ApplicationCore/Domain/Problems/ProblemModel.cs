@@ -3,7 +3,7 @@ using ApplicationCore.Domain.Problems.ProblemSetups;
 
 namespace ApplicationCore.Domain.Problems;
 
-public sealed class Problem : BaseAuditableModel<Guid>
+public sealed class ProblemModel : BaseAuditableModel<Guid>
 {
     public required string Title { get; init; }
 
@@ -11,7 +11,7 @@ public sealed class Problem : BaseAuditableModel<Guid>
 
     public required string Question { get; init; }
 
-    public required IEnumerable<Tag> Tags { get; init; }
+    public required IEnumerable<TagModel> Tags { get; init; }
 
     public int Difficulty { get; init; }
 

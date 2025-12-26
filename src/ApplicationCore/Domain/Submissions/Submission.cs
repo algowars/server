@@ -1,6 +1,18 @@
 namespace ApplicationCore.Domain.Submissions;
 
-public class Submission
+public sealed class Submission
 {
-    
+    public required Guid Id { get; init; }
+
+    public required string Code { get; init; }
+
+    public required int ProblemSetupId { get; init; }
+
+    public DateTime CreatedOn { get; init; }
+
+    public DateTime? CompletedAt { get; set; }
+
+    public Guid CreatedById { get; init; }
+
+    public IEnumerable<SubmissionResult> Results { get; init; }
 }

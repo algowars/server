@@ -1,6 +1,6 @@
 namespace ApplicationCore.Domain.Problems.TestSuites;
 
-public sealed class TestSuite : BaseAuditableEntity<int>
+public sealed class TestSuite : BaseAuditableModel<int>
 {
     public string? Name { get; init; }
 

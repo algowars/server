@@ -1,6 +1,6 @@
 namespace ApplicationCore.Domain.Problems;
 
-public sealed class Tag
+public sealed class TagModel
 {
     public int Id { get; init; }
     

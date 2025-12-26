@@ -1,7 +1,7 @@
 using ApplicationCore.Interfaces.Repositories;
 using FluentValidation;
 
-namespace ApplicationCore.Commands.Account.CreateAccount;
+namespace ApplicationCore.Commands.Accounts.CreateAccount;
 
 public sealed class CreateAccountValidator : AbstractValidator<CreateAccountCommand>
 {

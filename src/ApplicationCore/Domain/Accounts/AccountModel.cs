@@ -1,6 +1,6 @@
 namespace ApplicationCore.Domain.Accounts;
 
-public sealed class Account : BaseModel<Guid>
+public sealed class AccountModel : BaseModel<Guid>
 {
     public string? Sub { get; init; }
 

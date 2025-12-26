@@ -4,7 +4,7 @@ using ApplicationCore.Logging;
 using Ardalis.Result;
 using Microsoft.Extensions.Logging;
 
-namespace ApplicationCore.Commands.Account.CreateAccount;
+namespace ApplicationCore.Commands.Accounts.CreateAccount;
 
 public sealed partial class CreateAccountHandler(
     IAccountRepository accounts,
@@ -18,7 +18,7 @@ public sealed partial class CreateAccountHandler(
     {
         var id = Guid.NewGuid();
 
-        var account = new Domain.Accounts.Account
+        var account = new AccountModel
         {
             Id = id,
             Username = request.Username,
