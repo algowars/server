@@ -26,8 +26,16 @@ jobs:
         run: dotnet restore
       - name: build
         run: dotnet build --no-restore
-      - name: Unit Tests
-        run: dotnet test --no-restore --no-build --logger trx --results-directory "TestResults-${{ matrix.dotnet-version }}"
+      - name: Unit tests with code coverage
+        run: |
+          dotnet test \
+            --no-restore \
+            --no-build \
+            --logger trx \
+            --results-directory "TestResults-${{ matrix.dotnet-version }}" \
+            /p:CollectCoverage=true \
+            /p:CoverletOutput=TestResults-${{ matrix.dotnet-version }}/ \
+            /p:CoverletOutputFormat=cobertura
       - name: Upload dotnet test results
         uses: actions/upload-artifact@v4
         with:
@@ -35,15 +43,10 @@ jobs:
           path: TestResults-${{ matrix.dotnet-version }}
         # Use always() to always run this step to publish test results when there are test failures
         if: ${{ always() }}
-      - name: Create Test Coverage Badge
-        uses: simon-k/dotnet-code-coverage-badge@v1.0.0
-        id: create_coverage_badge
-        with:
-          label: Unit Test Coverage
-          color: brightgreen
-          path: <MyProject>.Tests/TestResults/coverage.opencover.xml
-          gist-filename: code-coverage.json
-          gist-id: 1234567890abcdef1234567890abcdef
-          gist-auth-token: ${{ secrets.GIST_AUTH_TOKEN }}       
-      - name: Print code coverage
-        run: echo "Code coverage percentage ${{steps.create_coverage_badge.outputs.percentage}}%"
+      - name: Generate coverage badge
+        run: |
+          dotnet tool install -g dotnet-reportgenerator-globaltool
+          reportgenerator \
+            -reports:TestResults-${{ matrix.dotnet-version }}/coverage.cobertura.xml \
+            -targetdir:coveragereport \
+            -reporttypes:Badges
