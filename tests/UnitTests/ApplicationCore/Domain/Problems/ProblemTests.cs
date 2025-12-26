@@ -18,7 +18,7 @@ public sealed class ProblemTests
             Difficulty = 2,
             Status = ProblemStatus.Draft,
             Version = 1,
-            ProblemSetups = setups?.ToList() ?? []
+            ProblemSetups = setups?.ToList() ?? [],
         };
     }
 
@@ -39,40 +39,53 @@ public sealed class ProblemTests
         {
             Id = 1,
             Name = "C#",
-            IsArchived = false
+            IsArchived = false,
         };
 
         var v10 = new LanguageVersion
         {
             Id = 10,
             Version = "10",
-            ProgrammingLanguage = language
+            ProgrammingLanguage = language,
         };
 
         var v11 = new LanguageVersion
         {
             Id = 11,
             Version = "11",
-            ProgrammingLanguage = language
+            ProgrammingLanguage = language,
         };
 
         var setups = new[]
         {
-            new ProblemSetup { Id = 1, ProblemId = Guid.NewGuid(), InitialCode = "", LanguageVersion = v10 },
-            new ProblemSetup { Id = 2, ProblemId = Guid.NewGuid(), InitialCode = "", LanguageVersion = v11 }
+            new ProblemSetup
+            {
+                Id = 1,
+                ProblemId = Guid.NewGuid(),
+                InitialCode = "",
+                LanguageVersion = v10,
+            },
+            new ProblemSetup
+            {
+                Id = 2,
+                ProblemId = Guid.NewGuid(),
+                InitialCode = "",
+                LanguageVersion = v11,
+            },
         };
 
         var problem = CreateProblem(setups);
 
         var languages = problem.GetAvailableLanguages().ToList();
 
-        Assert.That(languages.Count, Is.EqualTo(1));
+        IEnumerable<string> expected = ["10", "11"];
         using (Assert.EnterMultipleScope())
         {
+            Assert.That(languages, Has.Count.EqualTo(1));
             Assert.That(languages[0].Id, Is.EqualTo(1));
             Assert.That(languages[0].Name, Is.EqualTo("C#"));
             Assert.That(languages[0].IsArchived, Is.False);
-            Assert.That(languages[0].Versions.Select(v => v.Version), Is.EqualTo(new[] { "10", "11" }));
+            Assert.That(languages[0].Versions.Select(v => v.Version), Is.EqualTo(expected));
         }
     }
 
@@ -83,27 +96,39 @@ public sealed class ProblemTests
         {
             Id = 2,
             Name = "Python",
-            IsArchived = false
+            IsArchived = false,
         };
 
         var version = new LanguageVersion
         {
             Id = 1,
             Version = "3.11",
-            ProgrammingLanguage = language
+            ProgrammingLanguage = language,
         };
 
         var setups = new[]
         {
-            new ProblemSetup { Id = 1, ProblemId = Guid.NewGuid(), InitialCode = "", LanguageVersion = version },
-            new ProblemSetup { Id = 2, ProblemId = Guid.NewGuid(), InitialCode = "", LanguageVersion = version }
+            new ProblemSetup
+            {
+                Id = 1,
+                ProblemId = Guid.NewGuid(),
+                InitialCode = "",
+                LanguageVersion = version,
+            },
+            new ProblemSetup
+            {
+                Id = 2,
+                ProblemId = Guid.NewGuid(),
+                InitialCode = "",
+                LanguageVersion = version,
+            },
         };
 
         var problem = CreateProblem(setups);
 
         var languages = problem.GetAvailableLanguages().ToList();
 
-        Assert.That(languages.Single().Versions.Count, Is.EqualTo(1));
+        Assert.That(languages.Single().Versions, Has.Count.EqualTo(1));
     }
 
     [Test]
@@ -113,13 +138,25 @@ public sealed class ProblemTests
         {
             Id = 1,
             Version = "1.0",
-            ProgrammingLanguage = null!
+            ProgrammingLanguage = null!,
         };
 
         var setups = new[]
         {
-            new ProblemSetup { Id = 1, ProblemId = Guid.NewGuid(), InitialCode = "", LanguageVersion = null },
-            new ProblemSetup { Id = 2, ProblemId = Guid.NewGuid(), InitialCode = "", LanguageVersion = version }
+            new ProblemSetup
+            {
+                Id = 1,
+                ProblemId = Guid.NewGuid(),
+                InitialCode = "",
+                LanguageVersion = null,
+            },
+            new ProblemSetup
+            {
+                Id = 2,
+                ProblemId = Guid.NewGuid(),
+                InitialCode = "",
+                LanguageVersion = version,
+            },
         };
 
         var problem = CreateProblem(setups);
@@ -136,49 +173,99 @@ public sealed class ProblemTests
         {
             Id = 3,
             Name = "Java",
-            IsArchived = false
+            IsArchived = false,
         };
 
         var v21 = new LanguageVersion
         {
             Id = 2,
             Version = "21",
-            ProgrammingLanguage = language
+            ProgrammingLanguage = language,
         };
 
         var v17 = new LanguageVersion
         {
             Id = 1,
             Version = "17",
-            ProgrammingLanguage = language
+            ProgrammingLanguage = language,
         };
 
         var setups = new[]
         {
-            new ProblemSetup { Id = 1, ProblemId = Guid.NewGuid(), InitialCode = "", LanguageVersion = v21 },
-            new ProblemSetup { Id = 2, ProblemId = Guid.NewGuid(), InitialCode = "", LanguageVersion = v17 }
+            new ProblemSetup
+            {
+                Id = 1,
+                ProblemId = Guid.NewGuid(),
+                InitialCode = "",
+                LanguageVersion = v21,
+            },
+            new ProblemSetup
+            {
+                Id = 2,
+                ProblemId = Guid.NewGuid(),
+                InitialCode = "",
+                LanguageVersion = v17,
+            },
         };
 
         var problem = CreateProblem(setups);
 
-        var versions = problem.GetAvailableLanguages().Single().Versions.Select(v => v.Version).ToList();
+        var versions = problem
+            .GetAvailableLanguages()
+            .Single()
+            .Versions.Select(v => v.Version)
+            .ToList();
 
-        Assert.That(versions, Is.EqualTo(new[] { "17", "21" }));
+        IEnumerable<string> expected = ["17", "21"];
+
+        Assert.That(versions, Is.EqualTo(expected));
     }
 
     [Test]
     public void GetAvailableLanguages_deduplicates_languages_by_id()
     {
-        var lang1 = new ProgrammingLanguage { Id = 1, Name = "C#", IsArchived = false };
-        var lang2 = new ProgrammingLanguage { Id = 1, Name = "C#", IsArchived = true };
+        var lang1 = new ProgrammingLanguage
+        {
+            Id = 1,
+            Name = "C#",
+            IsArchived = false,
+        };
+        var lang2 = new ProgrammingLanguage
+        {
+            Id = 1,
+            Name = "C#",
+            IsArchived = true,
+        };
 
-        var v1 = new LanguageVersion { Id = 1, Version = "10", ProgrammingLanguage = lang1 };
-        var v2 = new LanguageVersion { Id = 2, Version = "11", ProgrammingLanguage = lang2 };
+        var v1 = new LanguageVersion
+        {
+            Id = 1,
+            Version = "10",
+            ProgrammingLanguage = lang1,
+        };
+        var v2 = new LanguageVersion
+        {
+            Id = 2,
+            Version = "11",
+            ProgrammingLanguage = lang2,
+        };
 
         var setups = new[]
         {
-            new ProblemSetup { Id = 1, ProblemId = Guid.NewGuid(), InitialCode = "", LanguageVersion = v1 },
-            new ProblemSetup { Id = 2, ProblemId = Guid.NewGuid(), InitialCode = "", LanguageVersion = v2 }
+            new ProblemSetup
+            {
+                Id = 1,
+                ProblemId = Guid.NewGuid(),
+                InitialCode = "",
+                LanguageVersion = v1,
+            },
+            new ProblemSetup
+            {
+                Id = 2,
+                ProblemId = Guid.NewGuid(),
+                InitialCode = "",
+                LanguageVersion = v2,
+            },
         };
 
         var problem = CreateProblem(setups);
