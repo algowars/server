@@ -58,20 +58,8 @@ public sealed class ProblemTests
 
         var setups = new[]
         {
-            new ProblemSetup
-            {
-                Id = 1,
-                ProblemId = Guid.NewGuid(),
-                InitialCode = "",
-                LanguageVersion = v10
-            },
-            new ProblemSetup
-            {
-                Id = 2,
-                ProblemId = Guid.NewGuid(),
-                InitialCode = "",
-                LanguageVersion = v11
-            }
+            new ProblemSetup { Id = 1, ProblemId = Guid.NewGuid(), InitialCode = "", LanguageVersion = v10 },
+            new ProblemSetup { Id = 2, ProblemId = Guid.NewGuid(), InitialCode = "", LanguageVersion = v11 }
         };
 
         var problem = CreateProblem(setups);
@@ -79,8 +67,13 @@ public sealed class ProblemTests
         var languages = problem.GetAvailableLanguages().ToList();
 
         Assert.That(languages.Count, Is.EqualTo(1));
-        Assert.That(languages[0].Name, Is.EqualTo("C#"));
-        Assert.That(languages[0].Versions.Select(v => v.Version), Is.EqualTo(new[] { "10", "11" }));
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(languages[0].Id, Is.EqualTo(1));
+            Assert.That(languages[0].Name, Is.EqualTo("C#"));
+            Assert.That(languages[0].IsArchived, Is.False);
+            Assert.That(languages[0].Versions.Select(v => v.Version), Is.EqualTo(new[] { "10", "11" }));
+        }
     }
 
     [Test]
@@ -102,20 +95,8 @@ public sealed class ProblemTests
 
         var setups = new[]
         {
-            new ProblemSetup
-            {
-                Id = 1,
-                ProblemId = Guid.NewGuid(),
-                InitialCode = "",
-                LanguageVersion = version
-            },
-            new ProblemSetup
-            {
-                Id = 2,
-                ProblemId = Guid.NewGuid(),
-                InitialCode = "",
-                LanguageVersion = version
-            }
+            new ProblemSetup { Id = 1, ProblemId = Guid.NewGuid(), InitialCode = "", LanguageVersion = version },
+            new ProblemSetup { Id = 2, ProblemId = Guid.NewGuid(), InitialCode = "", LanguageVersion = version }
         };
 
         var problem = CreateProblem(setups);
@@ -128,15 +109,17 @@ public sealed class ProblemTests
     [Test]
     public void GetAvailableLanguages_ignores_setups_without_language_version_or_language()
     {
+        var version = new LanguageVersion
+        {
+            Id = 1,
+            Version = "1.0",
+            ProgrammingLanguage = null!
+        };
+
         var setups = new[]
         {
-            new ProblemSetup
-            {
-                Id = 1,
-                ProblemId = Guid.NewGuid(),
-                InitialCode = "",
-                LanguageVersion = null
-            }
+            new ProblemSetup { Id = 1, ProblemId = Guid.NewGuid(), InitialCode = "", LanguageVersion = null },
+            new ProblemSetup { Id = 2, ProblemId = Guid.NewGuid(), InitialCode = "", LanguageVersion = version }
         };
 
         var problem = CreateProblem(setups);
@@ -172,20 +155,8 @@ public sealed class ProblemTests
 
         var setups = new[]
         {
-            new ProblemSetup
-            {
-                Id = 1,
-                ProblemId = Guid.NewGuid(),
-                InitialCode = "",
-                LanguageVersion = v21
-            },
-            new ProblemSetup
-            {
-                Id = 2,
-                ProblemId = Guid.NewGuid(),
-                InitialCode = "",
-                LanguageVersion = v17
-            }
+            new ProblemSetup { Id = 1, ProblemId = Guid.NewGuid(), InitialCode = "", LanguageVersion = v21 },
+            new ProblemSetup { Id = 2, ProblemId = Guid.NewGuid(), InitialCode = "", LanguageVersion = v17 }
         };
 
         var problem = CreateProblem(setups);
@@ -193,5 +164,32 @@ public sealed class ProblemTests
         var versions = problem.GetAvailableLanguages().Single().Versions.Select(v => v.Version).ToList();
 
         Assert.That(versions, Is.EqualTo(new[] { "17", "21" }));
+    }
+
+    [Test]
+    public void GetAvailableLanguages_deduplicates_languages_by_id()
+    {
+        var lang1 = new ProgrammingLanguage { Id = 1, Name = "C#", IsArchived = false };
+        var lang2 = new ProgrammingLanguage { Id = 1, Name = "C#", IsArchived = true };
+
+        var v1 = new LanguageVersion { Id = 1, Version = "10", ProgrammingLanguage = lang1 };
+        var v2 = new LanguageVersion { Id = 2, Version = "11", ProgrammingLanguage = lang2 };
+
+        var setups = new[]
+        {
+            new ProblemSetup { Id = 1, ProblemId = Guid.NewGuid(), InitialCode = "", LanguageVersion = v1 },
+            new ProblemSetup { Id = 2, ProblemId = Guid.NewGuid(), InitialCode = "", LanguageVersion = v2 }
+        };
+
+        var problem = CreateProblem(setups);
+
+        var result = problem.GetAvailableLanguages().Single();
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(result.Id, Is.EqualTo(1));
+            Assert.That(result.IsArchived, Is.False);
+            Assert.That(result.Versions, Has.Count.EqualTo(1));
+        }
     }
 }
