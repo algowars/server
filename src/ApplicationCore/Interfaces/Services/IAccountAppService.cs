@@ -1,6 +1,29 @@
+using ApplicationCore.Dtos.Accounts;
+using Ardalis.Result;
+using MediatR;
+
 namespace ApplicationCore.Interfaces.Services;
 
 public interface IAccountAppService
 {
-    
+    Task<Result<Guid>> CreateAsync(
+        string username,
+        string sub,
+        string imageUrl,
+        CancellationToken cancellationToken
+    );
+
+    Task<AccountDto?> GetAccountBySubAsync(string sub, CancellationToken cancellationToken);
+
+    Task<ProfileAggregateDto?> GetProfileAggregateAsync(
+        string username,
+        CancellationToken cancellationToken
+    );
+
+    Task<Result> UpdateUsernameAsync(Guid id, string username, CancellationToken cancellationToken);
+
+    Task<ProfileSettingsDto?> GetProfileSettingsAsync(
+        string sub,
+        CancellationToken cancellationToken
+    );
 }
