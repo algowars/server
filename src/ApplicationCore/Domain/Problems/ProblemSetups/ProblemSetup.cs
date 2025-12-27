@@ -9,7 +9,7 @@ public sealed class ProblemSetup
 
     public required Guid ProblemId { get; init; }
 
-    public Problem? Problem { get; init; }
+    public ProblemModel? Problem { get; init; }
 
     public required string InitialCode { get; init; }
 

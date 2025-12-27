@@ -1,6 +1,6 @@
 namespace ApplicationCore.Domain.Problems.Languages;
 
-public sealed class LanguageVersion : BaseEntity<int>
+public sealed class LanguageVersion : BaseModel<int>
 {
     public required string Version { get; init; }
 

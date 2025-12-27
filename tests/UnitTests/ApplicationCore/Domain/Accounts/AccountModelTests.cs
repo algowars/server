@@ -3,15 +3,12 @@ using ApplicationCore.Domain.Accounts;
 namespace UnitTests.ApplicationCore.Domain.Accounts;
 
 [TestFixture]
-public sealed class AccountTests
+public sealed class AccountModelTests
 {
     [Test]
     public void Creating_account_with_username_sets_value()
     {
-        var account = new Account
-        {
-            Username = "user1"
-        };
+        var account = new AccountModel { Username = "user1" };
 
         Assert.That(account.Username, Is.EqualTo("user1"));
     }
@@ -23,12 +20,12 @@ public sealed class AccountTests
         const string imageUrl = "https://example.com/avatar.png";
         var createdOn = DateTime.UtcNow;
 
-        var account = new Account
+        var account = new AccountModel
         {
             Username = "user1",
             Sub = sub,
             ImageUrl = imageUrl,
-            CreatedOn = createdOn
+            CreatedOn = createdOn,
         };
 
         using (Assert.EnterMultipleScope())
@@ -42,10 +39,7 @@ public sealed class AccountTests
     [Test]
     public void Last_modified_fields_default_to_null()
     {
-        var account = new Account
-        {
-            Username = "user1"
-        };
+        var account = new AccountModel { Username = "user1" };
 
         using (Assert.EnterMultipleScope())
         {
@@ -60,10 +54,7 @@ public sealed class AccountTests
         var modifiedOn = DateTime.UtcNow;
         var modifiedBy = Guid.NewGuid();
 
-        var account = new Account
-        {
-            Username = "user1"
-        };
+        var account = new AccountModel { Username = "user1" };
 
         account.LastModifiedOn = modifiedOn;
         account.LastModifiedById = modifiedBy;

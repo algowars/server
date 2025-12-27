@@ -4,14 +4,14 @@ using ApplicationCore.Domain.Accounts;
 namespace UnitTests.ApplicationCore.Domain;
 
 [TestFixture]
-public sealed class BaseAuditableEntityTests
+public sealed class BaseAuditableModelTests
 {
-    private sealed class TestAuditableEntity : BaseAuditableEntity<Guid> { }
+    private sealed class TestAuditableModel : BaseAuditableModel<Guid> { }
 
     [Test]
     public void All_properties_are_null_or_default_by_default()
     {
-        var entity = new TestAuditableEntity();
+        var entity = new TestAuditableModel();
 
         using (Assert.EnterMultipleScope())
         {
@@ -29,9 +29,9 @@ public sealed class BaseAuditableEntityTests
     {
         var createdOn = DateTime.UtcNow;
         var createdById = Guid.NewGuid();
-        var account = new Account { Username = "creator" };
+        var account = new AccountModel { Username = "creator" };
 
-        var entity = new TestAuditableEntity
+        var entity = new TestAuditableModel
         {
             CreatedOn = createdOn,
             CreatedById = createdById,
@@ -52,7 +52,7 @@ public sealed class BaseAuditableEntityTests
         var modifiedOn = DateTime.UtcNow;
         var modifiedById = Guid.NewGuid();
 
-        var entity = new TestAuditableEntity
+        var entity = new TestAuditableModel
         {
             LastModifiedOn = modifiedOn,
             LastModifiedById = modifiedById,
@@ -70,7 +70,7 @@ public sealed class BaseAuditableEntityTests
     {
         var deletedOn = DateTime.UtcNow;
 
-        var entity = new TestAuditableEntity { DeletedOn = deletedOn };
+        var entity = new TestAuditableModel { DeletedOn = deletedOn };
 
         Assert.That(entity.DeletedOn, Is.EqualTo(deletedOn));
     }

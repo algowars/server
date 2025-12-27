@@ -5,11 +5,11 @@ using ApplicationCore.Domain.Problems.ProblemSetups;
 namespace UnitTests.ApplicationCore.Domain.Problems;
 
 [TestFixture]
-public sealed class ProblemTests
+public sealed class ProblemModelTests
 {
-    private static Problem CreateProblem(IEnumerable<ProblemSetup>? setups = null)
+    private static ProblemModel CreateProblem(IEnumerable<ProblemSetup>? setups = null)
     {
-        return new Problem
+        return new ProblemModel
         {
             Title = "Sample Problem",
             Slug = "sample-problem",
