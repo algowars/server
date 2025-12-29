@@ -3,6 +3,7 @@ using Asp.Versioning;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
+using PublicApi.Authorization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -35,11 +36,12 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+return;
 
 void AddAuthentication(IServiceCollection services)
 {
-    builder
-        .Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    services
+        .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         .AddJwtBearer(options =>
         {
             options.Authority = $"https://{builder.Configuration["Auth0:Domain"]}/";
@@ -51,7 +53,7 @@ void AddAuthentication(IServiceCollection services)
             };
         });
 
-    builder.Services.AddAuthorization(options =>
+    services.AddAuthorization(options =>
     {
         options.AddPolicy(
             "create:problems",

@@ -41,4 +41,34 @@ public class AccountController(IAccountAppService accountAppService) : BaseApiCo
 
         return BadRequest(errors);
     }
+
+    [HttpGet("find/profile/{username}")]
+    public async Task<IActionResult> GetProfileAsync(
+        string username,
+        CancellationToken cancellationToken
+    )
+    {
+        if (string.IsNullOrEmpty(username))
+        {
+            return BadRequest("Username is required");
+        }
+
+        var accountResult = await accountAppService.GetProfileAggregateAsync(
+            username,
+            cancellationToken
+        );
+
+        if (accountResult.IsSuccess)
+        {
+            return Ok(accountResult.Value);
+        }
+
+        string errors = string.Join(", ", accountResult.Errors);
+
+        return BadRequest(errors);
+    }
+    
+    [HttpGet("find/profile")]
+    [Authorize]
+    public async Task<IActionResult> GetProfileAsync
 }

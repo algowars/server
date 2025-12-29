@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text.Json;
+using ApplicationCore.Logging;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
@@ -49,7 +50,7 @@ public static class ExceptionMiddlewareExtensions
                         errors,
                     };
 
-                    var json = JsonSerializer.Serialize(problem);
+                    string json = JsonSerializer.Serialize(problem);
                     await context.Response.WriteAsync(json);
                     return;
                 }
@@ -79,7 +80,7 @@ public static class ExceptionMiddlewareExtensions
                     details = env.IsDevelopment() ? ex?.ToString() : null,
                 };
 
-                var genericJson = JsonSerializer.Serialize(genericProblem);
+                string genericJson = JsonSerializer.Serialize(genericProblem);
                 await context.Response.WriteAsync(genericJson);
             });
         });

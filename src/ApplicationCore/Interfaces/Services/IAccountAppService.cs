@@ -15,7 +15,7 @@ public interface IAccountAppService
 
     Task<AccountDto?> GetAccountBySubAsync(string sub, CancellationToken cancellationToken);
 
-    Task<ProfileAggregateDto?> GetProfileAggregateAsync(
+    Task<Result<ProfileAggregateDto>> GetProfileAggregateAsync(
         string username,
         CancellationToken cancellationToken
     );

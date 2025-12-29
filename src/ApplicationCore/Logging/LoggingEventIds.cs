@@ -18,4 +18,10 @@ public static class LoggingEventIds
 
         public const int UpdateUsernameFailed = 2301;
     }
+
+    public static class Exceptions
+    {
+        public const int UnhandledException = 1000;
+        public const int UnhandledExceptionWithPath = 1001;
+    }
 }
