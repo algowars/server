@@ -32,4 +32,43 @@ public sealed class ProblemController(IProblemAppService problemAppService) : Ba
 
         return BadRequest(errors);
     }
+
+    [HttpGet]
+    public async Task<IActionResult> GetPageableAsync(
+        [FromQuery] DateTime timestamp,
+        [FromQuery] int page = 1,
+        [FromQuery] int size = 25,
+        CancellationToken cancellationToken = default
+    )
+    {
+        if (page < 1 || size < 1)
+        {
+            return BadRequest("Page and size must be greater than 0.");
+        }
+
+        return ToActionResult(
+            await problemAppService.GetProblemsPaginatedAsync(
+                page,
+                size,
+                timestamp,
+                cancellationToken
+            )
+        );
+    }
+
+    [HttpGet("{problemId:guid}/setup")]
+    public async Task<IActionResult> GetProblemSetupAsync(
+        Guid problemId,
+        [FromQuery] int languageVersionId,
+        CancellationToken cancellationToken
+    )
+    {
+        return ToActionResult(
+            await problemAppService.GetProblemSetupAsync(
+                problemId,
+                languageVersionId,
+                cancellationToken
+            )
+        );
+    }
 }

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
 using PublicApi.Authorization;
+using PublicApi.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,6 +22,27 @@ builder.Services.AddApiVersioning(o =>
     o.ReportApiVersions = true;
 });
 
+AddAuthentication(builder.Services);
+
+string[] allowedOrigins =
+    builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
+
+if (allowedOrigins.Length == 0)
+{
+    throw new InvalidOperationException("CORS: No Cors:AllowedOrigins configured.");
+}
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(
+        "AllowFrontend",
+        policy =>
+        {
+            policy.WithOrigins(allowedOrigins).AllowAnyHeader().AllowAnyMethod().AllowCredentials();
+        }
+    );
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -28,6 +50,22 @@ if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
+
+// app.UseHsts();
+app.UseHttpsRedirection();
+
+// Security Headers
+app.UseXContentTypeOptions(); // Prevent MIME type sniffing
+app.UseReferrerPolicy(opts => opts.NoReferrer()); // Hide referrer
+app.UseXXssProtection(options => options.EnabledWithBlockMode());
+app.UseXfo(options => options.Deny()); // Prevent clickjacking
+app.UseCsp(options =>
+    options.DefaultSources(s => s.Self()).StyleSources(s => s.Self().UnsafeInline())
+);
+
+app.UseCors("AllowFrontend");
+
+app.UseGlobalExceptionHandler();
 
 app.UseHttpsRedirection();
 

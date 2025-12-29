@@ -67,8 +67,29 @@ public class AccountController(IAccountAppService accountAppService) : BaseApiCo
 
         return BadRequest(errors);
     }
-    
+
     [HttpGet("find/profile")]
     [Authorize]
-    public async Task<IActionResult> GetProfileAsync
+    public async Task<IActionResult> GetProfileAsync(CancellationToken cancellationToken)
+    {
+        string? sub = GetSub();
+
+        if (sub is null)
+        {
+            return Unauthorized();
+        }
+
+        var permissions = User.Claims.Where(c => c.Type == "permissions").Select(c => c.Value);
+
+        var accountResult = await accountAppService.GetAccountBySubAsync(sub, cancellationToken);
+
+        if (accountResult.IsSuccess)
+        {
+            return Ok(accountResult.Value);
+        }
+
+        string errors = string.Join(", ", accountResult.Errors);
+
+        return BadRequest(errors);
+    }
 }
