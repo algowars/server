@@ -14,10 +14,7 @@ public sealed class GetProfileSettingsHandler(IAccountRepository accountReposito
     {
         try
         {
-            var account = await accountRepository.GetProfileSettingsBySubAsync(
-                request.Sub,
-                cancellationToken
-            );
+            var account = await accountRepository.GetBySubAsync(request.Sub, cancellationToken);
 
             return account is null
                 ? Result.NotFound()
