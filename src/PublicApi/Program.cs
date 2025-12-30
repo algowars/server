@@ -8,11 +8,10 @@ using PublicApi.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
 builder.Services.AddApplicationCore();
+builder.Services.AddIf
 builder.Services.AddControllers();
 
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
 builder.Services.AddApiVersioning(o =>
@@ -45,23 +44,12 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
 
-// app.UseHsts();
 app.UseHttpsRedirection();
-
-// Security Headers
-app.UseXContentTypeOptions(); // Prevent MIME type sniffing
-app.UseReferrerPolicy(opts => opts.NoReferrer()); // Hide referrer
-app.UseXXssProtection(options => options.EnabledWithBlockMode());
-app.UseXfo(options => options.Deny()); // Prevent clickjacking
-app.UseCsp(options =>
-    options.DefaultSources(s => s.Self()).StyleSources(s => s.Self().UnsafeInline())
-);
 
 app.UseCors("AllowFrontend");
 
