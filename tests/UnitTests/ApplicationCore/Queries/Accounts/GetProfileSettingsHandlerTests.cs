@@ -23,7 +23,7 @@ public sealed class GetProfileSettingsHandlerTests
     public async Task Handle_returns_not_found_when_account_does_not_exist()
     {
         _repository
-            .Setup(r => r.GetProfileSettingsBySubAsync("sub1", It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetBySubAsync("sub1", It.IsAny<CancellationToken>()))
             .ReturnsAsync((AccountModel?)null);
 
         var query = new GetProfileSettingsQuery("sub1");
@@ -39,7 +39,7 @@ public sealed class GetProfileSettingsHandlerTests
         var account = new AccountModel { Username = "user1" };
 
         _repository
-            .Setup(r => r.GetProfileSettingsBySubAsync("sub1", It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetBySubAsync("sub1", It.IsAny<CancellationToken>()))
             .ReturnsAsync(account);
 
         var query = new GetProfileSettingsQuery("sub1");
@@ -57,7 +57,7 @@ public sealed class GetProfileSettingsHandlerTests
     public async Task Handle_returns_error_when_exception_is_thrown()
     {
         _repository
-            .Setup(r => r.GetProfileSettingsBySubAsync("sub1", It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetBySubAsync("sub1", It.IsAny<CancellationToken>()))
             .ThrowsAsync(new Exception("db failure"));
 
         var query = new GetProfileSettingsQuery("sub1");
