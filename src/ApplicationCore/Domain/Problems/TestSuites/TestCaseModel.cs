@@ -1,6 +1,6 @@
 namespace ApplicationCore.Domain.Problems.TestSuites;
 
-public sealed class TestCase
+public sealed class TestCaseModel
 {
     public required int Id { get; init; }
 

@@ -7,7 +7,7 @@ namespace UnitTests.ApplicationCore.Domain.Problems;
 [TestFixture]
 public sealed class ProblemModelTests
 {
-    private static ProblemModel CreateProblem(IEnumerable<ProblemSetup>? setups = null)
+    private static ProblemModel CreateProblem(IEnumerable<ProblemSetupModel>? setups = null)
     {
         return new ProblemModel
         {
@@ -58,14 +58,14 @@ public sealed class ProblemModelTests
 
         var setups = new[]
         {
-            new ProblemSetup
+            new ProblemSetupModel
             {
                 Id = 1,
                 ProblemId = Guid.NewGuid(),
                 InitialCode = "",
                 LanguageVersion = v10,
             },
-            new ProblemSetup
+            new ProblemSetupModel
             {
                 Id = 2,
                 ProblemId = Guid.NewGuid(),
@@ -108,14 +108,14 @@ public sealed class ProblemModelTests
 
         var setups = new[]
         {
-            new ProblemSetup
+            new ProblemSetupModel
             {
                 Id = 1,
                 ProblemId = Guid.NewGuid(),
                 InitialCode = "",
                 LanguageVersion = version,
             },
-            new ProblemSetup
+            new ProblemSetupModel
             {
                 Id = 2,
                 ProblemId = Guid.NewGuid(),
@@ -143,14 +143,14 @@ public sealed class ProblemModelTests
 
         var setups = new[]
         {
-            new ProblemSetup
+            new ProblemSetupModel
             {
                 Id = 1,
                 ProblemId = Guid.NewGuid(),
                 InitialCode = "",
                 LanguageVersion = null,
             },
-            new ProblemSetup
+            new ProblemSetupModel
             {
                 Id = 2,
                 ProblemId = Guid.NewGuid(),
@@ -192,14 +192,14 @@ public sealed class ProblemModelTests
 
         var setups = new[]
         {
-            new ProblemSetup
+            new ProblemSetupModel
             {
                 Id = 1,
                 ProblemId = Guid.NewGuid(),
                 InitialCode = "",
                 LanguageVersion = v21,
             },
-            new ProblemSetup
+            new ProblemSetupModel
             {
                 Id = 2,
                 ProblemId = Guid.NewGuid(),
@@ -252,14 +252,14 @@ public sealed class ProblemModelTests
 
         var setups = new[]
         {
-            new ProblemSetup
+            new ProblemSetupModel
             {
                 Id = 1,
                 ProblemId = Guid.NewGuid(),
                 InitialCode = "",
                 LanguageVersion = v1,
             },
-            new ProblemSetup
+            new ProblemSetupModel
             {
                 Id = 2,
                 ProblemId = Guid.NewGuid(),

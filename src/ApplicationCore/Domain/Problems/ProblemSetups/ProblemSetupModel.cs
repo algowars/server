@@ -3,7 +3,7 @@ using ApplicationCore.Domain.Problems.TestSuites;
 
 namespace ApplicationCore.Domain.Problems.ProblemSetups;
 
-public sealed class ProblemSetup
+public sealed class ProblemSetupModel
 {
     public required int Id { get; init; }
 
@@ -21,5 +21,5 @@ public sealed class ProblemSetup
 
     public HarnessTemplate? HarnessTemplate { get; init; }
 
-    public IEnumerable<TestSuite> TestSuites { get; init; } = [];
+    public IEnumerable<TestSuiteModel> TestSuites { get; init; } = [];
 }

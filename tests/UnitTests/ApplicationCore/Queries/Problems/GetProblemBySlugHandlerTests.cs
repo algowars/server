@@ -56,7 +56,7 @@ public sealed class GetProblemBySlugHandlerTests
             Version = 1,
             ProblemSetups =
             [
-                new ProblemSetup
+                new ProblemSetupModel
                 {
                     Id = 1,
                     ProblemId = Guid.NewGuid(),

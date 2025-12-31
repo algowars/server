@@ -1,13 +1,16 @@
+using System.Net.Http;
 using ApplicationCore.Interfaces.Clients;
 using ApplicationCore.Interfaces.Repositories;
 using ApplicationCore.Interfaces.Services;
-using Castle.Core.Configuration;
 using Infrastructure.CodeExecution.Judge0;
+using Infrastructure.Configuration;
 using Infrastructure.Persistence;
 using Infrastructure.Repositories;
 using Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace Infrastructure;
 
@@ -18,7 +21,7 @@ public static class DependencyInjection
         IConfiguration configuration
     )
     {
-        var cs =
+        string cs =
             configuration.GetConnectionString("DefaultConnection")
             ?? throw new InvalidOperationException(
                 "Missing connection string 'DefaultConnection'."
@@ -29,61 +32,44 @@ public static class DependencyInjection
             o.UseNpgsql(cs, npg => npg.EnableRetryOnFailure());
         });
 
-        services.AddScoped<IAppDbContext>(provider => provider.GetRequiredService<AppDbContext>());
+        services.AddScoped<IAppDbContext>(sp => sp.GetRequiredService<AppDbContext>());
         services.AddScoped<ISlugService, SlugService>();
 
         services.AddScoped<IAccountRepository, AccountRepository>();
         services.AddScoped<IProblemRepository, ProblemRepository>();
-        services.AddScoped<ISubmissionRepository, SubmissionRepository>();
 
-        AddJudge0Client(services, configuration);
+        services.Configure<ExecutionEnginesOptions>(configuration.GetSection("ExecutionEngines"));
 
-        string runWorker = configuration.GetValue<bool>("ExecutionEngines:Judge0:RunWorker");
-        if (runWorker)
-        {
-            services.AddHostedService<Judge0JobWorker>();
-        }
+        AddJudge0Client(services);
 
         return services;
     }
 
-    private static void AddJudge0Client(IServiceCollection services, IConfiguration configuration)
+    private static void AddJudge0Client(IServiceCollection services)
     {
-        var enabled = configuration.GetSection("ExecutionEngines:Judge0").GetValue<bool>("Enabled");
-
-        if (!enabled)
+        services.AddSingleton<IJudge0Client>(sp =>
         {
-            services.AddScoped<IJudge0Client, MockJudge0Client>();
-            return;
-        }
+            var options = sp.GetRequiredService<IOptions<ExecutionEnginesOptions>>().Value;
+            var judge0 = options.Judge0;
 
-        var judge0Section = configuration.GetSection("Judge0");
+            //if (!judge0.Enabled)
+            //{
+            //    return new MockJudge0Client();
+            //}
 
-        var baseUrl =
-            judge0Section.GetValue<string>("BaseUrl")
-            ?? throw new InvalidOperationException("Judge0 BaseUrl is missing.");
+            string baseUrl = judge0.BaseUrl.EndsWith("/") ? judge0.BaseUrl : judge0.BaseUrl + "/";
 
-        var apiKey =
-            judge0Section.GetValue<string>("ApiKey")
-            ?? throw new InvalidOperationException("Judge0 ApiKey is missing.");
+            var client = new HttpClient
+            {
+                BaseAddress = new Uri(baseUrl),
+                Timeout = TimeSpan.FromSeconds(judge0.DefaultTimeoutInSeconds),
+            };
 
-        var host =
-            judge0Section.GetValue<string>("Host")
-            ?? throw new InvalidOperationException("Judge0 Host is missing.");
-
-        var timeout = judge0Section.GetValue<int?>("DefaultTimeoutInSeconds") ?? 10;
-
-        if (!baseUrl.EndsWith("/"))
-            baseUrl += "/";
-
-        services.AddHttpClient<IJudge0Client, Judge0Client>(client =>
-        {
-            client.BaseAddress = new Uri(baseUrl);
-            client.Timeout = TimeSpan.FromSeconds(timeout);
-
-            client.DefaultRequestHeaders.Add("x-rapidapi-key", apiKey);
-            client.DefaultRequestHeaders.Add("x-rapidapi-host", host);
+            client.DefaultRequestHeaders.Add("x-rapidapi-key", judge0.ApiKey);
+            client.DefaultRequestHeaders.Add("x-rapidapi-host", judge0.Host);
             client.DefaultRequestHeaders.Add("Accept", "application/json");
+
+            return new Judge0Client(client);
         });
     }
 }

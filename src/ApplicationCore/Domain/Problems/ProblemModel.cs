@@ -17,7 +17,7 @@ public sealed class ProblemModel : BaseAuditableModel<Guid>
 
     public ProblemStatus Status { get; init; }
 
-    public ICollection<ProblemSetup> ProblemSetups { get; init; } = [];
+    public ICollection<ProblemSetupModel> ProblemSetups { get; init; } = [];
 
     public int Version { get; init; }
 
