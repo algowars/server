@@ -24,7 +24,6 @@ var app = builder.Build();
 ConfigureOpenApi(app);
 ConfigureMiddleware(app);
 
-app.MapControllers();
 app.Run();
 
 void ConfigureOptions(IServiceCollection services, IConfiguration configuration)
@@ -35,7 +34,6 @@ void ConfigureOptions(IServiceCollection services, IConfiguration configuration)
 
 void AddApplicationServices(IServiceCollection services)
 {
-    services.AddApplicationCore();
     services.AddControllers();
     services.AddOpenApi();
 }
@@ -124,7 +122,19 @@ void ConfigureOpenApi(WebApplication app)
 void ConfigureMiddleware(WebApplication app)
 {
     app.UseHttpsRedirection();
+
+    app.UseXContentTypeOptions(); // Prevent MIME type sniffing
+    app.UseReferrerPolicy(opts => opts.NoReferrer()); // Hide referrer
+    app.UseXXssProtection(options => options.EnabledWithBlockMode());
+    app.UseXfo(options => options.Deny()); // Prevent clickjacking
+    app.UseCsp(options =>
+        options.DefaultSources(s => s.Self()).StyleSources(s => s.Self().UnsafeInline())
+    );
+
     app.UseCors("AllowFrontend");
     app.UseGlobalExceptionHandler();
+    app.UseAuthentication();
     app.UseAuthorization();
+
+    app.MapControllers();
 }

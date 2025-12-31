@@ -9,7 +9,8 @@ namespace PublicApi.Controllers;
 [ApiController]
 [Route("api/v{version:apiVersion}/[controller]")]
 [ApiVersion("1.0")]
-public class AccountController(IAccountAppService accountAppService) : BaseApiController
+public sealed partial class AccountController(IAccountAppService accountAppService)
+    : BaseApiController
 {
     [HttpPost]
     [Authorize]
