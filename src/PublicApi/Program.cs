@@ -1,8 +1,10 @@
+using System.Threading.RateLimiting;
 using ApplicationCore;
 using Asp.Versioning;
 using Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
 using PublicApi.Authorization;
 using PublicApi.Filters;
@@ -74,11 +76,18 @@ builder.Services.AddAuthorization(options =>
 builder.Services.AddSingleton<IAuthorizationHandler, RbacHandler>();
 
 // CORS
-string[] allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>();
+string corsOriginsEnv =
+    builder.Configuration["Cors:AllowedOrigins"]
+    ?? throw new InvalidOperationException("Cors:AllowedOrigins not configured!");
 
-if (allowedOrigins is null || allowedOrigins.Length == 0)
+string[] allowedOrigins = corsOriginsEnv.Split(
+    ',',
+    StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries
+);
+
+if (allowedOrigins.Length == 0)
 {
-    throw new InvalidOperationException("CORS: No Cors:AllowedOrigins configured.");
+    throw new InvalidOperationException("Cors:AllowedOrigins cannot be empty!");
 }
 
 builder.Services.AddCors(options =>
@@ -92,7 +101,56 @@ builder.Services.AddCors(options =>
     );
 });
 
+builder.Services.AddRateLimiter(options =>
+{
+    options.AddFixedWindowLimiter(
+        policyName: "ExtraShort",
+        configureOptions: opts =>
+        {
+            opts.PermitLimit = 4;
+            opts.Window = TimeSpan.FromSeconds(100);
+            opts.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+            opts.QueueLimit = 2;
+        }
+    );
+
+    options.AddFixedWindowLimiter(
+        policyName: "Short",
+        configureOptions: opts =>
+        {
+            opts.PermitLimit = 10;
+            opts.Window = TimeSpan.FromSeconds(30);
+            opts.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+            opts.QueueLimit = 2;
+        }
+    );
+
+    options.AddFixedWindowLimiter(
+        policyName: "Medium",
+        configureOptions: opts =>
+        {
+            opts.PermitLimit = 20;
+            opts.Window = TimeSpan.FromMinutes(1);
+            opts.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+            opts.QueueLimit = 2;
+        }
+    );
+
+    options.AddFixedWindowLimiter(
+        policyName: "Long",
+        configureOptions: opts =>
+        {
+            opts.PermitLimit = 50;
+            opts.Window = TimeSpan.FromMinutes(5);
+            opts.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+            opts.QueueLimit = 5;
+        }
+    );
+});
+
 var app = builder.Build();
+
+app.UseRateLimiter();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

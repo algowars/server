@@ -1,6 +1,7 @@
 using ApplicationCore.Interfaces.Services;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace PublicApi.Controllers;
 
@@ -10,6 +11,7 @@ namespace PublicApi.Controllers;
 public sealed class ProblemController(IProblemAppService problemAppService) : BaseApiController
 {
     [HttpGet("slug/{slug}")]
+    [EnableRateLimiting("Short")]
     public async Task<IActionResult> GetBySlugAsync(
         string slug,
         [FromQuery] int preferredLanguageId,
@@ -34,6 +36,7 @@ public sealed class ProblemController(IProblemAppService problemAppService) : Ba
     }
 
     [HttpGet]
+    [EnableRateLimiting("Medium")]
     public async Task<IActionResult> GetPageableAsync(
         [FromQuery] DateTime timestamp,
         [FromQuery] int page = 1,
@@ -57,6 +60,7 @@ public sealed class ProblemController(IProblemAppService problemAppService) : Ba
     }
 
     [HttpGet("{problemId:guid}/setup")]
+    [EnableRateLimiting("ExtraShort")]
     public async Task<IActionResult> GetProblemSetupAsync(
         Guid problemId,
         [FromQuery] int languageVersionId,
