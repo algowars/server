@@ -1,6 +1,6 @@
 namespace ApplicationCore.Domain.Problems.TestSuites;
 
-public sealed class TestSuite : BaseAuditableModel<int>
+public sealed class TestSuiteModel : BaseAuditableModel<int>
 {
     public string? Name { get; init; }
 
@@ -8,5 +8,5 @@ public sealed class TestSuite : BaseAuditableModel<int>
 
     public TestSuiteType TestSuiteType { get; init; }
 
-    public required IEnumerable<TestCase> TestCases { get; init; }
+    public required IEnumerable<TestCaseModel> TestCases { get; init; }
 }

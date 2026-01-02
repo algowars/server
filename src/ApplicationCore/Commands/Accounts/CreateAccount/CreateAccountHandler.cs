@@ -2,16 +2,18 @@ using ApplicationCore.Domain.Accounts;
 using ApplicationCore.Interfaces.Repositories;
 using ApplicationCore.Logging;
 using Ardalis.Result;
+using FluentValidation;
 using Microsoft.Extensions.Logging;
 
 namespace ApplicationCore.Commands.Accounts.CreateAccount;
 
 public sealed partial class CreateAccountHandler(
     IAccountRepository accounts,
-    ILogger<CreateAccountHandler> logger
-) : ICommandHandler<CreateAccountCommand, Guid>
+    ILogger<CreateAccountHandler> logger,
+    IValidator<CreateAccountCommand> validator
+) : AbstractCommandHandler<CreateAccountCommand, Guid>(validator)
 {
-    public async Task<Result<Guid>> Handle(
+    protected override async Task<Result<Guid>> HandleValidated(
         CreateAccountCommand request,
         CancellationToken cancellationToken
     )

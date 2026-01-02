@@ -7,42 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Persistence;
 
-public interface IAppDbContext
-{
-    DbSet<AccountEntity> Accounts { get; set; }
-
-    DbSet<HarnessTemplateEntity> HarnessTemplates { get; set; }
-
-    DbSet<LanguageVersionEntity> LanguageVersions { get; set; }
-
-    DbSet<ProblemEntity> Problems { get; set; }
-
-    DbSet<ProblemHistoryEntity> ProblemHistories { get; set; }
-
-    DbSet<ProblemSetupEntity> ProblemSetups { get; set; }
-
-    DbSet<ProblemStatusEntity> ProblemStatuses { get; set; }
-
-    DbSet<ProgrammingLanguageEntity> ProgrammingLanguages { get; set; }
-
-    DbSet<TagEntity> Tags { get; set; }
-
-    DbSet<TestCaseEntity> TestCases { get; set; }
-
-    DbSet<TestCaseIoPayloadEntity> TestCaseIoPayloads { get; set; }
-
-    DbSet<TestCaseTypeEntity> TestCaseTypes { get; set; }
-
-    DbSet<TestSuiteEntity> TestSuites { get; set; }
-
-    DbSet<TestSuiteTypeEntity> TestSuiteTypes { get; set; }
-
-    Task SaveChangesAsync(CancellationToken cancellationToken);
-}
-
-public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
-    : DbContext(options),
-        IAppDbContext
+public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
 {
     public DbSet<AccountEntity> Accounts { get; set; }
 
@@ -72,8 +37,50 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
 
     public DbSet<TestSuiteTypeEntity> TestSuiteTypes { get; set; }
 
-    public Task SaveChangesAsync(CancellationToken cancellationToken)
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        throw new NotImplementedException();
+        base.OnModelCreating(modelBuilder);
+
+        ModelProblems(modelBuilder);
+        ModelProblemSetupsTestSuites(modelBuilder);
+    }
+
+    private static void ModelProblems(ModelBuilder modelBuilder)
+    {
+        modelBuilder
+            .Entity<ProblemEntity>()
+            .HasMany(p => p.Tags)
+            .WithMany(t => t.Problems)
+            .UsingEntity<Dictionary<string, object>>(
+                "problem_tags",
+                j => j.HasOne<TagEntity>().WithMany().HasForeignKey("tag_id"),
+                j => j.HasOne<ProblemEntity>().WithMany().HasForeignKey("problem_id")
+            );
+    }
+
+    private static void ModelProblemSetupsTestSuites(ModelBuilder modelBuilder)
+    {
+        modelBuilder
+            .Entity<ProblemSetupEntity>()
+            .HasMany(ps => ps.TestSuites)
+            .WithMany(ts => ts.Setups)
+            .UsingEntity<Dictionary<string, object>>(
+                "problem_setup_test_suites",
+                j =>
+                    j.HasOne<TestSuiteEntity>()
+                        .WithMany()
+                        .HasForeignKey("test_suite_id")
+                        .HasConstraintName("fk_problem_setup_test_suites_test_suite_id"),
+                j =>
+                    j.HasOne<ProblemSetupEntity>()
+                        .WithMany()
+                        .HasForeignKey("problem_setup_id")
+                        .HasConstraintName("fk_problem_setup_test_suites_problem_setup_id"),
+                j =>
+                {
+                    j.ToTable("problem_setup_test_suites");
+                    j.HasKey("problem_setup_id", "test_suite_id");
+                }
+            );
     }
 }

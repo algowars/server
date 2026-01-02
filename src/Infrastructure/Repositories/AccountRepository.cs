@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Repositories;
 
-public sealed class AccountRepository(IAppDbContext db) : IAccountRepository
+public sealed class AccountRepository(AppDbContext db) : IAccountRepository
 {
     public async Task AddAsync(AccountModel account, CancellationToken ct)
     {
@@ -15,17 +15,13 @@ public sealed class AccountRepository(IAppDbContext db) : IAccountRepository
 
         db.Accounts.Add(entity);
         await db.SaveChangesAsync(ct);
-
-        account.Id = entity.Id;
     }
 
     public async Task<AccountModel?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
     {
-        var entity = await db
-            .Accounts.AsNoTracking()
+        return await db
+            .Accounts.ProjectToType<AccountModel>()
             .SingleOrDefaultAsync(a => a.Id == id, cancellationToken);
-
-        return entity?.Adapt<AccountModel>();
     }
 
     public async Task<AccountModel?> GetByUsernameOrSubAsync(
@@ -34,11 +30,9 @@ public sealed class AccountRepository(IAppDbContext db) : IAccountRepository
         CancellationToken cancellationToken
     )
     {
-        var entity = await db
-            .Accounts.AsNoTracking()
+        return await db
+            .Accounts.ProjectToType<AccountModel>()
             .SingleOrDefaultAsync(a => a.Username == username || a.Sub == sub, cancellationToken);
-
-        return entity?.Adapt<AccountModel>();
     }
 
     public async Task<AccountModel?> GetByUsernameAsync(
@@ -46,20 +40,16 @@ public sealed class AccountRepository(IAppDbContext db) : IAccountRepository
         CancellationToken cancellationToken
     )
     {
-        var entity = await db
-            .Accounts.AsNoTracking()
+        return await db
+            .Accounts.ProjectToType<AccountModel>()
             .SingleOrDefaultAsync(a => a.Username == username, cancellationToken);
-
-        return entity?.Adapt<AccountModel>();
     }
 
     public async Task<AccountModel?> GetBySubAsync(string sub, CancellationToken cancellationToken)
     {
-        var entity = await db
-            .Accounts.AsNoTracking()
+        return await db
+            .Accounts.ProjectToType<AccountModel>()
             .SingleOrDefaultAsync(a => a.Sub == sub, cancellationToken);
-
-        return entity?.Adapt<AccountModel>();
     }
 
     public async Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken)

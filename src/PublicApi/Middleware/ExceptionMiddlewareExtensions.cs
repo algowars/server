@@ -1,0 +1,81 @@
+using System.Net;
+using System.Text.Json;
+using ApplicationCore.Logging;
+using Microsoft.AspNetCore.Diagnostics;
+
+namespace PublicApi.Middleware;
+
+public static class ExceptionMiddlewareExtensions
+{
+    public static IApplicationBuilder UseGlobalExceptionHandler(this IApplicationBuilder app)
+    {
+        app.UseExceptionHandler(builder =>
+        {
+            builder.Run(async context =>
+            {
+                var logger = context
+                    .RequestServices.GetRequiredService<ILoggerFactory>()
+                    .CreateLogger("GlobalExceptionHandler");
+
+                var feature = context.Features.Get<IExceptionHandlerPathFeature>();
+                var ex = feature?.Error;
+
+                context.Response.ContentType = "application/json";
+
+                if (ex is FluentValidation.ValidationException)
+                {
+                    context.Response.StatusCode = StatusCodes.Status400BadRequest;
+
+                    AppLog.UnhandledExceptionWithPath(
+                        logger,
+                        context.Request.Method,
+                        context.Request.Path,
+                        ex
+                    );
+
+                    await context.Response.WriteAsync(
+                        JsonSerializer.Serialize(new { message = "Validation failed" })
+                    );
+                    return;
+                }
+
+                context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+
+                AppLog.UnhandledExceptionWithPath(
+                    logger,
+                    context.Request.Method,
+                    context.Request.Path,
+                    ex ?? new Exception("Unknown error")
+                );
+
+                await context.Response.WriteAsync(
+                    JsonSerializer.Serialize(new { message = "An unexpected error occurred." })
+                );
+            });
+        });
+
+        return app;
+    }
+}
+
+public static partial class AppLog
+{
+    [LoggerMessage(
+        EventId = LoggingEventIds.Exceptions.UnhandledException,
+        Level = LogLevel.Error,
+        Message = "Unhandled exception."
+    )]
+    public static partial void UnhandledException(ILogger logger, Exception exception);
+
+    [LoggerMessage(
+        EventId = LoggingEventIds.Exceptions.UnhandledExceptionWithPath,
+        Level = LogLevel.Error,
+        Message = "Unhandled exception for {Method} {Path}."
+    )]
+    public static partial void UnhandledExceptionWithPath(
+        ILogger logger,
+        string method,
+        string path,
+        Exception exception
+    );
+}
