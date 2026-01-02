@@ -3,6 +3,7 @@ using ApplicationCore.Interfaces.Services;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using PublicApi.Contracts.Account;
 
 namespace PublicApi.Controllers;
@@ -15,6 +16,7 @@ public sealed partial class AccountController(IAccountAppService accountAppServi
 {
     [HttpPost]
     [Authorize]
+    [EnableRateLimiting("ExtraShort")]
     public async Task<IActionResult> CreateAccountAsync(
         [FromBody] CreateAccountDto createAccountDto,
         CancellationToken cancellationToken
@@ -38,6 +40,7 @@ public sealed partial class AccountController(IAccountAppService accountAppServi
     }
 
     [HttpGet("find/profile/{username}")]
+    [EnableRateLimiting("Short")]
     public async Task<IActionResult> GetProfileAsync(
         string username,
         CancellationToken cancellationToken
@@ -65,6 +68,7 @@ public sealed partial class AccountController(IAccountAppService accountAppServi
 
     [HttpGet("find/profile")]
     [Authorize]
+    [EnableRateLimiting("Medium")]
     public async Task<IActionResult> GetProfileAsync(CancellationToken cancellationToken)
     {
         string? sub = GetSub();

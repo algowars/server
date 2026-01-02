@@ -1,8 +1,10 @@
+using System.Threading.RateLimiting;
 using ApplicationCore;
 using Asp.Versioning;
 using Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
 using PublicApi.Authorization;
 using PublicApi.Filters;
@@ -92,7 +94,56 @@ builder.Services.AddCors(options =>
     );
 });
 
+builder.Services.AddRateLimiter(options =>
+{
+    options.AddFixedWindowLimiter(
+        policyName: "ExtraShort",
+        configureOptions: opts =>
+        {
+            opts.PermitLimit = 4;
+            opts.Window = TimeSpan.FromSeconds(100);
+            opts.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+            opts.QueueLimit = 2;
+        }
+    );
+
+    options.AddFixedWindowLimiter(
+        policyName: "Short",
+        configureOptions: opts =>
+        {
+            opts.PermitLimit = 10;
+            opts.Window = TimeSpan.FromSeconds(30);
+            opts.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+            opts.QueueLimit = 2;
+        }
+    );
+
+    options.AddFixedWindowLimiter(
+        policyName: "Medium",
+        configureOptions: opts =>
+        {
+            opts.PermitLimit = 20;
+            opts.Window = TimeSpan.FromMinutes(1);
+            opts.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+            opts.QueueLimit = 2;
+        }
+    );
+
+    options.AddFixedWindowLimiter(
+        policyName: "Long",
+        configureOptions: opts =>
+        {
+            opts.PermitLimit = 50;
+            opts.Window = TimeSpan.FromMinutes(5);
+            opts.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+            opts.QueueLimit = 5;
+        }
+    );
+});
+
 var app = builder.Build();
+
+app.UseRateLimiter();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
