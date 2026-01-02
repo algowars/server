@@ -1,63 +1,53 @@
-using ApplicationCore.Dtos.Languages;
+using ApplicationCore.Domain.Problems.TestSuites;
 using ApplicationCore.Dtos.Problems;
+using ApplicationCore.Dtos.Problems.Tests;
 using ApplicationCore.Interfaces.Repositories;
-using ApplicationCore.Queries.Problems.GetProblemBySlug;
 using Ardalis.Result;
 
 namespace ApplicationCore.Queries.Problems.GetProblemSetup;
 
-public sealed class GetProblemBySlugHandler(IProblemRepository problemRepository)
-    : IQueryHandler<GetProblemBySlugQuery, ProblemDto>
+public sealed class GetProblemSetupHandler(IProblemRepository problemRepository)
+    : IQueryHandler<GetProblemSetupQuery, ProblemSetupDto>
 {
-    private readonly IProblemRepository _problemRepository = problemRepository;
+    private readonly IProblemRepository _problemRepository =
+        problemRepository ?? throw new ArgumentNullException(nameof(problemRepository));
 
-    public async Task<Result<ProblemDto>> Handle(
-        GetProblemBySlugQuery request,
+    public async Task<Result<ProblemSetupDto>> Handle(
+        GetProblemSetupQuery request,
         CancellationToken cancellationToken
     )
     {
-        try
-        {
-            var problem = await _problemRepository.GetProblemBySlugAsync(
-                request.Slug,
+        var setup = (
+            await _problemRepository.GetProblemSetupAsync(
+                request.ProblemId,
+                request.LanguageVersionId,
                 cancellationToken
-            );
+            )
+        );
 
-            if (problem is null)
-            {
-                return Result.NotFound();
-            }
-
-            var dto = new ProblemDto
-            {
-                Id = problem.Id,
-                Title = problem.Title,
-                Slug = problem.Slug,
-                Tags = problem.Tags.Select(t => t.Value),
-                Question = problem.Question,
-                Difficulty = problem.Difficulty,
-                Version = problem.Version,
-                AvailableLanguages = problem
-                    .GetAvailableLanguages()
-                    .Select(language => new ProgrammingLanguageDto()
-                    {
-                        Id = language.Id,
-                        Name = language.Name,
-                        Versions = language
-                            .Versions.Select(version => new LanguageVersionDto()
-                            {
-                                Id = version.Id,
-                                Version = version.Version,
-                            })
-                            .ToList(),
-                    }),
-            };
-
-            return Result.Success(dto);
-        }
-        catch (Exception ex)
+        if (setup is null)
         {
-            return Result.Error(ex.Message);
+            return Result.NotFound();
         }
+
+        return new ProblemSetupDto()
+        {
+            Id = setup.Id,
+            Version = setup.Version,
+            InitialCode = setup.InitialCode,
+            LanguageVersionId = setup.LanguageVersion.Id,
+            TestSuites = setup
+                .TestSuites.Where(ts => ts.TestSuiteType == TestSuiteType.Public)
+                .Select(ts => new TestSuiteDto()
+                {
+                    TestCases = ts
+                        .TestCases.Where(tc => tc.TestCaseType == TestCaseType.Sample)
+                        .Select(tc => new TestCaseDto()
+                        {
+                            Input = tc.Input,
+                            ExpectedOutput = tc.ExpectedOutput,
+                        }),
+                }),
+        };
     }
 }

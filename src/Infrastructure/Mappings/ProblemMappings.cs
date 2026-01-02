@@ -18,7 +18,10 @@ public sealed class ProblemMappings : IRegister
     {
         config.NewConfig<ProblemModel, ProblemEntity>();
 
-        config.NewConfig<ProblemEntity, ProblemModel>();
+        config
+            .NewConfig<ProblemEntity, ProblemModel>()
+            .Ignore(s => s.Status)
+            .Map(d => d.Status, s => (ProblemStatus)s.StatusId);
 
         config
             .NewConfig<ProblemSetupEntity, ProblemSetupModel>()

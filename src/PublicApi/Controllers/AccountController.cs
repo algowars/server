@@ -1,3 +1,4 @@
+using ApplicationCore.Dtos.Accounts;
 using ApplicationCore.Interfaces.Services;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
@@ -33,14 +34,7 @@ public sealed partial class AccountController(IAccountAppService accountAppServi
             cancellationToken
         );
 
-        if (accountResult.IsSuccess)
-        {
-            return Ok(accountResult.Value);
-        }
-
-        string errors = string.Join(", ", accountResult.Errors);
-
-        return BadRequest(errors);
+        return ToActionResult(accountResult);
     }
 
     [HttpGet("find/profile/{username}")]

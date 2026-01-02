@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Repositories;
 
-public sealed class AccountRepository(IAppDbContext db) : IAccountRepository
+public sealed class AccountRepository(AppDbContext db) : IAccountRepository
 {
     public async Task AddAsync(AccountModel account, CancellationToken ct)
     {
@@ -15,8 +15,6 @@ public sealed class AccountRepository(IAppDbContext db) : IAccountRepository
 
         db.Accounts.Add(entity);
         await db.SaveChangesAsync(ct);
-
-        account.Id = entity.Id;
     }
 
     public async Task<AccountModel?> GetByIdAsync(Guid id, CancellationToken cancellationToken)

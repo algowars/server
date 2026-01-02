@@ -2,9 +2,11 @@
 using System.Collections.Generic;
 using System.Text;
 using ApplicationCore.Common.Pagination;
+using ApplicationCore.Domain.Accounts;
 using ApplicationCore.Domain.Problems;
 using ApplicationCore.Domain.Problems.Languages;
 using ApplicationCore.Domain.Problems.ProblemSetups;
+using ApplicationCore.Domain.Problems.TestSuites;
 using ApplicationCore.Interfaces.Repositories;
 using Infrastructure.Persistence;
 using Mapster;
@@ -12,10 +14,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Repositories;
 
-public sealed class ProblemRepository(IAppDbContext db) : IProblemRepository
+public sealed class ProblemRepository(AppDbContext db) : IProblemRepository
 {
-    private readonly IAppDbContext _db = db;
-    private static readonly int AcceptedProblemStatusId = 1;
+    private readonly AppDbContext _db = db;
+    private static readonly int AcceptedProblemStatusId = 3;
 
     public async Task<ProblemModel?> GetProblemByIdAsync(
         Guid problemId,
@@ -23,8 +25,59 @@ public sealed class ProblemRepository(IAppDbContext db) : IProblemRepository
     )
     {
         return await _db
-            .Problems.ProjectToType<ProblemModel>()
-            .SingleOrDefaultAsync(p => p.Id == problemId, cancellationToken);
+            .Problems.Where(problem => problem.Id == problemId)
+            .Select(problem => new ProblemModel()
+            {
+                Id = problem.Id,
+                Slug = problem.Slug,
+                Title = problem.Title,
+                Question = problem.Question,
+                Difficulty = problem.Difficulty,
+                CreatedById = problem.CreatedById,
+                CreatedBy =
+                    problem.CreatedBy != null
+                        ? new AccountModel()
+                        {
+                            Id = problem.CreatedBy.Id,
+                            Username = problem.CreatedBy.Username,
+                            ImageUrl = problem.CreatedBy.ImageUrl,
+                            CreatedOn = problem.CreatedOn,
+                        }
+                        : null,
+                Tags = problem.Tags.Select(tag => new TagModel()
+                {
+                    Id = tag.Id,
+                    Value = tag.Value,
+                }),
+                ProblemSetups = problem
+                    .ProblemSetups.Select(ps => new ProblemSetupModel
+                    {
+                        Id = ps.Id,
+                        ProblemId = ps.ProblemId,
+                        InitialCode = ps.InitialCode,
+                        Version = ps.Version,
+                        LanguageVersion = new LanguageVersion
+                        {
+                            Id = ps.LanguageVersion.Id,
+                            ProgrammingLanguageId = ps.LanguageVersion.ProgrammingLanguageId,
+                            ProgrammingLanguage =
+                                ps.LanguageVersion.ProgrammingLanguage != null
+                                    ? new ProgrammingLanguage
+                                    {
+                                        Id = ps.LanguageVersion.ProgrammingLanguage.Id,
+                                        Name = ps.LanguageVersion.ProgrammingLanguage.Name,
+                                        IsArchived = ps.LanguageVersion
+                                            .ProgrammingLanguage
+                                            .IsArchived,
+                                        Versions = new List<LanguageVersion>(),
+                                    }
+                                    : null,
+                            Version = ps.LanguageVersion.Version,
+                        },
+                    })
+                    .ToList(),
+            })
+            .SingleOrDefaultAsync(cancellationToken);
     }
 
     public async Task<ProblemModel?> GetProblemBySlugAsync(
@@ -32,9 +85,62 @@ public sealed class ProblemRepository(IAppDbContext db) : IProblemRepository
         CancellationToken cancellationToken
     )
     {
-        return await _db
-            .Problems.ProjectToType<ProblemModel>()
-            .SingleOrDefaultAsync(p => p.Slug == slug, cancellationToken);
+        return !string.IsNullOrWhiteSpace(slug)
+            ? await _db
+                .Problems.Where(problem => problem.Slug == slug)
+                .Select(problem => new ProblemModel()
+                {
+                    Id = problem.Id,
+                    Slug = problem.Slug,
+                    Title = problem.Title,
+                    Question = problem.Question,
+                    Difficulty = problem.Difficulty,
+                    CreatedById = problem.CreatedById,
+                    CreatedBy =
+                        problem.CreatedBy != null
+                            ? new AccountModel()
+                            {
+                                Id = problem.CreatedBy.Id,
+                                Username = problem.CreatedBy.Username,
+                                ImageUrl = problem.CreatedBy.ImageUrl,
+                                CreatedOn = problem.CreatedOn,
+                            }
+                            : null,
+                    Tags = problem.Tags.Select(tag => new TagModel()
+                    {
+                        Id = tag.Id,
+                        Value = tag.Value,
+                    }),
+                    ProblemSetups = problem
+                        .ProblemSetups.Select(ps => new ProblemSetupModel
+                        {
+                            Id = ps.Id,
+                            ProblemId = ps.ProblemId,
+                            InitialCode = ps.InitialCode,
+                            Version = ps.Version,
+                            LanguageVersion = new LanguageVersion
+                            {
+                                Id = ps.LanguageVersion.Id,
+                                ProgrammingLanguageId = ps.LanguageVersion.ProgrammingLanguageId,
+                                ProgrammingLanguage =
+                                    ps.LanguageVersion.ProgrammingLanguage != null
+                                        ? new ProgrammingLanguage
+                                        {
+                                            Id = ps.LanguageVersion.ProgrammingLanguage.Id,
+                                            Name = ps.LanguageVersion.ProgrammingLanguage.Name,
+                                            IsArchived = ps.LanguageVersion
+                                                .ProgrammingLanguage
+                                                .IsArchived,
+                                            Versions = new List<LanguageVersion>(),
+                                        }
+                                        : null,
+                                Version = ps.LanguageVersion.Version,
+                            },
+                        })
+                        .ToList(),
+                })
+                .SingleOrDefaultAsync(cancellationToken)
+            : null;
     }
 
     public async Task<PaginatedResult<ProblemModel>> GetProblemsAsync(
@@ -64,7 +170,16 @@ public sealed class ProblemRepository(IAppDbContext db) : IProblemRepository
         var problems = await ordered
             .Skip((page - 1) * size)
             .Take(size)
-            .ProjectToType<ProblemModel>()
+            .Select(problem => new ProblemModel
+            {
+                Id = problem.Id,
+                Title = problem.Title,
+                Slug = problem.Slug,
+                Question = problem.Question,
+                Difficulty = problem.Difficulty,
+                Tags = problem.Tags.Select(tag => new TagModel { Id = tag.Id, Value = tag.Value }),
+                Version = problem.Version,
+            })
             .ToListAsync(cancellationToken);
 
         return new PaginatedResult<ProblemModel>
@@ -83,13 +198,58 @@ public sealed class ProblemRepository(IAppDbContext db) : IProblemRepository
     )
     {
         return await _db
-            .ProblemSetups.Include(ps => ps.LanguageVersion)
-            .Include(ps => ps.TestSuites)
-                .ThenInclude(ts => ts.TestCases)
-            .Where(ps =>
-                ps.ProblemId == problemId && ps.ProgrammingLanguageVersionId == languageVersionId
-            )
-            .ProjectToType<ProblemSetupModel>()
+            .ProblemSetups.Where(setup => setup.Id == 1)
+            .Include(s => s.HarnessTemplate)
+            .Select(ps => new ProblemSetupModel
+            {
+                Id = ps.Id,
+                ProblemId = ps.ProblemId,
+                InitialCode = ps.InitialCode,
+                Version = ps.Version,
+                FunctionName = ps.FunctionName,
+                LanguageVersion = new LanguageVersion
+                {
+                    Id = ps.LanguageVersion.Id,
+                    Version = ps.LanguageVersion.Version,
+                    ProgrammingLanguageId = ps.LanguageVersion.ProgrammingLanguageId,
+                    ProgrammingLanguage =
+                        ps.LanguageVersion.ProgrammingLanguage != null
+                            ? new ProgrammingLanguage
+                            {
+                                Id = ps.LanguageVersion.ProgrammingLanguage.Id,
+                                Name = ps.LanguageVersion.ProgrammingLanguage.Name,
+                                IsArchived = ps.LanguageVersion.ProgrammingLanguage.IsArchived,
+                                Versions = new List<LanguageVersion>(),
+                            }
+                            : null,
+                },
+                HarnessTemplate =
+                    ps.HarnessTemplate != null
+                        ? new HarnessTemplate
+                        {
+                            Id = ps.HarnessTemplate.Id,
+                            Template = ps.HarnessTemplate.Template,
+                        }
+                        : null,
+                TestSuites = ps
+                    .TestSuites.Select(ts => new TestSuiteModel
+                    {
+                        Id = ts.Id,
+                        Name = ts.Name,
+                        Description = ts.Description,
+                        TestSuiteType = (TestSuiteType)ts.TestSuiteType.Id,
+                        TestCases = ts
+                            .TestCases.Select(tc => new TestCaseModel
+                            {
+                                Id = tc.Id,
+                                Input = tc.IoPayload.Input,
+                                ExpectedOutput = tc.IoPayload.ExpectedOutput,
+                                TestCaseType = (TestCaseType)tc.TestCaseTypeId,
+                            })
+                            .ToList(),
+                    })
+                    .ToList(),
+            })
             .SingleOrDefaultAsync(cancellationToken);
     }
 

@@ -1,3 +1,3 @@
 namespace PublicApi.Contracts.Account;
 
-public record CreateAccountDto(string Username, string ImageUrl);
+public record CreateAccountDto(string Username, string? ImageUrl);

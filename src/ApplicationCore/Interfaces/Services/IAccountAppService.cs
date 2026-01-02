@@ -20,8 +20,6 @@ public interface IAccountAppService
         CancellationToken cancellationToken
     );
 
-    Task<Result> UpdateUsernameAsync(Guid id, string username, CancellationToken cancellationToken);
-
     Task<ProfileSettingsDto?> GetProfileSettingsAsync(
         string sub,
         CancellationToken cancellationToken

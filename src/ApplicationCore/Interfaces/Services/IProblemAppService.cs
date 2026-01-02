@@ -32,8 +32,4 @@ public interface IProblemAppService
         int languageVersionId,
         CancellationToken cancellationToken
     );
-
-    Task<Result<IEnumerable<ProgrammingLanguageDto>>> GetAvailableLanguagesAsync(
-        CancellationToken cancellationToken
-    );
 }

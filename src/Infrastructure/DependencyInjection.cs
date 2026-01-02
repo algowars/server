@@ -1,4 +1,3 @@
-using System.Net.Http;
 using ApplicationCore.Interfaces.Clients;
 using ApplicationCore.Interfaces.Repositories;
 using ApplicationCore.Interfaces.Services;
@@ -26,13 +25,11 @@ public static class DependencyInjection
             ?? throw new InvalidOperationException(
                 "Missing connection string 'DefaultConnection'."
             );
-
         services.AddDbContext<AppDbContext>(o =>
         {
             o.UseNpgsql(cs, npg => npg.EnableRetryOnFailure());
         });
 
-        services.AddScoped<IAppDbContext>(sp => sp.GetRequiredService<AppDbContext>());
         services.AddScoped<ISlugService, SlugService>();
 
         services.AddScoped<IAccountRepository, AccountRepository>();

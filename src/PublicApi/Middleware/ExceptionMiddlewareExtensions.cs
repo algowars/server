@@ -2,8 +2,6 @@ using System.Net;
 using System.Text.Json;
 using ApplicationCore.Logging;
 using Microsoft.AspNetCore.Diagnostics;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging;
 
 namespace PublicApi.Middleware;
 
@@ -15,24 +13,18 @@ public static class ExceptionMiddlewareExtensions
         {
             builder.Run(async context =>
             {
-                var env = context.RequestServices.GetRequiredService<IHostEnvironment>();
                 var logger = context
                     .RequestServices.GetRequiredService<ILoggerFactory>()
                     .CreateLogger("GlobalExceptionHandler");
+
                 var feature = context.Features.Get<IExceptionHandlerPathFeature>();
                 var ex = feature?.Error;
 
                 context.Response.ContentType = "application/json";
 
-                if (ex is FluentValidation.ValidationException validationException)
+                if (ex is FluentValidation.ValidationException)
                 {
-                    context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
-
-                    var errors = validationException.Errors.Select(e => new
-                    {
-                        Field = e.PropertyName,
-                        Message = e.ErrorMessage,
-                    });
+                    context.Response.StatusCode = StatusCodes.Status400BadRequest;
 
                     AppLog.UnhandledExceptionWithPath(
                         logger,
@@ -41,47 +33,24 @@ public static class ExceptionMiddlewareExtensions
                         ex
                     );
 
-                    var problem = new
-                    {
-                        status = context.Response.StatusCode,
-                        title = "Validation Failed",
-                        traceId = context.TraceIdentifier,
-                        path = context.Request.Path.Value,
-                        errors,
-                    };
-
-                    string json = JsonSerializer.Serialize(problem);
-                    await context.Response.WriteAsync(json);
+                    await context.Response.WriteAsync(
+                        JsonSerializer.Serialize(new { message = "Validation failed" })
+                    );
                     return;
                 }
 
-                context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+                context.Response.StatusCode = StatusCodes.Status500InternalServerError;
 
-                if (ex is not null)
-                {
-                    AppLog.UnhandledExceptionWithPath(
-                        logger,
-                        context.Request.Method,
-                        context.Request.Path,
-                        ex
-                    );
-                }
-                else
-                {
-                    AppLog.UnhandledException(logger, new Exception("Unknown error"));
-                }
+                AppLog.UnhandledExceptionWithPath(
+                    logger,
+                    context.Request.Method,
+                    context.Request.Path,
+                    ex ?? new Exception("Unknown error")
+                );
 
-                var genericProblem = new
-                {
-                    status = context.Response.StatusCode,
-                    title = "An unexpected error occurred.",
-                    traceId = context.TraceIdentifier,
-                    path = context.Request.Path.Value,
-                    details = env.IsDevelopment() ? ex?.ToString() : null,
-                };
-
-                string genericJson = JsonSerializer.Serialize(genericProblem);
-                await context.Response.WriteAsync(genericJson);
+                await context.Response.WriteAsync(
+                    JsonSerializer.Serialize(new { message = "An unexpected error occurred." })
+                );
             });
         });
 

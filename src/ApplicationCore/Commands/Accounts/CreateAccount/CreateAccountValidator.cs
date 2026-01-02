@@ -20,7 +20,7 @@ public sealed class CreateAccountValidator : AbstractValidator<CreateAccountComm
         RuleFor(x => x.Sub)
             .NotEmpty()
             .MustAsync(async (sub, ct) => await accounts.GetBySubAsync(sub, ct) is null)
-            .WithMessage("Account already exists (sub)");
+            .WithMessage("Account already exists");
 
         RuleFor(x => x.ImageUrl)
             .Must(IsValidUrl)
@@ -32,7 +32,7 @@ public sealed class CreateAccountValidator : AbstractValidator<CreateAccountComm
                 async (cmd, ct) =>
                     await accounts.GetByUsernameOrSubAsync(cmd.Username, cmd.Sub, ct) is null
             )
-            .WithMessage("Account already exists (username or sub)");
+            .WithMessage("Username already exists");
     }
 
     private static bool IsValidUsername(string username) =>
