@@ -76,11 +76,18 @@ builder.Services.AddAuthorization(options =>
 builder.Services.AddSingleton<IAuthorizationHandler, RbacHandler>();
 
 // CORS
-string[] allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>();
+string corsOriginsEnv =
+    builder.Configuration["Cors:AllowedOrigins"]
+    ?? throw new InvalidOperationException("Cors:AllowedOrigins not configured!");
 
-if (allowedOrigins is null || allowedOrigins.Length == 0)
+string[] allowedOrigins = corsOriginsEnv.Split(
+    ',',
+    StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries
+);
+
+if (allowedOrigins.Length == 0)
 {
-    throw new InvalidOperationException("CORS: No Cors:AllowedOrigins configured.");
+    throw new InvalidOperationException("Cors:AllowedOrigins cannot be empty!");
 }
 
 builder.Services.AddCors(options =>
