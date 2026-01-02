@@ -88,7 +88,7 @@ public sealed class CreateAccountValidatorTests
             Assert.That(result.IsValid, Is.False);
             Assert.That(
                 result.Errors,
-                Has.Some.Property("ErrorMessage").Contains("Account already exists (sub)")
+                Has.Some.Property("ErrorMessage").Contains("Account already exists")
             );
         });
     }
@@ -108,8 +108,7 @@ public sealed class CreateAccountValidatorTests
             Assert.That(result.IsValid, Is.False);
             Assert.That(
                 result.Errors,
-                Has.Some.Property("ErrorMessage")
-                    .Contains("Account already exists (username or sub)")
+                Has.Some.Property("ErrorMessage").Contains("Username already exists")
             );
         });
     }
