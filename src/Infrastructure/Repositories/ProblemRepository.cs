@@ -198,7 +198,10 @@ public sealed class ProblemRepository(AppDbContext db) : IProblemRepository
     )
     {
         return await _db
-            .ProblemSetups.Where(setup => setup.Id == 1)
+            .ProblemSetups.Where(setup =>
+                setup.ProblemId == problemId
+                && setup.ProgrammingLanguageVersionId == languageVersionId
+            )
             .Include(s => s.HarnessTemplate)
             .Select(ps => new ProblemSetupModel
             {

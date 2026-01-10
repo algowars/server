@@ -1,6 +1,6 @@
 namespace ApplicationCore.Domain.Submissions;
 
-public sealed class Submission
+public sealed class SubmissionModel
 {
     public required Guid Id { get; init; }
 

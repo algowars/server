@@ -1,6 +1,5 @@
 using ApplicationCore.Common.Pagination;
 using ApplicationCore.Domain.Problems;
-using ApplicationCore.Domain.Problems.Languages;
 using ApplicationCore.Domain.Problems.ProblemSetups;
 
 namespace ApplicationCore.Interfaces.Repositories;
