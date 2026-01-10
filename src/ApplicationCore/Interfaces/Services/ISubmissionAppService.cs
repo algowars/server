@@ -1,8 +1,10 @@
-﻿namespace ApplicationCore.Interfaces.Services;
+﻿using Ardalis.Result;
+
+namespace ApplicationCore.Interfaces.Services;
 
 public interface ISubmissionAppService
 {
-    Task<Guid> ExecuteAsync(
+    Task<Result<Guid>> ExecuteAsync(
         int problemSetupId,
         string code,
         Guid createdById,

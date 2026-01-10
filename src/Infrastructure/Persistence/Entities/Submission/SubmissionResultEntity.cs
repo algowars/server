@@ -13,10 +13,10 @@ public sealed class SubmissionResultEntity
     public Guid SubmissionId { get; set; }
 
     [Column("status_id")]
-    public int StatusId { get; set; }
+    public required int StatusId { get; set; }
 
     [ForeignKey(nameof(StatusId))]
-    public required SubmissionStatusEntity Status { get; set; }
+    public SubmissionStatusEntity? Status { get; set; }
 
     [Column("started_at")]
     public DateTime? StartedAt { get; set; }

@@ -34,6 +34,7 @@ public static class DependencyInjection
 
         services.AddScoped<IAccountRepository, AccountRepository>();
         services.AddScoped<IProblemRepository, ProblemRepository>();
+        services.AddScoped<ISubmissionRepository, SubmissionRepository>();
 
         services.Configure<ExecutionEnginesOptions>(configuration.GetSection("ExecutionEngines"));
 

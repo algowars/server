@@ -7,36 +7,6 @@ namespace Infrastructure.CodeExecution.Judge0;
 
 public sealed class Judge0Client(HttpClient http) : IJudge0Client
 {
-    public async Task<Result<Judge0SubmissionResponse>> SubmitAsync(
-        Judge0SubmissionRequest req,
-        CancellationToken ct
-    )
-    {
-        try
-        {
-            string uri = "submissions?base64_encoded=false&wait=false";
-
-            using var resp = await http.PostAsJsonAsync(uri, ToPayload(req), ct);
-            if (!resp.IsSuccessStatusCode)
-            {
-                string body = await resp.Content.ReadAsStringAsync(ct);
-                return Result.Error(body);
-            }
-
-            var token = await resp.Content.ReadFromJsonAsync<TokenOnly>(cancellationToken: ct);
-            if (token is null)
-            {
-                return Result.Error("Judge0 returned empty token.");
-            }
-
-            return Result.Success(new Judge0SubmissionResponse { Token = token.token });
-        }
-        catch (Exception ex)
-        {
-            return Result.Error(ex.Message);
-        }
-    }
-
     public async Task<Result<IEnumerable<Judge0SubmissionResponse>>> SubmitAsync(
         IEnumerable<Judge0SubmissionRequest> reqs,
         CancellationToken ct
@@ -82,7 +52,14 @@ public sealed class Judge0Client(HttpClient http) : IJudge0Client
             }
 
             return Result.Success(
-                tokens.Select(t => new Judge0SubmissionResponse { Token = t.token })
+                tokens.Select(t => new Judge0SubmissionResponse
+                {
+                    Token = t.Token,
+                    Status = new Judge0StatusModel
+                    {
+                        Id = 1, // judge0 in queue id.
+                    },
+                })
             );
         }
         catch (Exception ex)
@@ -139,18 +116,16 @@ public sealed class Judge0Client(HttpClient http) : IJudge0Client
                 return Result.Error(body);
             }
 
-            var details = await resp.Content.ReadFromJsonAsync<Judge0SubmissionResponse[]>(
-                cancellationToken: ct
-            );
+            var details = await resp.Content.ReadFromJsonAsync<
+                IEnumerable<Judge0SubmissionResponse>
+            >(cancellationToken: ct);
 
             if (details is null)
             {
                 return Result.Error("Judge0 returned empty batch result.");
             }
 
-            return Result.Success(
-                details.Select(d => new Judge0SubmissionResponse { Token = d.Token })
-            );
+            return Result.Success(details);
         }
         catch (Exception ex)
         {
@@ -158,14 +133,5 @@ public sealed class Judge0Client(HttpClient http) : IJudge0Client
         }
     }
 
-    private static object ToPayload(Judge0SubmissionRequest req) =>
-        new
-        {
-            language_id = req.LanguageId,
-            source_code = req.SourceCode,
-            stdin = req.StdIn,
-            expected_output = req.ExpectedOutput,
-        };
-
-    private sealed record TokenOnly(string token);
+    private sealed record TokenOnly(Guid Token);
 }
