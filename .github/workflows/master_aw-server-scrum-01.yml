@@ -1,7 +1,7 @@
 # Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
 # More GitHub Actions for Azure: https://github.com/Azure/actions
 
-name: Build and deploy ASP.Net Core app to Azure Web App - appi-server-prod-01
+name: Build and deploy ASP.Net Core app to Azure Web App - aw-server-scrum-01
 
 on:
   push:
@@ -38,18 +38,28 @@ jobs:
   deploy:
     runs-on: windows-latest
     needs: build
-    
+    permissions:
+      id-token: write #This is required for requesting the JWT
+      contents: read #This is required for actions/checkout
+
     steps:
       - name: Download artifact from build job
         uses: actions/download-artifact@v4
         with:
           name: .net-app
       
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_F21C0F59D5B145EFA6D17414B454CB97 }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_08AECD6DC1804306A63211DBA9D5F96B }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_4BA8387E4AA94E26AC82C27040D46BA4 }}
+
       - name: Deploy to Azure Web App
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
-          app-name: 'appi-server-prod-01'
+          app-name: 'aw-server-scrum-01'
           slot-name: 'Production'
           package: .
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_4DC9942899824F399CBCABBB9816419B }}
+          
