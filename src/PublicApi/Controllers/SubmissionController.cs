@@ -46,4 +46,18 @@ public class SubmissionController(
 
         return ToActionResult(submissionResult);
     }
+
+    [HttpGet("{submissionId:guid}")]
+    [Authorize]
+    public async Task<IActionResult> GetSubmissionsAsync(
+        [FromRoute] Guid submissionId,
+        CancellationToken cancellationToken
+    )
+    {
+        var submissionResult = await submissionAppService.GetByIdAsync(
+            submissionId,
+            cancellationToken
+        );
+        return ToActionResult(submissionResult);
+    }
 }

@@ -27,7 +27,7 @@ public static class DependencyInjection
             );
         services.AddDbContext<AppDbContext>(o =>
         {
-            o.UseNpgsql(cs, npg => npg.EnableRetryOnFailure());
+            o.UseNpgsql(cs);
         });
 
         services.AddScoped<ISlugService, SlugService>();

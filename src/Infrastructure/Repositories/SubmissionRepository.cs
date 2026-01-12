@@ -52,7 +52,7 @@ internal sealed class SubmissionRepository(AppDbContext db) : ISubmissionReposit
         db.Submissions.Add(submissionEntity);
         await db.SaveChangesAsync(cancellationToken);
 
-        if (submission.Results.Any())
+        if (submission.Results.Count != 0)
         {
             var resultEntities = submission.Results.Select(r => new SubmissionResultEntity
             {
@@ -70,5 +70,20 @@ internal sealed class SubmissionRepository(AppDbContext db) : ISubmissionReposit
         }
 
         await tx.CommitAsync(cancellationToken);
+    }
+
+    public async Task<SubmissionModel> GetByIdAsync(Guid id, CancellationToken cancellationToken)
+    {
+        return await db
+            .Submissions.Where(submission => submission.Id == id)
+            .Select(submission => new SubmissionModel
+            {
+                Id = submission.Id,
+                Code = submission.Code.Code,
+                ProblemSetupId = submission.ProblemSetupId,
+                CreatedOn = submission.CreatedOn,
+                CreatedById = submission.CreatedById,
+            })
+            .SingleOrDefaultAsync(cancellationToken);
     }
 }

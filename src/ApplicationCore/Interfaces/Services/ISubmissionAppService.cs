@@ -1,4 +1,5 @@
-﻿using Ardalis.Result;
+﻿using ApplicationCore.Dtos.Submissions;
+using Ardalis.Result;
 
 namespace ApplicationCore.Interfaces.Services;
 
@@ -10,4 +11,6 @@ public interface ISubmissionAppService
         Guid createdById,
         CancellationToken cancellationToken
     );
+
+    Task<Result<SubmissionDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken);
 }

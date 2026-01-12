@@ -1,3 +1,5 @@
+using ApplicationCore.Dtos.Submissions;
+
 namespace ApplicationCore.Domain.Submissions;
 
 public sealed class SubmissionModel
@@ -15,4 +17,9 @@ public sealed class SubmissionModel
     public Guid CreatedById { get; init; }
 
     public List<SubmissionResult> Results { get; init; } = [];
+
+    public OverallSubmissionStatus OverallStatus =>
+        Results.All(r => r.Status == SubmissionStatus.Accepted)
+            ? OverallSubmissionStatus.Accepted
+            : OverallSubmissionStatus.WrongAnswer;
 }

@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.Text;
 using ApplicationCore.Commands.Submissions.CreateSubmission;
+using ApplicationCore.Dtos.Submissions;
 using ApplicationCore.Interfaces.Services;
+using ApplicationCore.Queries.Submissions.GetSubmission;
 using Ardalis.Result;
 using MediatR;
 
@@ -20,5 +22,15 @@ public sealed class SubmissionAppService(IMediator mediator) : ISubmissionAppSer
         var command = new CreateSubmissionCommand(problemSetupId, code, createdById);
 
         return await mediator.Send(command, cancellationToken);
+    }
+
+    public async Task<Result<SubmissionDto>> GetByIdAsync(
+        Guid id,
+        CancellationToken cancellationToken
+    )
+    {
+        var query = new GetSubmissionQuery(id);
+
+        return await mediator.Send(query, cancellationToken);
     }
 }
