@@ -36,15 +36,18 @@ public sealed class CodeExecutionService(IJudge0Client judge0Client) : ICodeExec
             Id = Guid.NewGuid(),
             ProblemSetupId = context.Setup.Id,
             Code = context.Code,
-            Results = judge0Result.Value.Select(result => new SubmissionResult
-            {
-                Id = result.Token,
-                Status = MapJudge0SubmissionStatus(result.Status),
-                Stdout = result.Stdout,
-                Stderr = result.Stderr,
-                RuntimeMs = result.RuntimeMs,
-                MemoryKb = result.MemoryKb,
-            }),
+            CreatedById = context.CreatedById,
+            Results = judge0Result
+                .Value.Select(result => new SubmissionResult
+                {
+                    Id = result.Token,
+                    Status = MapJudge0SubmissionStatus(result.Status),
+                    Stdout = result.Stdout,
+                    Stderr = result.Stderr,
+                    RuntimeMs = result.RuntimeMs,
+                    MemoryKb = result.MemoryKb,
+                })
+                .ToList(),
         };
 
         return Result.Success<SubmissionModel>(submission);

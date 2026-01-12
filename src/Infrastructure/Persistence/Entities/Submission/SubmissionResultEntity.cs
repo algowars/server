@@ -9,8 +9,11 @@ public sealed class SubmissionResultEntity
     [Key, Column("id")]
     public Guid Id { get; set; }
 
-    [Column("submission_id")]
+    [Required, Column("submission_id")]
     public Guid SubmissionId { get; set; }
+
+    [ForeignKey(nameof(SubmissionId))]
+    public SubmissionEntity? Submission { get; set; }
 
     [Column("status_id")]
     public required int StatusId { get; set; }

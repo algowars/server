@@ -262,11 +262,63 @@ public sealed class ProblemRepository(AppDbContext db) : IProblemRepository
     )
     {
         return await _db
-            .ProblemSetups.Include(ps => ps.LanguageVersion)
-            .Include(ps => ps.TestSuites)
-                .ThenInclude(ts => ts.TestCases)
-            .Where(ps => ps.Id == setupId)
-            .ProjectToType<ProblemSetupModel>()
+            .ProblemSetups.Where(ps => ps.Id == setupId)
+            .Include(ps => ps.HarnessTemplate)
+            .Select(ps => new ProblemSetupModel
+            {
+                Id = ps.Id,
+                ProblemId = ps.ProblemId,
+                InitialCode = ps.InitialCode,
+                Version = ps.Version,
+                FunctionName = ps.FunctionName,
+                LanguageVersion =
+                    ps.LanguageVersion != null
+                        ? new LanguageVersion
+                        {
+                            Id = ps.LanguageVersion.Id,
+                            Version = ps.LanguageVersion.Version,
+                            ProgrammingLanguageId = ps.LanguageVersion.ProgrammingLanguageId,
+                            ProgrammingLanguage =
+                                ps.LanguageVersion.ProgrammingLanguage != null
+                                    ? new ProgrammingLanguage
+                                    {
+                                        Id = ps.LanguageVersion.ProgrammingLanguage.Id,
+                                        Name = ps.LanguageVersion.ProgrammingLanguage.Name,
+                                        IsArchived = ps.LanguageVersion
+                                            .ProgrammingLanguage
+                                            .IsArchived,
+                                        Versions = new List<LanguageVersion>(),
+                                    }
+                                    : null,
+                        }
+                        : null,
+                HarnessTemplate =
+                    ps.HarnessTemplate != null
+                        ? new HarnessTemplate
+                        {
+                            Id = ps.HarnessTemplate.Id,
+                            Template = ps.HarnessTemplate.Template,
+                        }
+                        : null,
+                TestSuites = ps
+                    .TestSuites.Select(ts => new TestSuiteModel
+                    {
+                        Id = ts.Id,
+                        Name = ts.Name,
+                        Description = ts.Description,
+                        TestSuiteType = (TestSuiteType)ts.TestSuiteType.Id,
+                        TestCases = ts
+                            .TestCases.Select(tc => new TestCaseModel
+                            {
+                                Id = tc.Id,
+                                Input = tc.IoPayload.Input,
+                                ExpectedOutput = tc.IoPayload.ExpectedOutput,
+                                TestCaseType = (TestCaseType)tc.TestCaseTypeId,
+                            })
+                            .ToList(),
+                    })
+                    .ToList(),
+            })
             .SingleOrDefaultAsync(cancellationToken);
     }
 }

@@ -1,4 +1,3 @@
-using ApplicationCore.Domain.Problems.TestSuites;
 using Infrastructure.Persistence.Entities.Account;
 using Infrastructure.Persistence.Entities.Language;
 using Infrastructure.Persistence.Entities.Problem;
@@ -54,6 +53,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
 
         ModelProblems(modelBuilder);
         ModelProblemSetupsTestSuites(modelBuilder);
+        ModelSubmissions(modelBuilder);
     }
 
     private static void ModelProblems(ModelBuilder modelBuilder)
@@ -93,5 +93,22 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
                     j.HasKey("problem_setup_id", "test_suite_id");
                 }
             );
+    }
+
+    private static void ModelSubmissions(ModelBuilder modelBuilder)
+    {
+        modelBuilder
+            .Entity<SubmissionResultEntity>()
+            .HasOne(sr => sr.Status)
+            .WithMany()
+            .HasForeignKey(sr => sr.StatusId)
+            .IsRequired(false);
+
+        modelBuilder
+            .Entity<SubmissionEntity>()
+            .HasOne(s => s.Code)
+            .WithMany()
+            .HasForeignKey(s => s.CodeId)
+            .IsRequired();
     }
 }

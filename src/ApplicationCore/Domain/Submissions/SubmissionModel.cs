@@ -14,5 +14,5 @@ public sealed class SubmissionModel
 
     public Guid CreatedById { get; init; }
 
-    public IEnumerable<SubmissionResult> Results { get; init; } = [];
+    public List<SubmissionResult> Results { get; init; } = [];
 }

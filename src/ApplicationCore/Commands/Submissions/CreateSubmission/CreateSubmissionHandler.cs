@@ -36,7 +36,7 @@ public sealed partial class CreateSubmissionHandler(
             {
                 InitialCode = setup.InitialCode,
                 Template = setup.HarnessTemplate.Template,
-                FunctionName = setup.FunctionName,
+                FunctionName = setup.FunctionName ?? string.Empty,
                 LanguageVersionId = setup.LanguageVersion?.Id,
                 Inputs = tc.Input,
                 ExpectedOutput = tc.ExpectedOutput,
@@ -56,6 +56,7 @@ public sealed partial class CreateSubmissionHandler(
                 Setup = setup,
                 Code = request.Code,
                 BuiltResults = buildResult.Value,
+                CreatedById = request.CreatedById,
             },
             cancellationToken
         );
@@ -67,7 +68,7 @@ public sealed partial class CreateSubmissionHandler(
 
         try
         {
-            await submissionRepository.SaveAsync(submissionResult.Value, cancellationToken);
+            await submissionRepository.SaveAsync(submissionResult.Value, CancellationToken.None);
 
             return Result.Success(submissionResult.Value.Id);
         }

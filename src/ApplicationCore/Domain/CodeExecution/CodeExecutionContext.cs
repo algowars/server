@@ -12,4 +12,6 @@ public sealed class CodeExecutionContext
     public required string Code { get; set; }
 
     public required IEnumerable<CodeBuildResult> BuiltResults { get; set; }
+
+    public required Guid CreatedById { get; set; }
 }

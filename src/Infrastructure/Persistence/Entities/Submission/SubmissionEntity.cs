@@ -10,8 +10,8 @@ public sealed class SubmissionEntity
     [Key, Column("id")]
     public Guid Id { get; set; }
 
-    [Required, Column("code_id")]
-    public required Guid CodeId { get; set; }
+    [Column("code_id")]
+    public Guid CodeId { get; set; }
 
     [ForeignKey(nameof(CodeId))]
     public SubmissionCodeEntity? Code { get; set; }
@@ -31,5 +31,5 @@ public sealed class SubmissionEntity
     [ForeignKey(nameof(CreatedById))]
     public AccountEntity? CreatedBy { get; set; }
 
-    public IEnumerable<SubmissionResultEntity> Results { get; set; } = [];
+    public List<SubmissionResultEntity> Results { get; set; } = [];
 }
