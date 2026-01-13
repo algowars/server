@@ -6,8 +6,10 @@ namespace ApplicationCore.Interfaces.Services;
 
 public interface ICodeExecutionService
 {
-    public Task<Result<SubmissionModel>> ExecuteAsync(
+    Task<Result<SubmissionModel>> ExecuteAsync(
         CodeExecutionContext context,
         CancellationToken cancellationToken
     );
+    
+    Task<Result<SubmissionModel>> GetSubmissionAsync
 }
