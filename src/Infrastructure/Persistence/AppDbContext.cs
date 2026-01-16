@@ -1,7 +1,7 @@
-using ApplicationCore.Domain.Problems.TestSuites;
 using Infrastructure.Persistence.Entities.Account;
 using Infrastructure.Persistence.Entities.Language;
 using Infrastructure.Persistence.Entities.Problem;
+using Infrastructure.Persistence.Entities.Submission;
 using Infrastructure.Persistence.Entities.TestSuite;
 using Microsoft.EntityFrameworkCore;
 
@@ -25,6 +25,16 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
 
     public DbSet<ProgrammingLanguageEntity> ProgrammingLanguages { get; set; }
 
+    public DbSet<SubmissionCodeEntity> SubmissionCodes { get; set; }
+
+    public DbSet<SubmissionEntity> Submissions { get; set; }
+
+    public DbSet<SubmissionResultEntity> SubmissionResults { get; set; }
+
+    public DbSet<SubmissionStatusEntity> SubmissionStatuses { get; set; }
+
+    public DbSet<SubmissionStatusTypeEntity> SubmissionStatusTypes { get; set; }
+
     public DbSet<TagEntity> Tags { get; set; }
 
     public DbSet<TestCaseEntity> TestCases { get; set; }
@@ -43,6 +53,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
 
         ModelProblems(modelBuilder);
         ModelProblemSetupsTestSuites(modelBuilder);
+        ModelSubmissions(modelBuilder);
     }
 
     private static void ModelProblems(ModelBuilder modelBuilder)
@@ -82,5 +93,22 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
                     j.HasKey("problem_setup_id", "test_suite_id");
                 }
             );
+    }
+
+    private static void ModelSubmissions(ModelBuilder modelBuilder)
+    {
+        modelBuilder
+            .Entity<SubmissionResultEntity>()
+            .HasOne(sr => sr.Status)
+            .WithMany()
+            .HasForeignKey(sr => sr.StatusId)
+            .IsRequired(false);
+
+        modelBuilder
+            .Entity<SubmissionEntity>()
+            .HasOne(s => s.Code)
+            .WithMany()
+            .HasForeignKey(s => s.CodeId)
+            .IsRequired();
     }
 }

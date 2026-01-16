@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using ApplicationCore.Commands.Accounts.CreateAccount;
+﻿using ApplicationCore.Commands.Accounts.CreateAccount;
 using ApplicationCore.Dtos.Accounts;
 using ApplicationCore.Interfaces.Services;
 using ApplicationCore.Queries.Accounts.GetAccountBySub;

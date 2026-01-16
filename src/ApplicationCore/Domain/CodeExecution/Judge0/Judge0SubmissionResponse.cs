@@ -5,10 +5,10 @@ namespace ApplicationCore.Domain.CodeExecution.Judge0;
 public sealed record Judge0SubmissionResponse
 {
     [JsonPropertyName("token")]
-    public string? Token { get; init; }
+    public Guid Token { get; set; }
 
     [JsonPropertyName("status")]
-    public Judge0StatusModel? Status { get; init; }
+    public required Judge0StatusModel Status { get; init; }
 
     [JsonPropertyName("stdout")]
     public string? Stdout { get; init; }
@@ -23,8 +23,8 @@ public sealed record Judge0SubmissionResponse
     public string? Message { get; init; }
 
     [JsonPropertyName("time")]
-    public float? Time { get; init; }
+    public float? RuntimeMs { get; init; }
 
     [JsonPropertyName("memory")]
-    public float? Memory { get; init; }
+    public int? MemoryKb { get; init; }
 }

@@ -6,17 +6,12 @@ namespace ApplicationCore.Interfaces.Clients;
 public interface IJudge0Client
 {
     Task<Result<Judge0SubmissionResponse>> GetAsync(
-        string token,
+        Guid token,
         CancellationToken cancellationToken
     );
 
     Task<Result<IEnumerable<Judge0SubmissionResponse>>> GetAsync(
-        IEnumerable<string> tokens,
-        CancellationToken cancellationToken
-    );
-
-    Task<Result<Judge0SubmissionResponse>> SubmitAsync(
-        Judge0SubmissionRequest req,
+        IEnumerable<Guid> tokens,
         CancellationToken cancellationToken
     );
 
