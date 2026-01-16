@@ -21,4 +21,7 @@
   <ItemGroup>
     <ProjectReference Include="..\ApplicationCore\ApplicationCore.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Persistence\Entities\NewFolder\" />
+  </ItemGroup>
 </Project>

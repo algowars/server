@@ -1,4 +1,5 @@
-﻿using ApplicationCore.Domain.CodeExecution;
+﻿using System;
+using ApplicationCore.Domain.CodeExecution;
 using ApplicationCore.Domain.CodeExecution.Judge0;
 using ApplicationCore.Domain.Submissions;
 using ApplicationCore.Interfaces.Clients;
@@ -37,8 +38,9 @@ public sealed class CodeExecutionService(IJudge0Client judge0Client) : ICodeExec
             ProblemSetupId = context.Setup.Id,
             Code = context.Code,
             CreatedById = context.CreatedById,
-            Results = judge0Result
-                .Value.Select(result => new SubmissionResult
+            Results =
+            [
+                .. judge0Result.Value.Select(result => new SubmissionResult
                 {
                     Id = result.Token,
                     Status = MapJudge0SubmissionStatus(result.Status),
@@ -46,11 +48,36 @@ public sealed class CodeExecutionService(IJudge0Client judge0Client) : ICodeExec
                     Stderr = result.Stderr,
                     RuntimeMs = result.RuntimeMs,
                     MemoryKb = result.MemoryKb,
-                })
-                .ToList(),
+                }),
+            ],
         };
 
-        return Result.Success<SubmissionModel>(submission);
+        return Result.Success(submission);
+    }
+
+    public async Task<Result<IEnumerable<SubmissionResult>>> GetSubmissionAsync(
+        IEnumerable<Guid> tokens,
+        CancellationToken cancellationToken
+    )
+    {
+        var results = await judge0Client.GetAsync(tokens, cancellationToken);
+
+        if (!results.IsSuccess)
+        {
+            return Result.Error("Failed to retrieve submission results.");
+        }
+
+        var mappedResults = results.Value.Select(result => new SubmissionResult
+        {
+            Id = result.Token,
+            Status = MapJudge0SubmissionStatus(result.Status),
+            Stdout = result.Stdout,
+            Stderr = result.Stderr,
+            RuntimeMs = result.RuntimeMs,
+            MemoryKb = result.MemoryKb,
+        });
+
+        return Result.Success(mappedResults);
     }
 
     private static SubmissionStatus MapJudge0SubmissionStatus(Judge0StatusModel status) =>

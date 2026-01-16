@@ -10,6 +10,9 @@ public interface ICodeExecutionService
         CodeExecutionContext context,
         CancellationToken cancellationToken
     );
-    
-    Task<Result<SubmissionModel>> GetSubmissionAsync
+
+    Task<Result<IEnumerable<SubmissionResult>>> GetSubmissionAsync(
+        IEnumerable<Guid> tokens,
+        CancellationToken cancellationToken
+    );
 }

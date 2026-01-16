@@ -24,14 +24,16 @@ public sealed class Judge0Client(HttpClient http) : IJudge0Client
 
             var payload = new Judge0BatchRequest
             {
-                Submissions = list.Select(r => new Judge0SubmissionRequest()
+                Submissions =
+                [
+                    .. list.Select(r => new Judge0SubmissionRequest()
                     {
                         LanguageId = r.LanguageId,
                         SourceCode = r.SourceCode,
                         StdIn = r.StdIn,
                         ExpectedOutput = r.ExpectedOutput,
-                    })
-                    .ToList(),
+                    }),
+                ],
             };
 
             using var response = await http.PostAsJsonAsync(uri, payload, ct);
@@ -68,7 +70,7 @@ public sealed class Judge0Client(HttpClient http) : IJudge0Client
         }
     }
 
-    public async Task<Result<Judge0SubmissionResponse>> GetAsync(string token, CancellationToken ct)
+    public async Task<Result<Judge0SubmissionResponse>> GetAsync(Guid token, CancellationToken ct)
     {
         try
         {
@@ -95,7 +97,7 @@ public sealed class Judge0Client(HttpClient http) : IJudge0Client
     }
 
     public async Task<Result<IEnumerable<Judge0SubmissionResponse>>> GetAsync(
-        IEnumerable<string> tokens,
+        IEnumerable<Guid> tokens,
         CancellationToken ct
     )
     {

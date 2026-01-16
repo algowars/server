@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using ApplicationCore.Commands.Submissions.CreateSubmission;
+﻿using ApplicationCore.Commands.Submissions.CreateSubmission;
 using ApplicationCore.Dtos.Submissions;
 using ApplicationCore.Interfaces.Services;
 using ApplicationCore.Queries.Submissions.GetSubmission;

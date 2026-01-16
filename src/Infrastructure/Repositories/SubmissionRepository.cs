@@ -1,75 +1,59 @@
 ﻿using ApplicationCore.Domain.Submissions;
+using ApplicationCore.Domain.Submissions.Outbox;
 using ApplicationCore.Interfaces.Repositories;
 using Infrastructure.Persistence;
 using Infrastructure.Persistence.Entities.Submission;
+using Infrastructure.Persistence.Entities.Submission.Outbox;
 using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Repositories;
 
-internal sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepository
+public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepository
 {
     public async Task SaveAsync(SubmissionModel submission, CancellationToken cancellationToken)
     {
-        await using var tx = await db.Database.BeginTransactionAsync(cancellationToken);
+        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
 
-        var codeEntity = await db
-            .SubmissionCodes.AsNoTracking()
-            .FirstOrDefaultAsync(c => c.Code == submission.Code, cancellationToken);
-
-        if (codeEntity is null)
+        try
         {
-            codeEntity = new SubmissionCodeEntity
+            var existingCode = await db
+                .SubmissionCodes.Where(code => code.Code == submission.Code)
+                .SingleOrDefaultAsync(cancellationToken);
+
+            existingCode ??= new SubmissionCodeEntity
             {
                 Id = Guid.NewGuid(),
                 Code = submission.Code,
-                CreatedOn = submission.CreatedOn,
+                CreatedOn = DateTime.UtcNow,
+            };
+            var entity = new SubmissionEntity
+            {
+                Id = submission.Id,
+                ProblemSetupId = submission.ProblemSetupId,
+                CodeId = existingCode.Id,
+                Code = existingCode,
+                CreatedOn = new DateTime(),
+                CreatedById = submission.CreatedById,
             };
 
-            db.SubmissionCodes.Add(codeEntity);
-
-            try
+            var submissionOutbox = new SubmissionOutboxEntity
             {
-                await db.SaveChangesAsync(cancellationToken);
-            }
-            catch (DbUpdateException)
-            {
-                codeEntity = await db
-                    .SubmissionCodes.AsNoTracking()
-                    .SingleAsync(c => c.Code == submission.Code, cancellationToken);
-            }
-        }
+                Id = Guid.NewGuid(),
+                SubmissionId = entity.Id,
+                TypeId = (int)SubmissionOutboxType.Initialized,
+                AttemptCount = 0,
+                CreatedOn = DateTime.UtcNow,
+                StatusId = (int)SubmissionOutboxStatus.Pending,
+            };
 
-        var submissionEntity = new SubmissionEntity
-        {
-            Id = submission.Id,
-            CodeId = codeEntity.Id,
-            ProblemSetupId = submission.ProblemSetupId,
-            CreatedOn = submission.CreatedOn,
-            CompletedAt = submission.CompletedAt,
-            CreatedById = submission.CreatedById,
-        };
-
-        db.Submissions.Add(submissionEntity);
-        await db.SaveChangesAsync(cancellationToken);
-
-        if (submission.Results.Count != 0)
-        {
-            var resultEntities = submission.Results.Select(r => new SubmissionResultEntity
-            {
-                Id = r.Id,
-                SubmissionId = submissionEntity.Id,
-                StatusId = (int)r.Status,
-                Stdout = r.Stdout,
-                Stderr = r.Stderr,
-                RuntimeMs = r.RuntimeMs is null ? null : (int?)Math.Ceiling(r.RuntimeMs.Value),
-                MemoryKb = r.MemoryKb,
-            });
-
-            db.SubmissionResults.AddRange(resultEntities);
             await db.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
         }
-
-        await tx.CommitAsync(cancellationToken);
+        catch
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            throw;
+        }
     }
 
     public async Task<SubmissionModel> GetByIdAsync(Guid id, CancellationToken cancellationToken)
