@@ -53,7 +53,8 @@ jobs:
             --no-build \
             --results-directory TestResults \
             /p:CollectCoverage=true \
-            /p:CoverletOutput=../../TestResults/ \
-            /p:CoverletOutputFormat=cobertura 
+            /p:CoverletOutput=TestResults/ \
+            /p:CoverletOutputFormat=cobertura \
+            /p:CoverletShowSummary=true
 
           dotnet-sonarscanner end /d:sonar.token="$SONAR_TOKEN"
