@@ -46,13 +46,14 @@ jobs:
             /d:sonar.cs.cobertura.reportsPaths="TestResults/**/coverage.cobertura.xml"
 
           dotnet restore
-          dotnet build
+          dotnet build \
+            --no-restore
           dotnet test \
+            --no-restore \
             --no-build \
             --results-directory TestResults \
             /p:CollectCoverage=true \
-            /p:CoverletOutput=TestResults/ \
-            /p:CoverletOutputFormat=cobertura \
-            /p:Exclude="[*.Tests]*"
+            /p:CoverletOutput=../../TestResults/ \
+            /p:CoverletOutputFormat=cobertura 
 
           dotnet-sonarscanner end /d:sonar.token="$SONAR_TOKEN"
