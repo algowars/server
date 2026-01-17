@@ -3,7 +3,7 @@ using ApplicationCore.Domain.Accounts;
 using ApplicationCore.Interfaces.Repositories;
 using Moq;
 
-namespace UnitTests.ApplicationCore.Commands.Account;
+namespace UnitTests.ApplicationCore.Commands.Accounts;
 
 [TestFixture]
 public sealed class CreateAccountValidatorTests

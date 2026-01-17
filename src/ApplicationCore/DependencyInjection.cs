@@ -18,6 +18,7 @@ public static class DependencyInjection
 
         services.AddScoped<IAccountAppService, AccountAppService>();
         services.AddScoped<IProblemAppService, ProblemAppService>();
+        services.AddScoped<ISubmissionAppService, SubmissionAppService>();
 
         return services;
     }

@@ -16,7 +16,7 @@ public sealed class ProblemSetupEntity : BaseAuditableEntity
     public Guid ProblemId { get; set; }
 
     [ForeignKey(nameof(ProblemId))]
-    public ProblemEntity Problem { get; set; }
+    public ProblemEntity? Problem { get; set; }
 
     [Column("programming_language_version_id")]
     public int ProgrammingLanguageVersionId { get; set; }
@@ -39,5 +39,5 @@ public sealed class ProblemSetupEntity : BaseAuditableEntity
     [ForeignKey(nameof(HarnessTemplateId))]
     public HarnessTemplateEntity? HarnessTemplate { get; set; }
 
-    public ICollection<TestSuiteEntity> TestSuites { get; set; } = [];
+    public IEnumerable<TestSuiteEntity> TestSuites { get; set; } = [];
 }

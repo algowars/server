@@ -10,11 +10,11 @@ public sealed class TestCaseIoPayloadEntity
     [Column("id")]
     public int Id { get; set; }
 
-    [Column("input")]
-    public string Input { get; set; }
+    [Required, Column("input")]
+    public required string Input { get; set; }
 
-    [Column("expected_output")]
-    public string ExpectedOutput { get; set; }
+    [Required, Column("expected_output")]
+    public required string ExpectedOutput { get; set; }
 
     [Column("created_on")]
     public DateTime CreatedOn { get; set; }

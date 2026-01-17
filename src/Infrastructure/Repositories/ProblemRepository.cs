@@ -54,26 +54,31 @@ public sealed class ProblemRepository(AppDbContext db) : IProblemRepository
                     {
                         Id = ps.Id,
                         ProblemId = ps.ProblemId,
-                        InitialCode = ps.InitialCode,
+                        InitialCode = ps.InitialCode ?? "",
                         Version = ps.Version,
-                        LanguageVersion = new LanguageVersion
-                        {
-                            Id = ps.LanguageVersion.Id,
-                            ProgrammingLanguageId = ps.LanguageVersion.ProgrammingLanguageId,
-                            ProgrammingLanguage =
-                                ps.LanguageVersion.ProgrammingLanguage != null
-                                    ? new ProgrammingLanguage
-                                    {
-                                        Id = ps.LanguageVersion.ProgrammingLanguage.Id,
-                                        Name = ps.LanguageVersion.ProgrammingLanguage.Name,
-                                        IsArchived = ps.LanguageVersion
-                                            .ProgrammingLanguage
-                                            .IsArchived,
-                                        Versions = new List<LanguageVersion>(),
-                                    }
-                                    : null,
-                            Version = ps.LanguageVersion.Version,
-                        },
+                        LanguageVersionId = ps.ProgrammingLanguageVersionId,
+                        LanguageVersion =
+                            ps.LanguageVersion != null
+                                ? new LanguageVersion
+                                {
+                                    Id = ps.LanguageVersion.Id,
+                                    ProgrammingLanguageId =
+                                        ps.LanguageVersion.ProgrammingLanguageId,
+                                    ProgrammingLanguage =
+                                        ps.LanguageVersion.ProgrammingLanguage != null
+                                            ? new ProgrammingLanguage
+                                            {
+                                                Id = ps.LanguageVersion.ProgrammingLanguage.Id,
+                                                Name = ps.LanguageVersion.ProgrammingLanguage.Name,
+                                                IsArchived = ps.LanguageVersion
+                                                    .ProgrammingLanguage
+                                                    .IsArchived,
+                                                Versions = new List<LanguageVersion>(),
+                                            }
+                                            : null,
+                                    Version = ps.LanguageVersion.Version,
+                                }
+                                : null,
                     })
                     .ToList(),
             })
@@ -116,26 +121,33 @@ public sealed class ProblemRepository(AppDbContext db) : IProblemRepository
                         {
                             Id = ps.Id,
                             ProblemId = ps.ProblemId,
-                            InitialCode = ps.InitialCode,
+                            InitialCode = ps.InitialCode ?? "",
                             Version = ps.Version,
-                            LanguageVersion = new LanguageVersion
-                            {
-                                Id = ps.LanguageVersion.Id,
-                                ProgrammingLanguageId = ps.LanguageVersion.ProgrammingLanguageId,
-                                ProgrammingLanguage =
-                                    ps.LanguageVersion.ProgrammingLanguage != null
-                                        ? new ProgrammingLanguage
-                                        {
-                                            Id = ps.LanguageVersion.ProgrammingLanguage.Id,
-                                            Name = ps.LanguageVersion.ProgrammingLanguage.Name,
-                                            IsArchived = ps.LanguageVersion
-                                                .ProgrammingLanguage
-                                                .IsArchived,
-                                            Versions = new List<LanguageVersion>(),
-                                        }
-                                        : null,
-                                Version = ps.LanguageVersion.Version,
-                            },
+                            LanguageVersionId = ps.ProgrammingLanguageVersionId,
+                            LanguageVersion =
+                                ps.LanguageVersion != null
+                                    ? new LanguageVersion
+                                    {
+                                        Id = ps.LanguageVersion.Id,
+                                        ProgrammingLanguageId =
+                                            ps.LanguageVersion.ProgrammingLanguageId,
+                                        ProgrammingLanguage =
+                                            ps.LanguageVersion.ProgrammingLanguage != null
+                                                ? new ProgrammingLanguage
+                                                {
+                                                    Id = ps.LanguageVersion.ProgrammingLanguage.Id,
+                                                    Name = ps.LanguageVersion
+                                                        .ProgrammingLanguage
+                                                        .Name,
+                                                    IsArchived = ps.LanguageVersion
+                                                        .ProgrammingLanguage
+                                                        .IsArchived,
+                                                    Versions = new List<LanguageVersion>(),
+                                                }
+                                                : null,
+                                        Version = ps.LanguageVersion.Version,
+                                    }
+                                    : null,
                         })
                         .ToList(),
                 })
@@ -191,7 +203,7 @@ public sealed class ProblemRepository(AppDbContext db) : IProblemRepository
         };
     }
 
-    public async Task<ProblemSetupModel> GetProblemSetupAsync(
+    public async Task<ProblemSetupModel?> GetProblemSetupAsync(
         Guid problemId,
         int languageVersionId,
         CancellationToken cancellationToken
@@ -204,25 +216,31 @@ public sealed class ProblemRepository(AppDbContext db) : IProblemRepository
             {
                 Id = ps.Id,
                 ProblemId = ps.ProblemId,
-                InitialCode = ps.InitialCode,
+                InitialCode = ps.InitialCode ?? "",
                 Version = ps.Version,
                 FunctionName = ps.FunctionName,
-                LanguageVersion = new LanguageVersion
-                {
-                    Id = ps.LanguageVersion.Id,
-                    Version = ps.LanguageVersion.Version,
-                    ProgrammingLanguageId = ps.LanguageVersion.ProgrammingLanguageId,
-                    ProgrammingLanguage =
-                        ps.LanguageVersion.ProgrammingLanguage != null
-                            ? new ProgrammingLanguage
-                            {
-                                Id = ps.LanguageVersion.ProgrammingLanguage.Id,
-                                Name = ps.LanguageVersion.ProgrammingLanguage.Name,
-                                IsArchived = ps.LanguageVersion.ProgrammingLanguage.IsArchived,
-                                Versions = new List<LanguageVersion>(),
-                            }
-                            : null,
-                },
+                LanguageVersionId = ps.ProgrammingLanguageVersionId,
+                LanguageVersion =
+                    ps.LanguageVersion != null
+                        ? new LanguageVersion
+                        {
+                            Id = ps.LanguageVersion.Id,
+                            Version = ps.LanguageVersion.Version,
+                            ProgrammingLanguageId = ps.LanguageVersion.ProgrammingLanguageId,
+                            ProgrammingLanguage =
+                                ps.LanguageVersion.ProgrammingLanguage != null
+                                    ? new ProgrammingLanguage
+                                    {
+                                        Id = ps.LanguageVersion.ProgrammingLanguage.Id,
+                                        Name = ps.LanguageVersion.ProgrammingLanguage.Name,
+                                        IsArchived = ps.LanguageVersion
+                                            .ProgrammingLanguage
+                                            .IsArchived,
+                                        Versions = new List<LanguageVersion>(),
+                                    }
+                                    : null,
+                        }
+                        : null,
                 HarnessTemplate =
                     ps.HarnessTemplate != null
                         ? new HarnessTemplate
@@ -237,13 +255,14 @@ public sealed class ProblemRepository(AppDbContext db) : IProblemRepository
                         Id = ts.Id,
                         Name = ts.Name,
                         Description = ts.Description,
-                        TestSuiteType = (TestSuiteType)ts.TestSuiteType.Id,
+                        TestSuiteType = (TestSuiteType)ts.TestSuiteTypeId,
                         TestCases = ts
                             .TestCases.Select(tc => new TestCaseModel
                             {
                                 Id = tc.Id,
-                                Input = tc.IoPayload.Input,
-                                ExpectedOutput = tc.IoPayload.ExpectedOutput,
+                                Input = tc.IoPayload != null ? tc.IoPayload.Input : "",
+                                ExpectedOutput =
+                                    tc.IoPayload != null ? tc.IoPayload.ExpectedOutput : "",
                                 TestCaseType = (TestCaseType)tc.TestCaseTypeId,
                             })
                             .ToList(),

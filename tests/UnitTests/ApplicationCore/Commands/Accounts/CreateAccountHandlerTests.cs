@@ -5,7 +5,7 @@ using FluentValidation;
 using Microsoft.Extensions.Logging;
 using Moq;
 
-namespace UnitTests.ApplicationCore.Commands.Account;
+namespace UnitTests.ApplicationCore.Commands.Accounts;
 
 [TestFixture]
 public sealed class CreateAccountHandlerTests
@@ -19,9 +19,9 @@ public sealed class CreateAccountHandlerTests
     [SetUp]
     public void SetUp()
     {
-        _accounts = new Mock<IAccountRepository>();
-        _logger = new Mock<ILogger<CreateAccountHandler>>();
-        _validator = new Mock<IValidator<CreateAccountCommand>>();
+        _accounts = new();
+        _logger = new();
+        _validator = new();
 
         _validator
             .Setup(v =>

@@ -35,7 +35,7 @@ public sealed class GetProblemSetupHandler(IProblemRepository problemRepository)
             Id = setup.Id,
             Version = setup.Version,
             InitialCode = setup.InitialCode,
-            LanguageVersionId = setup.LanguageVersion.Id,
+            LanguageVersionId = setup.LanguageVersionId,
             TestSuites = setup
                 .TestSuites.Where(ts => ts.TestSuiteType == TestSuiteType.Public)
                 .Select(ts => new TestSuiteDto()

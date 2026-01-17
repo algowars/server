@@ -23,7 +23,7 @@ public sealed class LanguageVersionEntity : BaseAuditableEntity
     public string? InitialCode { get; init; }
 
     [ForeignKey(nameof(ProgrammingLanguageId))]
-    public ProgrammingLanguageEntity ProgrammingLanguage { get; set; }
+    public ProgrammingLanguageEntity? ProgrammingLanguage { get; set; }
 
-    public ICollection<ProblemSetupEntity> ProblemSetups { get; set; }
+    public IEnumerable<ProblemSetupEntity> ProblemSetups { get; set; } = [];
 }
