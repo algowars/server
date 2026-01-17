@@ -35,29 +35,28 @@ jobs:
           dotnet tool update --global dotnet-sonarscanner
           echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
 
-      - name: Run SonarScanner and tests
+      - name: Setup Sconar
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: |
-          dotnet-sonarscanner begin \
-            /k:"algowars_server" \
-            /o:"algowars" \
-            /d:sonar.token="$SONAR_TOKEN" \
-            /d:sonar.cs.cobertura.reportsPaths="TestResults/**/coverage.cobertura.xml"
+        run: dotnet-sonarscanner begin \
+          /k:"algowars_server" \
+          /o:"algowars" \
+          /d:sonar.token="$SONAR_TOKEN" \
+          /d:sonar.cs.cobertura.reportsPaths="TestResults/**/coverage.cobertura.xml"
 
-          dotnet restore
-          dotnet build \
-            --no-restore
-          dotnet test \
-            --no-restore \
-            --no-build \
-            --results-directory TestResults \
-            /p:CollectCoverage=true \
-            /p:CoverletOutput=TestResults/ \
-            /p:CoverletOutputFormat=cobertura \
-            /p:CoverletShowSummary=true
+      - name: Restore dependencies
+        run: dotnet restore
 
-          dotnet-sonarscanner end /d:sonar.token="$SONAR_TOKEN"
+      - name: Build
+        run: dotnet build --no-restore
+
+      - name: Run unit tests
+        run: dotnet test --no-restore --no-build --collect:"XPlat Code Coverage" --logger trx --results-directory "TestResults-${{ matrix.dotnet-version }}"
+      - name: End Sonar
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: dotnet-sonarscanner end /d:sonar.token="$SONAR_TOKEN"
+
       - name: Upload Test Coverage
         uses: actions/upload-artifact@v4
         with:
