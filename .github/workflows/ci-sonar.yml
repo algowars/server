@@ -58,3 +58,8 @@ jobs:
             /p:CoverletShowSummary=true
 
           dotnet-sonarscanner end /d:sonar.token="$SONAR_TOKEN"
+      - name: Upload Test Coverage
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-coverage
+          path: TestResults/
