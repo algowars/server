@@ -1,3 +1,4 @@
+using System;
 using ApplicationCore.Domain.Problems;
 using ApplicationCore.Domain.Problems.Languages;
 using ApplicationCore.Domain.Problems.ProblemSetups;
@@ -62,6 +63,7 @@ public sealed class ProblemModelTests
             {
                 Id = 1,
                 ProblemId = Guid.NewGuid(),
+                LanguageVersionId = v10.Id,
                 InitialCode = "",
                 LanguageVersion = v10,
             },
@@ -69,6 +71,7 @@ public sealed class ProblemModelTests
             {
                 Id = 2,
                 ProblemId = Guid.NewGuid(),
+                LanguageVersionId = v10.Id,
                 InitialCode = "",
                 LanguageVersion = v11,
             },
@@ -112,6 +115,7 @@ public sealed class ProblemModelTests
             {
                 Id = 1,
                 ProblemId = Guid.NewGuid(),
+                LanguageVersionId = version.Id,
                 InitialCode = "",
                 LanguageVersion = version,
             },
@@ -119,6 +123,7 @@ public sealed class ProblemModelTests
             {
                 Id = 2,
                 ProblemId = Guid.NewGuid(),
+                LanguageVersionId = version.Id,
                 InitialCode = "",
                 LanguageVersion = version,
             },
@@ -147,6 +152,7 @@ public sealed class ProblemModelTests
             {
                 Id = 1,
                 ProblemId = Guid.NewGuid(),
+                LanguageVersionId = version.Id,
                 InitialCode = "",
                 LanguageVersion = null,
             },
@@ -156,6 +162,7 @@ public sealed class ProblemModelTests
                 ProblemId = Guid.NewGuid(),
                 InitialCode = "",
                 LanguageVersion = version,
+                LanguageVersionId = version.Id,
             },
         };
 
@@ -198,6 +205,7 @@ public sealed class ProblemModelTests
                 ProblemId = Guid.NewGuid(),
                 InitialCode = "",
                 LanguageVersion = v21,
+                LanguageVersionId = v21.Id,
             },
             new ProblemSetupModel
             {
@@ -205,6 +213,7 @@ public sealed class ProblemModelTests
                 ProblemId = Guid.NewGuid(),
                 InitialCode = "",
                 LanguageVersion = v17,
+                LanguageVersionId = v21.Id,
             },
         };
 
@@ -258,6 +267,7 @@ public sealed class ProblemModelTests
                 ProblemId = Guid.NewGuid(),
                 InitialCode = "",
                 LanguageVersion = v1,
+                LanguageVersionId = v1.Id,
             },
             new ProblemSetupModel
             {
@@ -265,6 +275,7 @@ public sealed class ProblemModelTests
                 ProblemId = Guid.NewGuid(),
                 InitialCode = "",
                 LanguageVersion = v2,
+                LanguageVersionId = v2.Id,
             },
         };
 

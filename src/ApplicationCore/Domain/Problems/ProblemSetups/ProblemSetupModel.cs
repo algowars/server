@@ -15,6 +15,8 @@ public sealed class ProblemSetupModel
 
     public string? FunctionName { get; init; }
 
+    public required int LanguageVersionId { get; init; }
+
     public LanguageVersion? LanguageVersion { get; init; }
 
     public int Version { get; init; }

@@ -62,6 +62,7 @@ public sealed class GetProblemBySlugHandlerTests
                     ProblemId = Guid.NewGuid(),
                     InitialCode = "",
                     LanguageVersion = version,
+                    LanguageVersionId = version.Id,
                 },
             ],
         };

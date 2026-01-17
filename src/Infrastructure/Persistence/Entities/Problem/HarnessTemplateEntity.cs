@@ -10,8 +10,8 @@ public sealed class HarnessTemplateEntity
     [Column("id")]
     public int Id { get; set; }
 
-    [Column("template")]
-    public string Template { get; set; }
+    [Required, Column("template")]
+    public required string Template { get; set; }
 
-    public ICollection<ProblemSetupEntity> ProblemSetups { get; set; }
+    public IEnumerable<ProblemSetupEntity> ProblemSetups { get; set; } = [];
 }

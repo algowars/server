@@ -17,16 +17,16 @@ public sealed class ProblemHistoryEntity
     public int Version { get; set; }
 
     [Column("title")]
-    public string Title { get; set; }
+    public required string Title { get; set; }
 
     [Column("slug")]
-    public string Slug { get; set; }
+    public required string Slug { get; set; }
 
     [Column("difficulty")]
     public int Difficulty { get; set; }
 
     [Column("question")]
-    public string Question { get; set; }
+    public required string Question { get; set; }
 
     [Column("archived_on")]
     public DateTime ArchivedOn { get; set; }

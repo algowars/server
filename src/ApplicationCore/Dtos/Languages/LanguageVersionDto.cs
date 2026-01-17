@@ -8,5 +8,5 @@ public sealed record LanguageVersionDto
 
     public string? InitialCode { get; init; }
 
-    public ProgrammingLanguageDto ProgrammingLanguage { get; init; }
+    public ProgrammingLanguageDto? ProgrammingLanguage { get; init; }
 }

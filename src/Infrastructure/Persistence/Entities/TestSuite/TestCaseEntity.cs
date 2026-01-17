@@ -17,14 +17,14 @@ public sealed class TestCaseEntity : BaseAuditableEntity
     public int TestCaseTypeId { get; set; }
 
     [ForeignKey(nameof(TestCaseTypeId))]
-    public TestCaseTypeEntity TestCaseType { get; set; }
+    public TestCaseTypeEntity? TestCaseType { get; set; }
 
     [Column("io_payload_id")]
     public int IoPayloadId { get; set; }
 
     [ForeignKey(nameof(IoPayloadId))]
-    public TestCaseIoPayloadEntity IoPayload { get; set; }
+    public TestCaseIoPayloadEntity? IoPayload { get; set; }
 
     [ForeignKey(nameof(TestSuiteId))]
-    public TestSuiteEntity TestSuite { get; set; }
+    public TestSuiteEntity? TestSuite { get; set; }
 }

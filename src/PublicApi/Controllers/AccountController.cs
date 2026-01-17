@@ -30,7 +30,7 @@ public sealed partial class AccountController(IAccountAppService accountAppServi
         var accountResult = await accountAppService.CreateAsync(
             createAccountDto.Username,
             sub,
-            createAccountDto.ImageUrl,
+            createAccountDto.ImageUrl ?? "",
             cancellationToken
         );
 

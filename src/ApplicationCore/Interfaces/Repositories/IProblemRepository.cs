@@ -11,7 +11,7 @@ public interface IProblemRepository
 
     Task<ProblemModel?> GetProblemBySlugAsync(string slug, CancellationToken cancellationToken);
 
-    Task<ProblemSetupModel> GetProblemSetupAsync(
+    Task<ProblemSetupModel?> GetProblemSetupAsync(
         Guid problemId,
         int languageVersionId,
         CancellationToken cancellationToken
