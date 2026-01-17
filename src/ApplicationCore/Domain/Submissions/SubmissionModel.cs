@@ -1,6 +1,6 @@
 namespace ApplicationCore.Domain.Submissions;
 
-public sealed class Submission
+public sealed class SubmissionModel
 {
     public required Guid Id { get; init; }
 
@@ -14,5 +14,5 @@ public sealed class Submission
 
     public Guid CreatedById { get; init; }
 
-    public IEnumerable<SubmissionResult> Results { get; init; } = [];
+    public List<SubmissionResult> Results { get; init; } = [];
 }

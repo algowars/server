@@ -1,6 +1,5 @@
 using ApplicationCore.Dtos.Accounts;
 using Ardalis.Result;
-using MediatR;
 
 namespace ApplicationCore.Interfaces.Services;
 

@@ -27,13 +27,14 @@ public static class DependencyInjection
             );
         services.AddDbContext<AppDbContext>(o =>
         {
-            o.UseNpgsql(cs, npg => npg.EnableRetryOnFailure());
+            o.UseNpgsql(cs);
         });
 
         services.AddScoped<ISlugService, SlugService>();
 
         services.AddScoped<IAccountRepository, AccountRepository>();
         services.AddScoped<IProblemRepository, ProblemRepository>();
+        services.AddScoped<ISubmissionRepository, SubmissionRepository>();
 
         services.Configure<ExecutionEnginesOptions>(configuration.GetSection("ExecutionEngines"));
 
