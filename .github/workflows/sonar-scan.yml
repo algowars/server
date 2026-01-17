@@ -47,7 +47,8 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         shell: powershell
         run: |
-          ${{ runner.temp }}\scanner\dotnet-sonarscanner begin /k:"algowars_server" /o:"algowars" /d:sonar.token="$SONAR_TOKEN"
+          $scanner = "${{ runner.temp }}\scanner\dotnet-sonarscanner"
+          $scanner begin /k:"algowars_server" /o:"algowars" /d:sonar.login=$env:SONAR_TOKEN /d:sonar.cs.vstest.reportsPaths="../../TestResults/*.trx"
 
       - name: Restore
         run: dotnet restore
@@ -65,4 +66,5 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         shell: powershell
         run: |
-          ${{ runner.temp }}\scanner\dotnet-sonarscanner end /d:sonar.token="$SONAR_TOKEN"
+          $scanner = "${{ runner.temp }}\scanner\dotnet-sonarscanner"
+          $scanner end /d:sonar.login=$env:SONAR_TOKEN
