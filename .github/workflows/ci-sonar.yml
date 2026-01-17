@@ -39,6 +39,12 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
+          dotnet-sonarscanner begin \
+            /k:"algowars_server" \
+            /o:"algowars" \
+            /d:sonar.token="$SONAR_TOKEN" \
+            /d:sonar.cs.cobertura.reportsPaths="TestResults/**/coverage.cobertura.xml"
+
           dotnet restore
           dotnet build \
             --no-restore
@@ -49,11 +55,5 @@ jobs:
             /p:CollectCoverage=true \
             /p:CoverletOutput=../../TestResults/ \
             /p:CoverletOutputFormat=cobertura 
-
-          dotnet-sonarscanner begin \
-            /k:"algowars_server" \
-            /o:"algowars" \
-            /d:sonar.token="$SONAR_TOKEN" \
-            /d:sonar.cs.cobertura.reportsPaths="TestResults/**/coverage.cobertura.xml"
 
           dotnet-sonarscanner end /d:sonar.token="$SONAR_TOKEN"
