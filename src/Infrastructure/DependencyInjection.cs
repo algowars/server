@@ -1,8 +1,10 @@
+using ApplicationCore.Domain.Job;
 using ApplicationCore.Interfaces.Clients;
 using ApplicationCore.Interfaces.Repositories;
 using ApplicationCore.Interfaces.Services;
 using Infrastructure.CodeExecution.Judge0;
 using Infrastructure.Configuration;
+using Infrastructure.Job;
 using Infrastructure.Persistence;
 using Infrastructure.Repositories;
 using Infrastructure.Services;
@@ -10,6 +12,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using SubmissionPollerJob = Infrastructure.Job.Jobs.SubmissionPollerJob;
 
 namespace Infrastructure;
 
@@ -37,6 +40,15 @@ public static class DependencyInjection
         services.AddScoped<ISubmissionRepository, SubmissionRepository>();
 
         services.Configure<ExecutionEnginesOptions>(configuration.GetSection("ExecutionEngines"));
+
+        services.AddBackgroundJobs(jobs =>
+        {
+            jobs.Register<SubmissionPollerJob>(
+                jobType: BackgroundJobType.SubmissionPoller,
+                interval: TimeSpan.FromSeconds(5),
+                enabled: true
+            );
+        });
 
         AddJudge0Client(services);
 
@@ -69,5 +81,20 @@ public static class DependencyInjection
 
             return new Judge0Client(client);
         });
+    }
+
+    private static IServiceCollection AddBackgroundJobs(
+        this IServiceCollection services,
+        Action<JobRegistry> configure
+    )
+    {
+        var registry = new JobRegistry();
+        configure(registry);
+
+        services.AddSingleton(registry);
+        services.AddSingleton<JobRunner>();
+        services.AddHostedService<BackgroundJobService>();
+
+        return services;
     }
 }

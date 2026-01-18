@@ -1,5 +1,6 @@
 using System.Net.Http.Json;
 using ApplicationCore.Domain.CodeExecution.Judge0;
+using ApplicationCore.Domain.Submissions;
 using ApplicationCore.Interfaces.Clients;
 using Ardalis.Result;
 
@@ -23,13 +24,14 @@ public sealed class Judge0Client(HttpClient http) : IJudge0Client
                 return Result.Error(body);
             }
 
-            var token = await resp.Content.ReadFromJsonAsync<TokenOnly>(cancellationToken: ct);
-            if (token is null)
-            {
-                return Result.Error("Judge0 returned empty token.");
-            }
-
-            return Result.Success(new Judge0SubmissionResponse { Token = token.token });
+            var token = await resp.Content.ReadFromJsonAsync<Guid>(cancellationToken: ct);
+            return Result.Success(
+                new Judge0SubmissionResponse
+                {
+                    Token = token,
+                    Status = new Judge0StatusModel { Id = (int)SubmissionStatus.InQueue },
+                }
+            );
         }
         catch (Exception ex)
         {
@@ -72,7 +74,7 @@ public sealed class Judge0Client(HttpClient http) : IJudge0Client
                 return Result.Error(body);
             }
 
-            var tokens = await response.Content.ReadFromJsonAsync<List<TokenOnly>>(
+            var tokens = await response.Content.ReadFromJsonAsync<List<Guid>>(
                 cancellationToken: ct
             );
 
@@ -82,7 +84,11 @@ public sealed class Judge0Client(HttpClient http) : IJudge0Client
             }
 
             return Result.Success(
-                tokens.Select(t => new Judge0SubmissionResponse { Token = t.token })
+                tokens.Select(t => new Judge0SubmissionResponse
+                {
+                    Token = t,
+                    Status = new Judge0StatusModel { Id = (int)SubmissionStatus.InQueue },
+                })
             );
         }
         catch (Exception ex)
@@ -91,7 +97,7 @@ public sealed class Judge0Client(HttpClient http) : IJudge0Client
         }
     }
 
-    public async Task<Result<Judge0SubmissionResponse>> GetAsync(string token, CancellationToken ct)
+    public async Task<Result<Judge0SubmissionResponse>> GetAsync(Guid token, CancellationToken ct)
     {
         try
         {
@@ -118,7 +124,7 @@ public sealed class Judge0Client(HttpClient http) : IJudge0Client
     }
 
     public async Task<Result<IEnumerable<Judge0SubmissionResponse>>> GetAsync(
-        IEnumerable<string> tokens,
+        IEnumerable<Guid> tokens,
         CancellationToken ct
     )
     {
@@ -149,7 +155,11 @@ public sealed class Judge0Client(HttpClient http) : IJudge0Client
             }
 
             return Result.Success(
-                details.Select(d => new Judge0SubmissionResponse { Token = d.Token })
+                details.Select(d => new Judge0SubmissionResponse
+                {
+                    Token = d.Token,
+                    Status = new Judge0StatusModel { Id = (int)SubmissionStatus.InQueue },
+                })
             );
         }
         catch (Exception ex)

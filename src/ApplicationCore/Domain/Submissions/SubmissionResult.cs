@@ -12,8 +12,6 @@ public sealed class SubmissionResult
 
     public string? Stdout { get; set; }
 
-    public string? Stderr { get; set; }
-
     public int? RuntimeMs { get; set; }
 
     public int? MemoryKb { get; set; }

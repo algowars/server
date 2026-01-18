@@ -1,0 +1,14 @@
+using ApplicationCore.Domain.Problems.ProblemSetups;
+
+namespace ApplicationCore.Domain.CodeExecution;
+
+public sealed class CodeExecutionContext
+{
+    public required ProblemSetupModel Setup { get; set; }
+
+    public required string Code { get; set; }
+
+    public required IEnumerable<CodeBuildResult> BuiltResults { get; set; } = [];
+
+    public required Guid CreatedById { get; set; }
+}

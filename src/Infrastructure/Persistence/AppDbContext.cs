@@ -27,7 +27,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
 
     public DbSet<ProgrammingLanguageEntity> ProgrammingLanguages { get; set; }
 
-    public DbSet<SubmissionOutboxEntity> SubmissionOutboxes { get; set; }
+    public DbSet<SubmissionOutboxEntity> SubmissionOutbox { get; set; }
 
     public DbSet<SubmissionOutboxStatusEntity> SubmissionOutboxStatuses { get; set; }
 

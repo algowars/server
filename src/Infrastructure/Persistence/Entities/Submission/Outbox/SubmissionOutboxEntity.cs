@@ -33,7 +33,7 @@ public sealed class SubmissionOutboxEntity
     [Column("next_attempt_on")]
     public DateTime? NextAttemptOn { get; set; }
 
-    [Column("last_error")]
+    [Column("last_error"), MaxLength(255)]
     public string? LastError { get; set; }
 
     [Column("created_on")]
@@ -41,4 +41,7 @@ public sealed class SubmissionOutboxEntity
 
     [Column("process_on")]
     public DateTime ProcessOn { get; set; }
+
+    [Column("finalized_on")]
+    public DateTime? FinalizedOn { get; set; }
 }
