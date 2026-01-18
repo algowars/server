@@ -47,6 +47,6 @@ jobs:
 
           dotnet restore
           dotnet build
-          dotnet test --collect:"XPlat Code Coverage" --logger trx --results-directory TestResults
+          dotnet test --collect:"XPlat Code Coverage" --logger trx --results-directory ../../TestResults
 
           dotnet-sonarscanner end /d:sonar.token="$SONAR_TOKEN"
