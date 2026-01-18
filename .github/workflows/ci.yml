@@ -1,4 +1,4 @@
-name: ci
+name: Continuous Integration
 
 on:
   pull_request:
@@ -7,12 +7,10 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        dotnet-version:
-          ['10.x.x']
+        dotnet-version: ["10.x.x"]
 
     steps:
       - uses: actions/checkout@v5
@@ -33,5 +31,4 @@ jobs:
         with:
           name: dotnet-results-${{ matrix.dotnet-version }}
           path: TestResults-${{ matrix.dotnet-version }}
-        # Use always() to always run this step to publish test results when there are test failures
         if: ${{ always() }}
