@@ -41,12 +41,14 @@ jobs:
         run: |
           New-Item -Path ${{ runner.temp }}\scanner -ItemType Directory
           dotnet tool update dotnet-sonarscanner --tool-path ${{ runner.temp }}\scanner
+
       - name: Begin SonarQube analysis
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         shell: powershell
         run: |
-          ${{ runner.temp }}\scanner\dotnet-sonarscanner begin /k:"algowars_server" /o:"algowars" /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
+          ${{ runner.temp }}\scanner\dotnet-sonarscanner begin /k:"algowars_server" /o:"algowars" /d:sonar.token="${{ $SONAR_TOKEN }}"
+
       - name: Restore
         run: dotnet restore
 
@@ -57,9 +59,10 @@ jobs:
         shell: powershell
         run: |
           dotnet test --no-restore --no-build --collect:"XPlat Code Coverage" --logger trx --results-directory "TestResults"
+
       - name: End SonarQube analysis
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         shell: powershell
         run: |
-          ${{ runner.temp }}\scanner\dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
+          ${{ runner.temp }}\scanner\dotnet-sonarscanner end /d:sonar.token="${{ $SONAR_TOKEN }}"
