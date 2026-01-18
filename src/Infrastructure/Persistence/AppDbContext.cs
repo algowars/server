@@ -3,6 +3,7 @@ using Infrastructure.Persistence.Entities.Account;
 using Infrastructure.Persistence.Entities.Language;
 using Infrastructure.Persistence.Entities.Problem;
 using Infrastructure.Persistence.Entities.Submission;
+using Infrastructure.Persistence.Entities.Submission.Outbox;
 using Infrastructure.Persistence.Entities.TestSuite;
 using Microsoft.EntityFrameworkCore;
 
@@ -25,6 +26,12 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<ProblemStatusEntity> ProblemStatuses { get; set; }
 
     public DbSet<ProgrammingLanguageEntity> ProgrammingLanguages { get; set; }
+
+    public DbSet<SubmissionOutboxEntity> SubmissionOutboxes { get; set; }
+
+    public DbSet<SubmissionOutboxStatusEntity> SubmissionOutboxStatuses { get; set; }
+
+    public DbSet<SubmissionOutboxTypeEntity> SubmissionOutboxTypes { get; set; }
 
     public DbSet<SubmissionEntity> Submissions { get; set; }
 
