@@ -1,4 +1,3 @@
-using ApplicationCore.Domain.Job;
 using ApplicationCore.Interfaces.Clients;
 using ApplicationCore.Interfaces.Repositories;
 using ApplicationCore.Interfaces.Services;

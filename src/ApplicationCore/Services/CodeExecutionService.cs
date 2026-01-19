@@ -55,6 +55,28 @@ public sealed class CodeExecutionService(IJudge0Client judge0Client) : ICodeExec
         return Result.Success(submission);
     }
 
+    public async Task<Result<IEnumerable<SubmissionModel>>> ExecuteAsync(
+        IEnumerable<CodeExecutionContext> contexts,
+        CancellationToken cancellationToken
+    )
+    {
+        var submissions = new List<SubmissionModel>();
+
+        foreach (var context in contexts)
+        {
+            var result = await ExecuteAsync(context, cancellationToken);
+
+            if (!result.IsSuccess)
+            {
+                return Result.Error(result.Errors.ToString());
+            }
+
+            submissions.Add(result.Value);
+        }
+
+        return Result.Success<IEnumerable<SubmissionModel>>(submissions);
+    }
+
     public async Task<Result<IEnumerable<SubmissionResult>>> GetSubmissionResultsAsync(
         SubmissionModel submission,
         CancellationToken cancellationToken

@@ -5,5 +5,5 @@ namespace ApplicationCore.Interfaces.Services;
 
 public interface ICodeBuilderService
 {
-    Task<Result<IEnumerable<CodeBuildResult>>> BuildAsync(IEnumerable<CodeBuilderContext> contexts);
+    Result<IEnumerable<CodeBuildResult>> Build(IEnumerable<CodeBuilderContext> contexts);
 }

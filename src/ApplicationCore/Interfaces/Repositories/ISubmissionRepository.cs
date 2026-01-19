@@ -7,6 +7,11 @@ public interface ISubmissionRepository
 {
     Task SaveAsync(SubmissionModel submission, CancellationToken cancellationToken);
 
+    Task BulkUpsertAsync(
+        IEnumerable<SubmissionModel> submissions,
+        CancellationToken cancellationToken
+    );
+
     Task<IEnumerable<SubmissionOutboxModel>> GetSubmissionOutboxesAsync(
         CancellationToken cancellationToken
     );

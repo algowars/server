@@ -1,4 +1,4 @@
-namespace ApplicationCore.Domain.Job;
+namespace Infrastructure.Job;
 
 public sealed class JobDescriptor
 {

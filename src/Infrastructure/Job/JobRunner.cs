@@ -1,34 +1,20 @@
-using ApplicationCore.Domain.Job;
-using ApplicationCore.Interfaces.Job;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Infrastructure.Job;
 
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-
-public sealed class JobRunner(IServiceProvider serviceProvider, ILogger<JobRunner> logger)
+public sealed class JobRunner(IServiceProvider serviceProvider)
 {
-    public async Task RunAsync(JobDescriptor descriptor, CancellationToken cancellationToken)
+    public async Task RunAsync(JobRegistration registration, CancellationToken cancellationToken)
     {
-        if (!descriptor.Enabled)
+        if (!registration.Enabled)
         {
             return;
         }
 
         using var scope = serviceProvider.CreateScope();
 
-        var job = (IBackgroundJob)
-            scope.ServiceProvider.GetRequiredService(descriptor.ImplementationType);
+        var job = (IBackgroundJob)scope.ServiceProvider.GetRequiredService(registration.JobType);
 
-        try
-        {
-            logger.LogInformation("Running job {JobType}", descriptor.JobType);
-
-            await job.ExecuteAsync(cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Job {JobType} failed", descriptor.JobType);
-        }
+        await job.ExecuteAsync(cancellationToken);
     }
 }

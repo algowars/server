@@ -1,6 +1,4 @@
-using ApplicationCore.Domain.Job;
-
-namespace ApplicationCore.Interfaces.Job;
+namespace Infrastructure.Job;
 
 public interface IBackgroundJob
 {

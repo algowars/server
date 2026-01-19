@@ -1,4 +1,3 @@
-using ApplicationCore.Domain.Job;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
@@ -10,8 +9,6 @@ public sealed class BackgroundJobService(
     ILogger<BackgroundJobService> logger
 ) : BackgroundService
 {
-    private readonly ILogger<BackgroundJobService> _logger = logger;
-
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         var lastRun = new Dictionary<BackgroundJobType, DateTimeOffset>();
@@ -20,18 +17,27 @@ public sealed class BackgroundJobService(
         {
             var now = DateTimeOffset.UtcNow;
 
-            foreach (var job in registry.Jobs)
+            foreach (var entry in registry.Jobs)
             {
+                var jobType = entry.Key;
+                var registration = entry.Value;
+
+                if (!registration.Enabled)
+                {
+                    continue;
+                }
+
                 if (
-                    lastRun.TryGetValue(job.JobType, out var previous)
-                    && now - previous < job.Interval
+                    lastRun.TryGetValue(jobType, out var previous)
+                    && now - previous < registration.Interval
                 )
                 {
                     continue;
                 }
 
-                lastRun[job.JobType] = now;
-                await runner.RunAsync(job, stoppingToken);
+                lastRun[jobType] = now;
+
+                await runner.RunAsync(registration, stoppingToken);
             }
 
             await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);

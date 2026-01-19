@@ -48,6 +48,14 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
         }
     }
 
+    public Task BulkUpsertAsync(
+        IEnumerable<SubmissionModel> submissions,
+        CancellationToken cancellationToken
+    )
+    {
+        throw new NotImplementedException();
+    }
+
     public async Task<IEnumerable<SubmissionOutboxModel>> GetSubmissionOutboxesAsync(
         CancellationToken cancellationToken
     )

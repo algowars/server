@@ -73,7 +73,7 @@ public sealed class ProblemAppService(IMediator mediator) : IProblemAppService
         return await mediator.Send(pageableQuery, cancellationToken);
     }
 
-    Task<Result<IEnumerable<ProblemSetupModel>>> GetProblemSetupsForExecutionAsync(
+    public Task<Result<IEnumerable<ProblemSetupModel>>> GetProblemSetupsForExecutionAsync(
         IEnumerable<int> setupIds,
         CancellationToken cancellationToken
     )
