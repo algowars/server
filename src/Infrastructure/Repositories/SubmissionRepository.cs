@@ -1,6 +1,7 @@
 ﻿using ApplicationCore.Domain.Submissions;
 using ApplicationCore.Domain.Submissions.Outbox;
 using ApplicationCore.Interfaces.Repositories;
+using EFCore.BulkExtensions;
 using Infrastructure.Persistence;
 using Infrastructure.Persistence.Entities.Submission;
 using Infrastructure.Persistence.Entities.Submission.Outbox;
@@ -33,7 +34,7 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
                 {
                     Id = Guid.NewGuid(),
                     SubmissionId = submission.Id,
-                    SubmissionOutboxTypeId = (int)SubmissionOutboxType.Initialized,
+                    SubmissionOutboxTypeId = (int)SubmissionOutboxType.ExecuteSubmission,
                     SubmissionOutboxStatusId = (int)SubmissionOutboxStatus.Pending,
                 },
                 cancellationToken
@@ -48,12 +49,35 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
         }
     }
 
-    public Task BulkUpsertAsync(
+    public async Task BulkUpsertResultsAsync(
         IEnumerable<SubmissionModel> submissions,
         CancellationToken cancellationToken
     )
     {
-        throw new NotImplementedException();
+        var resultEntities = submissions
+            .SelectMany(
+                s => s.Results,
+                (s, sr) =>
+                    new SubmissionResultEntity
+                    {
+                        Id = sr.Id,
+                        SubmissionId = s.Id,
+                        StatusId = (int)sr.Status,
+                        StartedAt = sr.StartedAt,
+                        FinishedAt = sr.FinishedAt,
+                        Stdout = sr.Stdout,
+                        RuntimeMs = sr.RuntimeMs,
+                        MemoryKb = sr.MemoryKb,
+                    }
+            )
+            .ToList();
+
+        if (resultEntities.Count == 0)
+        {
+            return;
+        }
+
+        await db.BulkInsertOrUpdateAsync(resultEntities, cancellationToken: cancellationToken);
     }
 
     public async Task<IEnumerable<SubmissionOutboxModel>> GetSubmissionOutboxesAsync(

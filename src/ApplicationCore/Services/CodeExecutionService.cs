@@ -33,7 +33,7 @@ public sealed class CodeExecutionService(IJudge0Client judge0Client) : ICodeExec
 
         var submission = new SubmissionModel
         {
-            Id = Guid.NewGuid(),
+            Id = context.SubmissionId ?? Guid.NewGuid(),
             ProblemSetupId = context.Setup.Id,
             Code = context.Code,
             CreatedById = context.CreatedById,

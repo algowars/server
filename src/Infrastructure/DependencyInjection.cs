@@ -4,6 +4,7 @@ using ApplicationCore.Interfaces.Services;
 using Infrastructure.CodeExecution.Judge0;
 using Infrastructure.Configuration;
 using Infrastructure.Job;
+using Infrastructure.Job.Jobs;
 using Infrastructure.Persistence;
 using Infrastructure.Repositories;
 using Infrastructure.Services;
@@ -11,7 +12,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using SubmissionPollerJob = Infrastructure.Job.Jobs.SubmissionPollerJob;
 
 namespace Infrastructure;
 
@@ -27,6 +27,7 @@ public static class DependencyInjection
             ?? throw new InvalidOperationException(
                 "Missing connection string 'DefaultConnection'."
             );
+
         services.AddDbContext<AppDbContext>(o =>
         {
             o.UseNpgsql(cs);
@@ -39,6 +40,8 @@ public static class DependencyInjection
         services.AddScoped<ISubmissionRepository, SubmissionRepository>();
 
         services.Configure<ExecutionEnginesOptions>(configuration.GetSection("ExecutionEngines"));
+
+        services.AddScoped<SubmissionPollerJob>();
 
         services.AddBackgroundJobs(jobs =>
         {
@@ -60,11 +63,6 @@ public static class DependencyInjection
         {
             var options = sp.GetRequiredService<IOptions<ExecutionEnginesOptions>>().Value;
             var judge0 = options.Judge0;
-
-            //if (!judge0.Enabled)
-            //{
-            //    return new MockJudge0Client();
-            //}
 
             string baseUrl = judge0.BaseUrl.EndsWith("/") ? judge0.BaseUrl : judge0.BaseUrl + "/";
 

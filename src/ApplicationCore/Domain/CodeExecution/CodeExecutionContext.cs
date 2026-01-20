@@ -4,6 +4,8 @@ namespace ApplicationCore.Domain.CodeExecution;
 
 public sealed class CodeExecutionContext
 {
+    public Guid? SubmissionId { get; set; }
+
     public required ProblemSetupModel Setup { get; set; }
 
     public required string Code { get; set; }

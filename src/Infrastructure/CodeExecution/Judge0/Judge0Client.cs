@@ -74,7 +74,7 @@ public sealed class Judge0Client(HttpClient http) : IJudge0Client
                 return Result.Error(body);
             }
 
-            var tokens = await response.Content.ReadFromJsonAsync<List<Guid>>(
+            var tokens = await response.Content.ReadFromJsonAsync<List<TokenOnly>>(
                 cancellationToken: ct
             );
 
@@ -86,7 +86,7 @@ public sealed class Judge0Client(HttpClient http) : IJudge0Client
             return Result.Success(
                 tokens.Select(t => new Judge0SubmissionResponse
                 {
-                    Token = t,
+                    Token = t.token,
                     Status = new Judge0StatusModel { Id = (int)SubmissionStatus.InQueue },
                 })
             );
@@ -177,5 +177,5 @@ public sealed class Judge0Client(HttpClient http) : IJudge0Client
             expected_output = req.ExpectedOutput,
         };
 
-    private sealed record TokenOnly(string token);
+    private sealed record TokenOnly(Guid token);
 }
