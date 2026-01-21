@@ -9,98 +9,120 @@ namespace ApplicationCore.Services;
 
 public sealed class CodeExecutionService(IJudge0Client judge0Client) : ICodeExecutionService
 {
-    public async Task<Result<SubmissionModel>> ExecuteAsync(
-        CodeExecutionContext context,
-        CancellationToken cancellationToken
-    )
-    {
-        var submissionRequests = context
-            .BuiltResults.Select(b => new Judge0SubmissionRequest
-            {
-                LanguageId = 102,
-                SourceCode = b.FinalCode,
-                StdIn = b.Inputs,
-                ExpectedOutput = b.ExpectedOutputs,
-            })
-            .ToList();
-
-        var judge0Result = await judge0Client.SubmitAsync(submissionRequests, cancellationToken);
-
-        if (!judge0Result.IsSuccess)
-        {
-            return Result.Error("Failed to submit code for execution.");
-        }
-
-        var submission = new SubmissionModel
-        {
-            Id = context.SubmissionId ?? Guid.NewGuid(),
-            ProblemSetupId = context.Setup.Id,
-            Code = context.Code,
-            CreatedById = context.CreatedById,
-            Results =
-            [
-                .. judge0Result.Value.Select(result => new SubmissionResult
-                {
-                    Id = result.Token,
-                    Status = MapJudge0SubmissionStatus(result.Status),
-                    Stdout = result.Stdout,
-                    RuntimeMs = result.RuntimeMs.HasValue
-                        ? (int?)Math.Ceiling(result.RuntimeMs.Value)
-                        : null,
-                    MemoryKb = result.MemoryKb,
-                }),
-            ],
-        };
-
-        return Result.Success(submission);
-    }
-
     public async Task<Result<IEnumerable<SubmissionModel>>> ExecuteAsync(
         IEnumerable<CodeExecutionContext> contexts,
         CancellationToken cancellationToken
     )
     {
-        var submissions = new List<SubmissionModel>();
+        var contextList = contexts.ToList();
+        if (!contextList.Any())
+            return Result.Success(Enumerable.Empty<SubmissionModel>());
 
-        foreach (var context in contexts)
+        var submissions = contextList.ToDictionary(
+            c => c.SubmissionId,
+            c => SubmissionModel.Create(c.SubmissionId, c.CreatedById)
+        );
+
+        var requests = new List<Judge0SubmissionRequest>();
+        var map = new List<PendingResult>();
+
+        foreach (var context in contextList)
         {
-            var result = await ExecuteAsync(context, cancellationToken);
+            var submission = submissions[context.SubmissionId];
 
-            if (!result.IsSuccess)
+            var built = context.BuiltResults.ToList();
+            for (int i = 0; i < built.Count; i++)
             {
-                return Result.Error(result.Errors.ToString());
-            }
+                var br = built[i];
 
-            submissions.Add(result.Value);
+                requests.Add(
+                    new Judge0SubmissionRequest
+                    {
+                        LanguageId = br.LanguageVersionId,
+                        SourceCode = br.SourceCode,
+                        StdIn = br.Inputs,
+                        ExpectedOutput = br.ExpectedOutput,
+                    }
+                );
+
+                map.Add(new PendingResult(context.SubmissionId, i));
+
+                submission.AddResult(
+                    new SubmissionResult
+                    {
+                        Status = SubmissionStatus.InQueue,
+                        StartedAt = DateTime.UtcNow,
+                    }
+                );
+            }
         }
 
-        return Result.Success<IEnumerable<SubmissionModel>>(submissions);
+        var submitResult = await judge0Client.SubmitAsync(requests, cancellationToken);
+
+        if (!submitResult.IsSuccess)
+        {
+            return Result.Error(submitResult.Errors.ToString());
+        }
+
+        var tokens = submitResult.Value.ToList();
+
+        if (tokens.Count != map.Count)
+        {
+            return Result.Error("Judge0 token count mismatch.");
+        }
+
+        for (int i = 0; i < tokens.Count; i++)
+        {
+            var pending = map[i];
+            var submission = submissions[pending.SubmissionId];
+
+            submission.Results[pending.ResultIndex].Id = tokens[i].Token;
+        }
+
+        return Result.Success<IEnumerable<SubmissionModel>>(submissions.Values);
     }
 
-    public async Task<Result<IEnumerable<SubmissionResult>>> GetSubmissionResultsAsync(
-        SubmissionModel submission,
+    public async Task<Result<IEnumerable<SubmissionModel>>> GetSubmissionResultsAsync(
+        IEnumerable<SubmissionModel> submissions,
         CancellationToken cancellationToken
     )
     {
-        var results = await judge0Client.GetAsync(submission.GetResultTokens(), cancellationToken);
+        var submissionList = submissions.ToList();
+        if (!submissionList.Any())
+        {
+            return Result.Success(Enumerable.Empty<SubmissionModel>());
+        }
 
-        if (!results.IsSuccess)
+        var tokenMap = submissionList
+            .SelectMany(s => s.Results.Select(r => (Submission: s, Token: r.Id)))
+            .ToDictionary(x => x.Token, x => x.Submission);
+
+        var judge0Results = await judge0Client.GetAsync(tokenMap.Keys, cancellationToken);
+
+        if (!judge0Results.IsSuccess)
         {
             return Result.Error("Failed to retrieve submission results.");
         }
 
-        var mappedResults = results.Value.Select(result => new SubmissionResult
+        foreach (var result in judge0Results.Value)
         {
-            Id = result.Token,
-            Status = MapJudge0SubmissionStatus(result.Status),
-            Stdout = result.Stdout,
-            RuntimeMs = result.RuntimeMs.HasValue
-                ? (int?)Math.Ceiling(result.RuntimeMs.Value)
-                : null,
-            MemoryKb = result.MemoryKb,
-        });
+            if (!tokenMap.TryGetValue(result.Token, out var submission))
+            {
+                continue;
+            }
 
-        return Result.Success(mappedResults);
+            var submissionResult = submission.Results.First(r => r.Id == result.Token);
+
+            submissionResult.Status = MapJudge0SubmissionStatus(result.Status);
+            submissionResult.Stdout = result.Stdout;
+            submissionResult.RuntimeMs = result.RuntimeMs.HasValue
+                ? (int?)Math.Ceiling(result.RuntimeMs.Value)
+                : null;
+            submissionResult.MemoryKb = result.MemoryKb;
+            submissionResult.FinishedAt = DateTime.UtcNow;
+        }
+
+        return Result.Success<IEnumerable<SubmissionModel>>(submissionList);
     }
 
     private static SubmissionStatus MapJudge0SubmissionStatus(Judge0StatusModel status) =>

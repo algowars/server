@@ -50,6 +50,11 @@ public static class DependencyInjection
                 interval: TimeSpan.FromSeconds(5),
                 enabled: true
             );
+            jobs.Register<SubmissionExecutorJob>(
+                jobType: BackgroundJobType.SubmissionExecutor,
+                interval: TimeSpan.FromSeconds(5),
+                enabled: true
+            );
         });
 
         AddJudge0Client(services);

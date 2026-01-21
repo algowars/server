@@ -18,63 +18,34 @@ public sealed class SubmissionPollerJob(
 
     public async Task ExecuteAsync(CancellationToken cancellationToken)
     {
-        var submissionOutboxResult = await submissionAppService.GetOutboxesAsync(cancellationToken);
-
-        if (!submissionOutboxResult.IsSuccess)
-        {
-            return;
-        }
-
-        var submissionsThatNeedExecution = submissionOutboxResult
-            .Value.Where(outbox => outbox.Type == SubmissionOutboxType.ExecuteSubmission)
-            .ToList();
-
-        var setupsResult = await problemAppService.GetProblemSetupsForExecutionAsync(
-            submissionsThatNeedExecution.Select(s => s.Submission.ProblemSetupId),
+        var submissionOutboxResults = await submissionAppService.GetOutboxesAsync(
             cancellationToken
         );
 
-        var setupsMap = setupsResult.Value.ToDictionary(setup => setup.Id);
-
-        var executionContexts = submissionsThatNeedExecution.Select(submissionOutbox =>
-        {
-            var setup = setupsMap[submissionOutbox.Submission.ProblemSetupId];
-
-            var builderContexts = setup
-                .TestSuites.SelectMany(ts => ts.TestCases)
-                .Select(tc => new CodeBuilderContext
-                {
-                    InitialCode = setup.InitialCode,
-                    Template = setup.HarnessTemplate.Template,
-                    FunctionName = setup.FunctionName ?? string.Empty,
-                    LanguageVersionId = setup.LanguageVersionId,
-                    Inputs = tc.Input,
-                    ExpectedOutput = tc.ExpectedOutput,
-                });
-
-            var buildResults = codeBuilderService.Build(builderContexts);
-
-            return new CodeExecutionContext
-            {
-                SubmissionId = submissionOutbox.SubmissionId,
-                Setup = setup,
-                Code = submissionOutbox.Submission.Code,
-                CreatedById = submissionOutbox.Submission.CreatedById,
-                BuiltResults = buildResults.Value,
-            };
-        });
-
-        if (!executionContexts.Any())
+        if (!submissionOutboxResults.IsSuccess)
         {
             return;
         }
 
-        var results = await codeExecutionService.ExecuteAsync(executionContexts, cancellationToken);
+        var submissionThatNeedPolling = submissionOutboxResults.Value.Where(outbox =>
+            outbox.Type == SubmissionOutboxType.PollJudge0Result
+        );
 
-        await submissionRepository.BulkUpsertResultsAsync(results.Value, cancellationToken);
+        var tokens = submissionThatNeedPolling.Select(outbox => outbox.Submission);
 
-        var submissionOutboxesThatNeedToPoll = submissionOutboxResult.Value.Where(s =>
-            s.Type == SubmissionOutboxType.PollJudge0Result
+        var polledResults = await codeExecutionService.GetSubmissionResultsAsync(
+            tokens,
+            cancellationToken
+        );
+
+        if (!polledResults.IsSuccess || !polledResults.Value.Any())
+        {
+            return;
+        }
+
+        await submissionRepository.BulkUpsertResultsAsync(
+            polledResults.Value.SelectMany(s => s.Results),
+            cancellationToken
         );
     }
 }

@@ -15,4 +15,10 @@ public interface ISubmissionRepository
     Task<IEnumerable<SubmissionOutboxModel>> GetSubmissionOutboxesAsync(
         CancellationToken cancellationToken
     );
+
+    Task MarkOutboxesAsPollingAsync(
+        IEnumerable<Guid> outboxIds,
+        DateTime now,
+        CancellationToken cancellationToken
+    );
 }

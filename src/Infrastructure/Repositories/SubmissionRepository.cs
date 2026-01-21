@@ -85,7 +85,9 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
     )
     {
         return await db
-            .SubmissionOutbox.Where(outbox => outbox.FinalizedOn == null)
+            .SubmissionOutbox.Where(outbox =>
+                outbox.FinalizedOn == null && outbox.AttemptCount < MaxRetryCount
+            )
             .Include(outbox => outbox.Submission)
             .Select(
                 (
@@ -120,4 +122,33 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
             )
             .ToListAsync(cancellationToken);
     }
+
+    public async Task MarkOutboxesAsPollingAsync(
+        IEnumerable<Guid> outboxIds,
+        DateTime now,
+        CancellationToken cancellationToken
+    )
+    {
+        await db
+            .SubmissionOutbox.Where(o => outboxIds.Contains(o.Id))
+            .ExecuteUpdateAsync(
+                setters =>
+                    setters
+                        .SetProperty(o => o.AttemptCount, o => o.AttemptCount + 1)
+                        .SetProperty(
+                            o => o.SubmissionOutboxStatusId,
+                            (int)SubmissionOutboxStatus.Processing
+                        )
+                        .SetProperty(
+                            o => o.SubmissionOutboxTypeId,
+                            (int)SubmissionOutboxType.PollJudge0Result
+                        )
+                        .SetProperty(o => o.ProcessOn, now)
+                        .SetProperty(o => o.NextAttemptOn, (DateTime?)null)
+                        .SetProperty(o => o.LastError, (string?)null),
+                cancellationToken
+            );
+    }
+
+    private static readonly int MaxRetryCount = 5;
 }
