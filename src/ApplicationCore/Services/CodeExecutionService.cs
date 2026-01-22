@@ -15,71 +15,76 @@ public sealed class CodeExecutionService(IJudge0Client judge0Client) : ICodeExec
     )
     {
         var contextList = contexts.ToList();
-        if (!contextList.Any())
+        if (contextList.Count == 0)
+        {
             return Result.Success(Enumerable.Empty<SubmissionModel>());
+        }
 
-        var submissions = contextList.ToDictionary(
-            c => c.SubmissionId,
-            c => SubmissionModel.Create(c.SubmissionId, c.CreatedById)
-        );
-
-        var requests = new List<Judge0SubmissionRequest>();
-        var map = new List<PendingResult>();
+        var submissions = new List<SubmissionModel>();
+        var judge0Requests = new List<Judge0SubmissionRequest>();
+        var indexMap = new List<(List<SubmissionResult> Results, int ResultIndex)>();
 
         foreach (var context in contextList)
         {
-            var submission = submissions[context.SubmissionId];
+            var results = new List<SubmissionResult>();
 
-            var built = context.BuiltResults.ToList();
-            for (int i = 0; i < built.Count; i++)
+            foreach (var buildResult in context.BuiltResults)
             {
-                var br = built[i];
-
-                requests.Add(
+                judge0Requests.Add(
                     new Judge0SubmissionRequest
                     {
-                        LanguageId = br.LanguageVersionId,
-                        SourceCode = br.SourceCode,
-                        StdIn = br.Inputs,
-                        ExpectedOutput = br.ExpectedOutput,
+                        LanguageId = 102,
+                        SourceCode = context.Code,
+                        StdIn = buildResult.Inputs,
+                        ExpectedOutput = buildResult.ExpectedOutput,
                     }
                 );
 
-                map.Add(new PendingResult(context.SubmissionId, i));
+                results.Add(new SubmissionResult { Status = SubmissionStatus.InQueue });
 
-                submission.AddResult(
-                    new SubmissionResult
-                    {
-                        Status = SubmissionStatus.InQueue,
-                        StartedAt = DateTime.UtcNow,
-                    }
-                );
+                indexMap.Add((results, results.Count - 1));
             }
+
+            var submission = new SubmissionModel
+            {
+                Id = context.SubmissionId ?? Guid.NewGuid(),
+                CreatedById = context.CreatedById,
+                Results = results,
+            };
+
+            submissions.Add(submission);
         }
 
-        var submitResult = await judge0Client.SubmitAsync(requests, cancellationToken);
-
-        if (!submitResult.IsSuccess)
+        if (!judge0Requests.Any())
         {
-            return Result.Error(submitResult.Errors.ToString());
+            return Result.Success<IEnumerable<SubmissionModel>>(submissions);
         }
 
-        var tokens = submitResult.Value.ToList();
+        var judge0Response = await judge0Client.SubmitAsync(judge0Requests, cancellationToken);
 
-        if (tokens.Count != map.Count)
+        if (!judge0Response.IsSuccess)
         {
-            return Result.Error("Judge0 token count mismatch.");
+            return Result.Error("Failed to submit code for execution.");
         }
 
-        for (int i = 0; i < tokens.Count; i++)
+        var responseList = judge0Response.Value.ToList();
+
+        if (responseList.Count != indexMap.Count)
         {
-            var pending = map[i];
-            var submission = submissions[pending.SubmissionId];
-
-            submission.Results[pending.ResultIndex].Id = tokens[i].Token;
+            return Result.Error("Mismatch between Judge0 responses and submitted jobs.");
         }
 
-        return Result.Success<IEnumerable<SubmissionModel>>(submissions.Values);
+        for (int i = 0; i < responseList.Count; i++)
+        {
+            var response = responseList[i];
+            (var results, int resultIndex) = indexMap[i];
+
+            var result = results[resultIndex];
+            result.Id = response.Token;
+            result.Status = MapJudge0SubmissionStatus(response.Status);
+        }
+
+        return Result.Success<IEnumerable<SubmissionModel>>(submissions);
     }
 
     public async Task<Result<IEnumerable<SubmissionModel>>> GetSubmissionResultsAsync(
@@ -115,8 +120,8 @@ public sealed class CodeExecutionService(IJudge0Client judge0Client) : ICodeExec
 
             submissionResult.Status = MapJudge0SubmissionStatus(result.Status);
             submissionResult.Stdout = result.Stdout;
-            submissionResult.RuntimeMs = result.RuntimeMs.HasValue
-                ? (int?)Math.Ceiling(result.RuntimeMs.Value)
+            submissionResult.RuntimeMs = decimal.TryParse(result.Time, out decimal seconds)
+                ? (int)Math.Ceiling(seconds * 1000)
                 : null;
             submissionResult.MemoryKb = result.MemoryKb;
             submissionResult.FinishedAt = DateTime.UtcNow;

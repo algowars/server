@@ -1,15 +1,11 @@
-using ApplicationCore.Domain.CodeExecution;
 using ApplicationCore.Domain.Submissions.Outbox;
 using ApplicationCore.Interfaces.Repositories;
 using ApplicationCore.Interfaces.Services;
-using Ardalis.Result;
 
 namespace Infrastructure.Job.Jobs;
 
 public sealed class SubmissionPollerJob(
     ISubmissionAppService submissionAppService,
-    IProblemAppService problemAppService,
-    ICodeBuilderService codeBuilderService,
     ICodeExecutionService codeExecutionService,
     ISubmissionRepository submissionRepository
 ) : IBackgroundJob
@@ -31,10 +27,10 @@ public sealed class SubmissionPollerJob(
             outbox.Type == SubmissionOutboxType.PollJudge0Result
         );
 
-        var tokens = submissionThatNeedPolling.Select(outbox => outbox.Submission);
+        var submissions = submissionThatNeedPolling.Select(outbox => outbox.Submission);
 
         var polledResults = await codeExecutionService.GetSubmissionResultsAsync(
-            tokens,
+            submissions,
             cancellationToken
         );
 
@@ -43,9 +39,6 @@ public sealed class SubmissionPollerJob(
             return;
         }
 
-        await submissionRepository.BulkUpsertResultsAsync(
-            polledResults.Value.SelectMany(s => s.Results),
-            cancellationToken
-        );
+        await submissionRepository.BulkUpsertResultsAsync(polledResults.Value, cancellationToken);
     }
 }

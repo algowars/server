@@ -4,9 +4,9 @@ public sealed class SubmissionModel
 {
     public required Guid Id { get; init; }
 
-    public required string Code { get; init; }
+    public string? Code { get; set; }
 
-    public required int ProblemSetupId { get; init; }
+    public int ProblemSetupId { get; init; }
 
     public DateTime CreatedOn { get; init; }
 

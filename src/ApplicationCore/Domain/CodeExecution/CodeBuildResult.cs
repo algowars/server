@@ -8,7 +8,7 @@ public sealed class CodeBuildResult
 
     public string? Inputs { get; init; }
 
-    public string? ExpectedOutputs { get; init; }
+    public string? ExpectedOutput { get; init; }
 
     public string? InputTypeName { get; init; }
 }

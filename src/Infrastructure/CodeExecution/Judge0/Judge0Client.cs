@@ -145,7 +145,7 @@ public sealed class Judge0Client(HttpClient http) : IJudge0Client
                 return Result.Error(body);
             }
 
-            var details = await resp.Content.ReadFromJsonAsync<Judge0SubmissionResponse[]>(
+            var details = await resp.Content.ReadFromJsonAsync<Judge0BatchGetResponse>(
                 cancellationToken: ct
             );
 
@@ -155,7 +155,7 @@ public sealed class Judge0Client(HttpClient http) : IJudge0Client
             }
 
             return Result.Success(
-                details.Select(d => new Judge0SubmissionResponse
+                details.Submissions.Select(d => new Judge0SubmissionResponse
                 {
                     Token = d.Token,
                     Status = new Judge0StatusModel { Id = (int)SubmissionStatus.InQueue },

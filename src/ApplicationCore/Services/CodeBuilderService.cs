@@ -31,7 +31,7 @@ public sealed class CodeBuilderService : ICodeBuilderService
                     FinalCode = finalCode,
                     FunctionName = context.FunctionName,
                     Inputs = context.Inputs,
-                    ExpectedOutputs = context.ExpectedOutput,
+                    ExpectedOutput = context.ExpectedOutput,
                     InputTypeName = context.InputTypeName,
                 }
             );

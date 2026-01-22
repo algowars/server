@@ -17,7 +17,7 @@ public sealed record Judge0SubmissionResponse
     public string? Message { get; init; }
 
     [JsonPropertyName("time")]
-    public decimal? RuntimeMs { get; init; }
+    public string? Time { get; init; }
 
     [JsonPropertyName("memory")]
     public int? MemoryKb { get; init; }
