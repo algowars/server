@@ -3,41 +3,15 @@ using ApplicationCore.Domain.CodeExecution.Judge0;
 using ApplicationCore.Domain.Submissions;
 using ApplicationCore.Interfaces.Clients;
 using Ardalis.Result;
+using Infrastructure.Configuration;
+using Microsoft.Extensions.Options;
 
 namespace Infrastructure.CodeExecution.Judge0;
 
-public sealed class Judge0Client(HttpClient http) : IJudge0Client
+public sealed class Judge0Client(HttpClient http, IOptions<Judge0Options> options) : IJudge0Client
 {
-    public async Task<Result<Judge0SubmissionResponse>> SubmitAsync(
-        Judge0SubmissionRequest req,
-        CancellationToken ct
-    )
-    {
-        try
-        {
-            string uri = "submissions?base64_encoded=false&wait=false";
-
-            using var resp = await http.PostAsJsonAsync(uri, ToPayload(req), ct);
-            if (!resp.IsSuccessStatusCode)
-            {
-                string body = await resp.Content.ReadAsStringAsync(ct);
-                return Result.Error(body);
-            }
-
-            var token = await resp.Content.ReadFromJsonAsync<Guid>(cancellationToken: ct);
-            return Result.Success(
-                new Judge0SubmissionResponse
-                {
-                    Token = token,
-                    Status = new Judge0StatusModel { Id = (int)SubmissionStatus.InQueue },
-                }
-            );
-        }
-        catch (Exception ex)
-        {
-            return Result.Error(ex.Message);
-        }
-    }
+    private readonly HttpClient _http = http;
+    private readonly IOptions<Judge0Options> _options;
 
     public async Task<Result<IEnumerable<Judge0SubmissionResponse>>> SubmitAsync(
         IEnumerable<Judge0SubmissionRequest> reqs,
@@ -97,32 +71,6 @@ public sealed class Judge0Client(HttpClient http) : IJudge0Client
         }
     }
 
-    public async Task<Result<Judge0SubmissionResponse>> GetAsync(Guid token, CancellationToken ct)
-    {
-        try
-        {
-            string uri = $"submissions/{token}?base64_encoded=false";
-            using var resp = await http.GetAsync(uri, ct);
-
-            if (!resp.IsSuccessStatusCode)
-            {
-                string body = await resp.Content.ReadAsStringAsync(ct);
-                return Result.Error(body);
-            }
-
-            var detail = await resp.Content.ReadFromJsonAsync<Judge0SubmissionResponse>(
-                cancellationToken: ct
-            );
-            return detail is null
-                ? Result.Error("Judge0 returned empty submission detail.")
-                : Result.Success(detail);
-        }
-        catch (Exception ex)
-        {
-            return Result.Error(ex.Message);
-        }
-    }
-
     public async Task<Result<IEnumerable<Judge0SubmissionResponse>>> GetAsync(
         IEnumerable<Guid> tokens,
         CancellationToken ct
@@ -138,7 +86,6 @@ public sealed class Judge0Client(HttpClient http) : IJudge0Client
         {
             string uri = $"submissions/batch?tokens={string.Join(",", list)}&base64_encoded=false";
             using var resp = await http.GetAsync(uri, ct);
-
             if (!resp.IsSuccessStatusCode)
             {
                 string body = await resp.Content.ReadAsStringAsync(ct);

@@ -12,7 +12,7 @@ public interface ISubmissionAppService
         CancellationToken cancellationToken
     );
 
-    public Task<Result<IEnumerable<SubmissionOutboxModel>>> GetOutboxesAsync(
+    Task<Result<IEnumerable<SubmissionOutboxModel>>> GetExecutionOutboxesAsync(
         CancellationToken cancellationToken
     );
 }

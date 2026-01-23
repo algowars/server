@@ -12,8 +12,6 @@ using PublicApi.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
-Console.WriteLine(builder.Environment.EnvironmentName);
-
 builder.Services.AddApplicationCore();
 builder.Services.AddInfrastructure(builder.Configuration);
 

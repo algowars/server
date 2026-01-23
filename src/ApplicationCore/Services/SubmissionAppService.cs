@@ -21,11 +21,11 @@ public sealed class SubmissionAppService(IMediator mediator) : ISubmissionAppSer
         return mediator.Send(command, cancellationToken);
     }
 
-    public Task<Result<IEnumerable<SubmissionOutboxModel>>> GetOutboxesAsync(
+    public Task<Result<IEnumerable<SubmissionOutboxModel>>> GetExecutionOutboxesAsync(
         CancellationToken cancellationToken
     )
     {
-        var query = new GetSubmissionOutboxItemsQuery();
+        var query = new GetExecutionOutboxesAsync();
 
         return mediator.Send(query, cancellationToken);
     }
