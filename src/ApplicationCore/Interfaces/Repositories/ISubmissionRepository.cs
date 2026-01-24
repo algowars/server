@@ -1,4 +1,5 @@
-﻿using ApplicationCore.Domain.Submissions;
+﻿using ApplicationCore.Common.Pagination;
+using ApplicationCore.Domain.Submissions;
 using ApplicationCore.Domain.Submissions.Outbox;
 
 namespace ApplicationCore.Interfaces.Repositories;
@@ -31,8 +32,9 @@ public interface ISubmissionRepository
         CancellationToken cancellationToken
     );
 
-    Task<ProblemSubmissions?> GetProblemSubmissionsAsync(
+    Task<PaginatedResult<SubmissionModel>> GetProblemSubmissions(
         Guid problemId,
+        PaginationRequest pagination,
         CancellationToken cancellationToken
     );
 }

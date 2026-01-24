@@ -1,4 +1,8 @@
-﻿using ApplicationCore.Domain.Accounts;
+﻿using System.Collections.Immutable;
+using System.Linq;
+using System.Linq.Expressions;
+using ApplicationCore.Common.Pagination;
+using ApplicationCore.Domain.Accounts;
 using ApplicationCore.Domain.Problems;
 using ApplicationCore.Domain.Submissions;
 using ApplicationCore.Domain.Submissions.Outbox;
@@ -94,38 +98,8 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
                 outbox.SubmissionOutboxTypeId == (int)SubmissionOutboxType.ExecuteSubmission
             )
             .Include(outbox => outbox.Submission)
-            .Select(
-                (
-                    outbox => new SubmissionOutboxModel
-                    {
-                        Id = outbox.Id,
-                        Status = (SubmissionOutboxStatus)outbox.SubmissionOutboxStatusId,
-                        Type = (SubmissionOutboxType)outbox.SubmissionOutboxTypeId,
-                        SubmissionId = outbox.SubmissionId,
-                        Submission = new SubmissionModel
-                        {
-                            Id = outbox.Submission!.Id,
-                            ProblemSetupId = outbox.Submission.ProblemSetupId,
-                            Code = outbox.Submission.Code,
-                            CreatedOn = outbox.Submission.CreatedOn,
-                            CreatedById = outbox.Submission.CreatedById,
-                            Results = outbox.Submission.Results.Select(
-                                result => new SubmissionResult
-                                {
-                                    Id = result.Id,
-                                    Status = (SubmissionStatus)result.StatusId,
-                                    FinishedAt = result.FinishedAt,
-                                    MemoryKb = result.MemoryKb,
-                                    RuntimeMs = result.RuntimeMs,
-                                    StartedAt = result.StartedAt,
-                                    Stdout = result.Stdout,
-                                }
-                            ),
-                        },
-                    }
-                )
-            )
-            .ToListAsync(cancellationToken);
+            .Select(MapOutboxExpr)
+            .ToListAsync(cancellationToken: cancellationToken);
     }
 
     public async Task<IEnumerable<SubmissionOutboxModel>> GetSubmissionPollingOutboxesAsync(
@@ -140,82 +114,8 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
                 outbox.SubmissionOutboxTypeId == (int)SubmissionOutboxType.PollJudge0Result
             )
             .Include(outbox => outbox.Submission)
-            .Select(
-                (
-                    outbox => new SubmissionOutboxModel
-                    {
-                        Id = outbox.Id,
-                        Status = (SubmissionOutboxStatus)outbox.SubmissionOutboxStatusId,
-                        Type = (SubmissionOutboxType)outbox.SubmissionOutboxTypeId,
-                        SubmissionId = outbox.SubmissionId,
-                        Submission = new SubmissionModel
-                        {
-                            Id = outbox.Submission!.Id,
-                            ProblemSetupId = outbox.Submission.ProblemSetupId,
-                            Code = outbox.Submission.Code,
-                            CreatedOn = outbox.Submission.CreatedOn,
-                            CreatedById = outbox.Submission.CreatedById,
-                            Results = outbox.Submission.Results.Select(
-                                result => new SubmissionResult
-                                {
-                                    Id = result.Id,
-                                    Status = (SubmissionStatus)result.StatusId,
-                                    FinishedAt = result.FinishedAt,
-                                    MemoryKb = result.MemoryKb,
-                                    RuntimeMs = result.RuntimeMs,
-                                    StartedAt = result.StartedAt,
-                                    Stdout = result.Stdout,
-                                }
-                            ),
-                        },
-                    }
-                )
-            )
-            .ToListAsync(cancellationToken);
-    }
-
-    public async Task<ProblemSubmissions?> GetProblemSubmissionsAsync(
-        Guid problemId,
-        CancellationToken cancellationToken
-    )
-    {
-        return await db
-            .Problems.Where(problem => problem.Id == problemId)
-            .Select(problem => new ProblemSubmissions
-            {
-                Problem = new ProblemModel
-                {
-                    Id = problem.Id,
-                    Title = problem.Title,
-                    Slug = problem.Slug,
-                    Question = problem.Question,
-                    Difficulty = problem.Difficulty,
-                    CreatedOn = problem.CreatedOn,
-                    CreatedBy =
-                        problem.CreatedBy != null
-                            ? new AccountModel
-                            {
-                                Id = problem.CreatedBy.Id,
-                                Username = problem.CreatedBy.Username,
-                                ImageUrl = problem.CreatedBy.ImageUrl,
-                            }
-                            : null,
-                    Tags = problem.Tags.Select(tag => new TagModel
-                    {
-                        Id = tag.Id,
-                        Value = tag.Value,
-                    }),
-                },
-                Submissions = problem
-                    .ProblemSetups.SelectMany(setup => setup.Submissions)
-                    .Select(submission => new SubmissionModel
-                    {
-                        Id = submission.Id,
-                        Code = submission.Code,
-                        CompletedAt = submission.CompletedAt,
-                    }),
-            })
-            .SingleOrDefaultAsync(cancellationToken);
+            .Select(MapOutboxExpr)
+            .ToListAsync(cancellationToken: cancellationToken);
     }
 
     public async Task MarkOutboxesAsPollingAsync(
@@ -394,5 +294,87 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
             );
     }
 
+    public async Task<PaginatedResult<SubmissionModel>> GetProblemSubmissions(
+        Guid problemId,
+        PaginationRequest pagination,
+        CancellationToken cancellationToken
+    )
+    {
+        int page = pagination.Page > 0 ? pagination.Page : 1;
+        int size = pagination.Size > 0 ? pagination.Size : 10;
+
+        var baseQuery = db
+            .ProblemSetups.Where(ps => ps.ProblemId == problemId)
+            .SelectMany(ps => ps.Submissions);
+
+        int total = await baseQuery.CountAsync(cancellationToken: cancellationToken);
+
+        var ordered =
+            pagination.Direction == SortDirection.Asc
+                ? baseQuery.OrderBy(s => s.CreatedOn).ThenBy(s => s.Id)
+                : baseQuery.OrderByDescending(s => s.CreatedOn).ThenByDescending(s => s.Id);
+
+        var submissions = await ordered
+            .Skip((page - 1) * size)
+            .Take(size)
+            .Select(MapSubmissionExpr)
+            .ToListAsync(cancellationToken: cancellationToken);
+
+        return new PaginatedResult<SubmissionModel>
+        {
+            Results = submissions,
+            Total = total,
+            Page = page,
+            Size = size,
+        };
+    }
+
     private static readonly int MaxRetryCount = 5;
+
+    private static readonly Expression<
+        Func<SubmissionResultEntity, SubmissionResult>
+    > MapResultExpr = result => new SubmissionResult
+    {
+        Id = result.Id,
+        Status = (SubmissionStatus)result.StatusId,
+        FinishedAt = result.FinishedAt,
+        MemoryKb = result.MemoryKb,
+        RuntimeMs = result.RuntimeMs,
+        StartedAt = result.StartedAt,
+        Stdout = result.Stdout,
+    };
+
+    private static readonly Expression<Func<SubmissionEntity, SubmissionModel>> MapSubmissionExpr =
+        submission => new SubmissionModel
+        {
+            Id = submission.Id,
+            Code = submission.Code,
+            ProblemSetupId = submission.ProblemSetupId,
+            CreatedOn = submission.CreatedOn,
+            CompletedAt = submission.CompletedAt,
+            CreatedById = submission.CreatedById,
+            Results = submission.Results.AsQueryable().Select(MapResultExpr),
+        };
+
+    private static readonly Expression<
+        Func<SubmissionOutboxEntity, SubmissionOutboxModel>
+    > MapOutboxExpr = outbox => new SubmissionOutboxModel
+    {
+        Id = outbox.Id,
+        Status = (SubmissionOutboxStatus)outbox.SubmissionOutboxStatusId,
+        Type = (SubmissionOutboxType)outbox.SubmissionOutboxTypeId,
+        SubmissionId = outbox.SubmissionId,
+        Submission =
+            outbox.Submission == null
+                ? null!
+                : new SubmissionModel
+                {
+                    Id = outbox.Submission.Id,
+                    ProblemSetupId = outbox.Submission.ProblemSetupId,
+                    Code = outbox.Submission.Code,
+                    CreatedOn = outbox.Submission.CreatedOn,
+                    CreatedById = outbox.Submission.CreatedById,
+                    Results = outbox.Submission.Results.AsQueryable().Select(MapResultExpr),
+                },
+    };
 }

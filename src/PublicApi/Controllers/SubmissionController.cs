@@ -1,4 +1,5 @@
-﻿using ApplicationCore.Interfaces.Services;
+﻿using ApplicationCore.Common.Pagination;
+using ApplicationCore.Interfaces.Services;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -14,6 +15,23 @@ public sealed class SubmissionController(
     ISubmissionAppService submissionAppService
 ) : BaseApiController
 {
+    [HttpGet("problem/{problemId:Guid}")]
+    [Authorize]
+    public async Task<IActionResult> GetProblemSubmissionsAsync(
+        Guid problemId,
+        [FromQuery] PaginationRequest paginationRequest,
+        CancellationToken cancellationToken
+    )
+    {
+        return ToActionResult(
+            await submissionAppService.GetSubmissionsAsync(
+                problemId,
+                paginationRequest,
+                cancellationToken
+            )
+        );
+    }
+
     [HttpPost("execute")]
     [Authorize]
     public async Task<IActionResult> CreateSubmissionAsync(

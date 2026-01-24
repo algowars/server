@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using ApplicationCore.Domain.Submissions;
 using Infrastructure.Persistence.Entities.Language;
+using Infrastructure.Persistence.Entities.Submission;
 using Infrastructure.Persistence.Entities.TestSuite;
 
 namespace Infrastructure.Persistence.Entities.Problem;
@@ -42,5 +43,5 @@ public sealed class ProblemSetupEntity : BaseAuditableEntity
 
     public IEnumerable<TestSuiteEntity> TestSuites { get; set; } = [];
 
-    public IEnumerable<SubmissionModel> Submissions { get; set; } = [];
+    public IEnumerable<SubmissionEntity> Submissions { get; set; } = [];
 }
