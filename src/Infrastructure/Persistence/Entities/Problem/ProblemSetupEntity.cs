@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using ApplicationCore.Domain.Submissions;
 using Infrastructure.Persistence.Entities.Language;
 using Infrastructure.Persistence.Entities.TestSuite;
 
@@ -40,4 +41,6 @@ public sealed class ProblemSetupEntity : BaseAuditableEntity
     public HarnessTemplateEntity? HarnessTemplate { get; set; }
 
     public IEnumerable<TestSuiteEntity> TestSuites { get; set; } = [];
+
+    public IEnumerable<SubmissionModel> Submissions { get; set; } = [];
 }

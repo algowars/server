@@ -13,8 +13,4 @@ public interface ISubmissionAppService
         Guid createdById,
         CancellationToken cancellationToken
     );
-
-    Task<Result<IEnumerable<SubmissionOutboxModel>>> GetExecutionOutboxesAsync(
-        CancellationToken cancellationToken
-    );
 }

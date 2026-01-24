@@ -1,4 +1,6 @@
-﻿using ApplicationCore.Domain.Submissions;
+﻿using ApplicationCore.Domain.Accounts;
+using ApplicationCore.Domain.Problems;
+using ApplicationCore.Domain.Submissions;
 using ApplicationCore.Domain.Submissions.Outbox;
 using ApplicationCore.Interfaces.Repositories;
 using EFCore.BulkExtensions;
@@ -170,6 +172,50 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
                 )
             )
             .ToListAsync(cancellationToken);
+    }
+
+    public async Task<ProblemSubmissions?> GetProblemSubmissionsAsync(
+        Guid problemId,
+        CancellationToken cancellationToken
+    )
+    {
+        return await db
+            .Problems.Where(problem => problem.Id == problemId)
+            .Select(problem => new ProblemSubmissions
+            {
+                Problem = new ProblemModel
+                {
+                    Id = problem.Id,
+                    Title = problem.Title,
+                    Slug = problem.Slug,
+                    Question = problem.Question,
+                    Difficulty = problem.Difficulty,
+                    CreatedOn = problem.CreatedOn,
+                    CreatedBy =
+                        problem.CreatedBy != null
+                            ? new AccountModel
+                            {
+                                Id = problem.CreatedBy.Id,
+                                Username = problem.CreatedBy.Username,
+                                ImageUrl = problem.CreatedBy.ImageUrl,
+                            }
+                            : null,
+                    Tags = problem.Tags.Select(tag => new TagModel
+                    {
+                        Id = tag.Id,
+                        Value = tag.Value,
+                    }),
+                },
+                Submissions = problem
+                    .ProblemSetups.SelectMany(setup => setup.Submissions)
+                    .Select(submission => new SubmissionModel
+                    {
+                        Id = submission.Id,
+                        Code = submission.Code,
+                        CompletedAt = submission.CompletedAt,
+                    }),
+            })
+            .SingleOrDefaultAsync(cancellationToken);
     }
 
     public async Task MarkOutboxesAsPollingAsync(

@@ -16,18 +16,18 @@ public sealed class SubmissionExecutorJob(
 
     public async Task ExecuteAsync(CancellationToken cancellationToken)
     {
-        var outboxSubmissionsResult = await submissionAppService.GetExecutionOutboxesAsync(
+        var outboxSubmissions = await submissionRepository.GetSubmissionExecutionOutboxesAsync(
             cancellationToken
         );
 
         var setupsMap = (
             await problemAppService.GetProblemSetupsForExecutionAsync(
-                outboxSubmissionsResult.Value.Select(s => s.Submission.ProblemSetupId),
+                outboxSubmissions.Select(s => s.Submission.ProblemSetupId),
                 cancellationToken
             )
         ).Value.ToDictionary(setup => setup.Id);
 
-        var executionContexts = outboxSubmissionsResult.Value.Select(submissionOutbox =>
+        var executionContexts = outboxSubmissions.Select(submissionOutbox =>
         {
             var setup = setupsMap[submissionOutbox.Submission.ProblemSetupId];
 
@@ -60,7 +60,7 @@ public sealed class SubmissionExecutorJob(
             return;
         }
 
-        var outboxIds = outboxSubmissionsResult.Value.Select(o => o.Id).ToList();
+        var outboxIds = outboxSubmissions.Select(o => o.Id).ToList();
         var now = DateTime.UtcNow;
         await submissionRepository.IncrementOutboxesCount(outboxIds, now, cancellationToken);
 

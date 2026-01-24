@@ -30,4 +30,9 @@ public interface ISubmissionRepository
     Task<IEnumerable<SubmissionOutboxModel>> GetSubmissionPollingOutboxesAsync(
         CancellationToken cancellationToken
     );
+
+    Task<ProblemSubmissions?> GetProblemSubmissionsAsync(
+        Guid problemId,
+        CancellationToken cancellationToken
+    );
 }

@@ -68,13 +68,13 @@ public static class DependencyInjection
             jobs.Register<SubmissionPollerJob>(
                 jobType: BackgroundJobType.SubmissionPoller,
                 interval: GetInterval("SubmissionPoller", 5),
-                enabled: GetEnabled("SubmissionPoller", true)
+                enabled: GetEnabled("SubmissionPoller", false)
             );
 
             jobs.Register<SubmissionExecutorJob>(
                 jobType: BackgroundJobType.SubmissionExecutor,
                 interval: GetInterval("SubmissionExecutor", 5),
-                enabled: GetEnabled("SubmissionExecutor", true)
+                enabled: GetEnabled("SubmissionExecutor", false)
             );
         });
 
