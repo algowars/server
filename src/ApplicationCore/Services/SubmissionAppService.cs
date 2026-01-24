@@ -1,7 +1,8 @@
 ﻿using ApplicationCore.Commands.Submissions.CreateSubmission;
+using ApplicationCore.Domain.Submissions;
 using ApplicationCore.Domain.Submissions.Outbox;
 using ApplicationCore.Interfaces.Services;
-using ApplicationCore.Queries.Submissions.GetSubmissionOutboxItems;
+using ApplicationCore.Queries.Submissions.GetSubmissionExecutionOutboxes;
 using Ardalis.Result;
 using MediatR;
 
@@ -25,7 +26,7 @@ public sealed class SubmissionAppService(IMediator mediator) : ISubmissionAppSer
         CancellationToken cancellationToken
     )
     {
-        var query = new GetExecutionOutboxesAsync();
+        var query = new GetSubmissionExecutionOutboxesCommand();
 
         return mediator.Send(query, cancellationToken);
     }

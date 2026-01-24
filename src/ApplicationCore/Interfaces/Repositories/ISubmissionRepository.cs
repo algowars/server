@@ -7,18 +7,27 @@ public interface ISubmissionRepository
 {
     Task SaveAsync(SubmissionModel submission, CancellationToken cancellationToken);
 
-    Task BulkUpsertResultsAsync(
+    Task ProcessSubmissionExecution(
         IEnumerable<SubmissionModel> submissions,
         CancellationToken cancellationToken
     );
 
-    Task<IEnumerable<SubmissionOutboxModel>> GetSubmissionOutboxesAsync(
+    Task ProcessSubmissionPolling(
+        IEnumerable<SubmissionModel> submissions,
         CancellationToken cancellationToken
     );
 
-    Task MarkOutboxesAsPollingAsync(
+    Task IncrementOutboxesCount(
         IEnumerable<Guid> outboxIds,
         DateTime now,
+        CancellationToken cancellationToken
+    );
+
+    Task<IEnumerable<SubmissionOutboxModel>> GetSubmissionExecutionOutboxesAsync(
+        CancellationToken cancellationToken
+    );
+
+    Task<IEnumerable<SubmissionOutboxModel>> GetSubmissionPollingOutboxesAsync(
         CancellationToken cancellationToken
     );
 }

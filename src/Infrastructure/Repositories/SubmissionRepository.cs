@@ -22,7 +22,7 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
                 {
                     Id = submission.Id,
                     ProblemSetupId = submission.ProblemSetupId,
-                    Code = submission.Code,
+                    Code = submission.Code ?? "",
                     CreatedOn = DateTime.UtcNow,
                     CreatedById = submission.CreatedById,
                 },
@@ -43,7 +43,7 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
             await db.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
         }
-        catch (Exception ex)
+        catch
         {
             await transaction.RollbackAsync(cancellationToken);
         }
@@ -80,13 +80,62 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
         await db.BulkInsertOrUpdateAsync(resultEntities, cancellationToken: cancellationToken);
     }
 
-    public async Task<IEnumerable<SubmissionOutboxModel>> GetSubmissionOutboxesAsync(
+    public async Task<IEnumerable<SubmissionOutboxModel>> GetSubmissionExecutionOutboxesAsync(
         CancellationToken cancellationToken
     )
     {
         return await db
             .SubmissionOutbox.Where(outbox =>
                 outbox.FinalizedOn == null && outbox.AttemptCount < MaxRetryCount
+            )
+            .Where(outbox =>
+                outbox.SubmissionOutboxTypeId == (int)SubmissionOutboxType.ExecuteSubmission
+            )
+            .Include(outbox => outbox.Submission)
+            .Select(
+                (
+                    outbox => new SubmissionOutboxModel
+                    {
+                        Id = outbox.Id,
+                        Status = (SubmissionOutboxStatus)outbox.SubmissionOutboxStatusId,
+                        Type = (SubmissionOutboxType)outbox.SubmissionOutboxTypeId,
+                        SubmissionId = outbox.SubmissionId,
+                        Submission = new SubmissionModel
+                        {
+                            Id = outbox.Submission!.Id,
+                            ProblemSetupId = outbox.Submission.ProblemSetupId,
+                            Code = outbox.Submission.Code,
+                            CreatedOn = outbox.Submission.CreatedOn,
+                            CreatedById = outbox.Submission.CreatedById,
+                            Results = outbox.Submission.Results.Select(
+                                result => new SubmissionResult
+                                {
+                                    Id = result.Id,
+                                    Status = (SubmissionStatus)result.StatusId,
+                                    FinishedAt = result.FinishedAt,
+                                    MemoryKb = result.MemoryKb,
+                                    RuntimeMs = result.RuntimeMs,
+                                    StartedAt = result.StartedAt,
+                                    Stdout = result.Stdout,
+                                }
+                            ),
+                        },
+                    }
+                )
+            )
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IEnumerable<SubmissionOutboxModel>> GetSubmissionPollingOutboxesAsync(
+        CancellationToken cancellationToken
+    )
+    {
+        return await db
+            .SubmissionOutbox.Where(outbox =>
+                outbox.FinalizedOn == null && outbox.AttemptCount < MaxRetryCount
+            )
+            .Where(outbox =>
+                outbox.SubmissionOutboxTypeId == (int)SubmissionOutboxType.PollJudge0Result
             )
             .Include(outbox => outbox.Submission)
             .Select(
@@ -146,7 +195,156 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
                         .SetProperty(o => o.ProcessOn, now)
                         .SetProperty(o => o.NextAttemptOn, (DateTime?)null)
                         .SetProperty(o => o.LastError, (string?)null),
-                cancellationToken
+                cancellationToken: cancellationToken
+            );
+    }
+
+    public async Task ProcessSubmissionExecution(
+        IEnumerable<SubmissionModel> submissions,
+        CancellationToken cancellationToken
+    )
+    {
+        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+
+        try
+        {
+            var resultEntities = submissions
+                .SelectMany(
+                    s => s.Results,
+                    (s, sr) =>
+                        new SubmissionResultEntity
+                        {
+                            Id = sr.Id,
+                            SubmissionId = s.Id,
+                            StatusId = (int)sr.Status,
+                            StartedAt = sr.StartedAt,
+                            FinishedAt = sr.FinishedAt,
+                            Stdout = sr.Stdout,
+                            RuntimeMs = sr.RuntimeMs,
+                            MemoryKb = sr.MemoryKb,
+                        }
+                )
+                .ToList();
+
+            if (resultEntities.Count != 0)
+            {
+                await db.BulkInsertOrUpdateAsync(
+                    resultEntities,
+                    cancellationToken: cancellationToken
+                );
+
+                var submissionIds = resultEntities
+                    .Select(re => re.SubmissionId)
+                    .Distinct()
+                    .ToList();
+
+                await db
+                    .SubmissionOutbox.Where(outbox =>
+                        submissionIds.Contains(outbox.SubmissionId)
+                        && outbox.SubmissionOutboxTypeId
+                            == (int)SubmissionOutboxType.ExecuteSubmission
+                    )
+                    .ExecuteUpdateAsync(
+                        setters =>
+                            setters
+                                .SetProperty(
+                                    o => o.SubmissionOutboxTypeId,
+                                    (int)SubmissionOutboxType.PollJudge0Result
+                                )
+                                .SetProperty(o => o.AttemptCount, _ => 0),
+                        cancellationToken: cancellationToken
+                    );
+            }
+
+            await transaction.CommitAsync(cancellationToken);
+        }
+        catch
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            throw;
+        }
+    }
+
+    public async Task ProcessSubmissionPolling(
+        IEnumerable<SubmissionModel> submissions,
+        CancellationToken cancellationToken
+    )
+    {
+        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+
+        try
+        {
+            var resultEntities = submissions
+                .SelectMany(
+                    s => s.Results,
+                    (s, sr) =>
+                        new SubmissionResultEntity
+                        {
+                            Id = sr.Id,
+                            SubmissionId = s.Id,
+                            StatusId = (int)sr.Status,
+                            StartedAt = sr.StartedAt,
+                            FinishedAt = sr.FinishedAt,
+                            Stdout = sr.Stdout,
+                            RuntimeMs = sr.RuntimeMs,
+                            MemoryKb = sr.MemoryKb,
+                        }
+                )
+                .ToList();
+
+            if (resultEntities.Count != 0)
+            {
+                await db.BulkInsertOrUpdateAsync(
+                    resultEntities,
+                    cancellationToken: cancellationToken
+                );
+
+                var submissionIds = resultEntities
+                    .Select(re => re.SubmissionId)
+                    .Distinct()
+                    .ToList();
+
+                await db
+                    .SubmissionOutbox.Where(outbox =>
+                        submissionIds.Contains(outbox.SubmissionId)
+                        && outbox.SubmissionOutboxTypeId
+                            == (int)SubmissionOutboxType.PollJudge0Result
+                    )
+                    .ExecuteUpdateAsync(
+                        setters =>
+                            setters.SetProperty(
+                                o => o.SubmissionOutboxTypeId,
+                                (int)SubmissionOutboxType.PollJudge0Result
+                            ),
+                        cancellationToken: cancellationToken
+                    );
+            }
+
+            await transaction.CommitAsync(cancellationToken);
+        }
+        catch
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            throw;
+        }
+    }
+
+    public Task IncrementOutboxesCount(
+        IEnumerable<Guid> outboxIds,
+        DateTime now,
+        CancellationToken cancellationToken
+    )
+    {
+        return db
+            .SubmissionOutbox.Where(o => outboxIds.Contains(o.Id))
+            .ExecuteUpdateAsync(
+                setters =>
+                    setters
+                        .SetProperty(o => o.AttemptCount, o => o.AttemptCount + 1)
+                        .SetProperty(o => o.ProcessOn, now)
+                        .SetProperty(o => o.NextAttemptOn, (DateTime?)null)
+                        .SetProperty(o => o.LastError, (string?)null),
+                cancellationToken: cancellationToken
             );
     }
 

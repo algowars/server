@@ -51,19 +51,30 @@ public static class DependencyInjection
         services.AddScoped<ISubmissionRepository, SubmissionRepository>();
 
         services.AddScoped<SubmissionPollerJob>();
+        services.AddScoped<SubmissionExecutorJob>();
+
+        var jobsSection = configuration.GetSection("BackgroundJobs");
+
+        bool GetEnabled(string jobKey, bool defaultEnabled) =>
+            jobsSection.GetValue<bool?>($"{jobKey}:Enabled") ?? defaultEnabled;
+
+        TimeSpan GetInterval(string jobKey, double defaultSeconds) =>
+            TimeSpan.FromSeconds(
+                jobsSection.GetValue<double?>($"{jobKey}:IntervalSeconds") ?? defaultSeconds
+            );
 
         services.AddBackgroundJobs(jobs =>
         {
             jobs.Register<SubmissionPollerJob>(
                 jobType: BackgroundJobType.SubmissionPoller,
-                interval: TimeSpan.FromSeconds(5),
-                enabled: true
+                interval: GetInterval("SubmissionPoller", 5),
+                enabled: GetEnabled("SubmissionPoller", true)
             );
 
-            jobs.Register<SubmissionExecutorJobOld>(
+            jobs.Register<SubmissionExecutorJob>(
                 jobType: BackgroundJobType.SubmissionExecutor,
-                interval: TimeSpan.FromSeconds(5),
-                enabled: true
+                interval: GetInterval("SubmissionExecutor", 5),
+                enabled: GetEnabled("SubmissionExecutor", true)
             );
         });
 

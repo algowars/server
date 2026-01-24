@@ -14,20 +14,11 @@ public sealed class SubmissionPollerJob(
 
     public async Task ExecuteAsync(CancellationToken cancellationToken)
     {
-        var submissionOutboxResults = await submissionAppService.GetOutboxesAsync(
+        var submissionOutboxResults = await submissionRepository.GetSubmissionPollingOutboxesAsync(
             cancellationToken
         );
 
-        if (!submissionOutboxResults.IsSuccess)
-        {
-            return;
-        }
-
-        var submissionThatNeedPolling = submissionOutboxResults.Value.Where(outbox =>
-            outbox.Type == SubmissionOutboxType.PollJudge0Result
-        );
-
-        var submissions = submissionThatNeedPolling.Select(outbox => outbox.Submission);
+        var submissions = submissionOutboxResults.Select(outbox => outbox.Submission);
 
         var polledResults = await codeExecutionService.GetSubmissionResultsAsync(
             submissions,
@@ -39,6 +30,9 @@ public sealed class SubmissionPollerJob(
             return;
         }
 
-        await submissionRepository.BulkUpsertResultsAsync(polledResults.Value, cancellationToken);
+        await submissionRepository.ProcessSubmissionExecution(
+            polledResults.Value,
+            cancellationToken
+        );
     }
 }
