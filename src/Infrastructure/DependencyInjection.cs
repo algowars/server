@@ -1,3 +1,4 @@
+using System.Text.Json;
 using ApplicationCore.Interfaces.Clients;
 using ApplicationCore.Interfaces.Repositories;
 using ApplicationCore.Interfaces.Services;
@@ -30,6 +31,20 @@ public static class DependencyInjection
                 "DefaultConnection connection string is required"
             )
             .ValidateOnStart();
+
+        services.AddSingleton(
+            new JsonSerializerOptions(JsonSerializerDefaults.Web)
+            {
+                PropertyNameCaseInsensitive = true,
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                DefaultIgnoreCondition = System
+                    .Text
+                    .Json
+                    .Serialization
+                    .JsonIgnoreCondition
+                    .WhenWritingNull,
+            }
+        );
 
         services
             .AddOptions<ExecutionEnginesOptions>()

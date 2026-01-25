@@ -123,7 +123,7 @@ public sealed class CodeExecutionService(IJudge0Client judge0Client) : ICodeExec
             submissionResult.RuntimeMs = decimal.TryParse(result.Time, out decimal seconds)
                 ? (int)Math.Ceiling(seconds * 1000)
                 : null;
-            submissionResult.MemoryKb = result.MemoryKb;
+            submissionResult.MemoryKb = result.Memory;
             submissionResult.FinishedAt = DateTime.UtcNow;
         }
 

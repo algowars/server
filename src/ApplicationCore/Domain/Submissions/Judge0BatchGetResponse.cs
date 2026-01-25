@@ -6,5 +6,5 @@ namespace ApplicationCore.Domain.Submissions;
 public sealed record Judge0BatchGetResponse
 {
     [JsonPropertyName("submissions")]
-    public required Judge0SubmissionResponse[] Submissions { get; init; }
+    public required List<Judge0SubmissionResponse> Submissions { get; init; }
 }
