@@ -15,9 +15,9 @@ public sealed class SubmissionExecutorHandler(
 
     public async Task ExecuteAsync(CancellationToken cancellationToken)
     {
-        var outboxSubmissions = await submissionRepository.GetSubmissionExecutionOutboxesAsync(
-            cancellationToken
-        );
+        var outboxSubmissions = (
+            await submissionRepository.GetSubmissionExecutionOutboxesAsync(cancellationToken)
+        ).ToList();
 
         var setupsMap = (
             await problemAppService.GetProblemSetupsForExecutionAsync(
@@ -26,35 +26,37 @@ public sealed class SubmissionExecutorHandler(
             )
         ).Value.ToDictionary(setup => setup.Id);
 
-        var executionContexts = outboxSubmissions.Select(submissionOutbox =>
-        {
-            var setup = setupsMap[submissionOutbox.Submission.ProblemSetupId];
-
-            var builderContexts = setup
-                .TestSuites.SelectMany(ts => ts.TestCases)
-                .Select(tc => new CodeBuilderContext
-                {
-                    InitialCode = setup.InitialCode,
-                    Template = setup.HarnessTemplate.Template,
-                    FunctionName = setup.FunctionName ?? string.Empty,
-                    LanguageVersionId = setup.LanguageVersionId,
-                    Inputs = tc.Input,
-                    ExpectedOutput = tc.ExpectedOutput,
-                });
-
-            var buildResults = codeBuilderService.Build(builderContexts);
-
-            return new CodeExecutionContext
+        var executionContexts = outboxSubmissions
+            .Select(submissionOutbox =>
             {
-                SubmissionId = submissionOutbox.SubmissionId,
-                Setup = setup,
-                Code = submissionOutbox.Submission.Code,
-                CreatedById = submissionOutbox.Submission.CreatedById,
-                BuiltResults = buildResults.Value,
-            };
-        });
+                var setup = setupsMap[submissionOutbox.Submission.ProblemSetupId];
 
-        if (!executionContexts.Any())
+                var builderContexts = setup
+                    .TestSuites.SelectMany(ts => ts.TestCases)
+                    .Select(tc => new CodeBuilderContext
+                    {
+                        InitialCode = setup.InitialCode,
+                        Template = setup.HarnessTemplate.Template,
+                        FunctionName = setup.FunctionName ?? string.Empty,
+                        LanguageVersionId = setup.LanguageVersionId,
+                        Inputs = tc.Input,
+                        ExpectedOutput = tc.ExpectedOutput,
+                    });
+
+                var buildResults = codeBuilderService.Build(builderContexts);
+
+                return new CodeExecutionContext
+                {
+                    SubmissionId = submissionOutbox.SubmissionId,
+                    Setup = setup,
+                    Code = submissionOutbox.Submission.Code,
+                    CreatedById = submissionOutbox.Submission.CreatedById,
+                    BuiltResults = buildResults.Value,
+                };
+            })
+            .ToList();
+
+        if (executionContexts.Count == 0)
         {
             return;
         }
