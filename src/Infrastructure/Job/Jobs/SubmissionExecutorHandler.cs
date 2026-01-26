@@ -4,8 +4,7 @@ using ApplicationCore.Interfaces.Services;
 
 namespace Infrastructure.Job.Jobs;
 
-public sealed class SubmissionExecutorJob(
-    ISubmissionAppService submissionAppService,
+public sealed class SubmissionExecutorHandler(
     IProblemAppService problemAppService,
     ICodeBuilderService codeBuilderService,
     ISubmissionRepository submissionRepository,

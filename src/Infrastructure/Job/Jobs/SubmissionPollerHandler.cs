@@ -4,7 +4,7 @@ using ApplicationCore.Interfaces.Services;
 
 namespace Infrastructure.Job.Jobs;
 
-public sealed class SubmissionPollerJob(
+public sealed class SubmissionPollerHandler(
     ISubmissionAppService submissionAppService,
     ICodeExecutionService codeExecutionService,
     ISubmissionRepository submissionRepository
