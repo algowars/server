@@ -1,9 +1,8 @@
-﻿using System.Collections.Immutable;
-using System.Linq;
-using System.Linq.Expressions;
+﻿using System.Linq.Expressions;
 using ApplicationCore.Common.Pagination;
 using ApplicationCore.Domain.Accounts;
-using ApplicationCore.Domain.Problems;
+using ApplicationCore.Domain.Problems.Languages;
+using ApplicationCore.Domain.Problems.ProblemSetups;
 using ApplicationCore.Domain.Submissions;
 using ApplicationCore.Domain.Submissions.Outbox;
 using ApplicationCore.Interfaces.Repositories;
@@ -55,37 +54,6 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
         }
     }
 
-    public async Task BulkUpsertResultsAsync(
-        IEnumerable<SubmissionModel> submissions,
-        CancellationToken cancellationToken
-    )
-    {
-        var resultEntities = submissions
-            .SelectMany(
-                s => s.Results,
-                (s, sr) =>
-                    new SubmissionResultEntity
-                    {
-                        Id = sr.Id,
-                        SubmissionId = s.Id,
-                        StatusId = (int)sr.Status,
-                        StartedAt = sr.StartedAt,
-                        FinishedAt = sr.FinishedAt,
-                        Stdout = sr.Stdout,
-                        RuntimeMs = sr.RuntimeMs,
-                        MemoryKb = sr.MemoryKb,
-                    }
-            )
-            .ToList();
-
-        if (resultEntities.Count == 0)
-        {
-            return;
-        }
-
-        await db.BulkInsertOrUpdateAsync(resultEntities, cancellationToken: cancellationToken);
-    }
-
     public async Task<IEnumerable<SubmissionOutboxModel>> GetSubmissionExecutionOutboxesAsync(
         CancellationToken cancellationToken
     )
@@ -116,6 +84,72 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
             .Include(outbox => outbox.Submission)
             .Select(MapOutboxExpr)
             .ToListAsync(cancellationToken: cancellationToken);
+    }
+
+    public async Task<SubmissionModel?> GetSubmissionAsync(
+        Guid submissionId,
+        CancellationToken cancellationToken
+    )
+    {
+        return await db
+            .Submissions.Where(submission => submission.Id == submissionId)
+            .Select(submission => new SubmissionModel
+            {
+                Id = submission.Id,
+                Code = submission.Code,
+                ProblemSetupId = submission.ProblemSetupId,
+                CreatedBy =
+                    submission.CreatedBy != null
+                        ? new AccountModel
+                        {
+                            Id = submission.CreatedBy.Id,
+                            Username = submission.CreatedBy.Username,
+                        }
+                        : null,
+                ProblemSetup =
+                    submission.ProblemSetup != null
+                        ? new ProblemSetupModel
+                        {
+                            Id = submission.ProblemSetup.Id,
+                            ProblemId = submission.ProblemSetup.ProblemId,
+                            LanguageVersionId = submission
+                                .ProblemSetup
+                                .ProgrammingLanguageVersionId,
+                            LanguageVersion =
+                                submission.ProblemSetup.LanguageVersion != null
+                                    ? new LanguageVersion
+                                    {
+                                        Id = submission.ProblemSetup.LanguageVersion.Id,
+                                        Version = submission.ProblemSetup.LanguageVersion.Version,
+                                        ProgrammingLanguageId = submission
+                                            .ProblemSetup
+                                            .LanguageVersion
+                                            .ProgrammingLanguageId,
+                                        ProgrammingLanguage =
+                                            submission
+                                                .ProblemSetup
+                                                .LanguageVersion
+                                                .ProgrammingLanguage != null
+                                                ? new ProgrammingLanguage
+                                                {
+                                                    Id = submission
+                                                        .ProblemSetup
+                                                        .LanguageVersion
+                                                        .ProgrammingLanguage
+                                                        .Id,
+                                                    Name = submission
+                                                        .ProblemSetup
+                                                        .LanguageVersion
+                                                        .ProgrammingLanguage
+                                                        .Name,
+                                                }
+                                                : null,
+                                    }
+                                    : null,
+                        }
+                        : null,
+            })
+            .SingleOrDefaultAsync(cancellationToken);
     }
 
     public async Task MarkOutboxesAsPollingAsync(

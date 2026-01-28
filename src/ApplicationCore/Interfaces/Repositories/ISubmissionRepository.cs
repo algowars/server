@@ -32,6 +32,11 @@ public interface ISubmissionRepository
         CancellationToken cancellationToken
     );
 
+    Task<SubmissionModel?> GetSubmissionAsync(
+        Guid submissionId,
+        CancellationToken cancellationToken
+    );
+
     Task<PaginatedResult<SubmissionModel>> GetProblemSubmissions(
         Guid problemId,
         PaginationRequest pagination,

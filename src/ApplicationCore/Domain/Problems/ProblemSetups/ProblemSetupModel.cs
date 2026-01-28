@@ -11,7 +11,7 @@ public sealed class ProblemSetupModel
 
     public ProblemModel? Problem { get; init; }
 
-    public required string InitialCode { get; init; }
+    public string? InitialCode { get; init; }
 
     public string? FunctionName { get; init; }
 

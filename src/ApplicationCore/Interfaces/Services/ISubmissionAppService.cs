@@ -14,6 +14,11 @@ public interface ISubmissionAppService
         CancellationToken cancellationToken
     );
 
+    Task<Result<SubmissionDto>> GetSubmissionAsync(
+        Guid submissionId,
+        CancellationToken cancellationToken
+    );
+
     Task<Result<PaginatedResult<SubmissionDto>>> GetSubmissionsAsync(
         Guid problemId,
         PaginationRequest paginationRequest,

@@ -19,6 +19,11 @@ public sealed class SubmissionExecutorHandler(
             await submissionRepository.GetSubmissionExecutionOutboxesAsync(cancellationToken)
         ).ToList();
 
+        if (outboxSubmissions.Count == 0)
+        {
+            return;
+        }
+
         var setupsMap = (
             await problemAppService.GetProblemSetupsForExecutionAsync(
                 outboxSubmissions.Select(s => s.Submission.ProblemSetupId),

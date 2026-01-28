@@ -144,6 +144,28 @@ builder.Services.AddRateLimiter(options =>
             opts.QueueLimit = 5;
         }
     );
+
+    options.AddPolicy(
+        "SubmissionDaily",
+        context =>
+        {
+            string userId =
+                context.User.FindFirst("sub")?.Value
+                ?? context.Connection.RemoteIpAddress?.ToString()
+                ?? "anonymous";
+
+            return RateLimitPartition.GetFixedWindowLimiter(
+                partitionKey: userId,
+                factory: _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = 50,
+                    Window = TimeSpan.FromDays(1),
+                    QueueLimit = 0,
+                    AutoReplenishment = true,
+                }
+            );
+        }
+    );
 });
 
 var app = builder.Build();

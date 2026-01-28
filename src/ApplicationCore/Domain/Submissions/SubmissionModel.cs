@@ -1,5 +1,6 @@
 using ApplicationCore.Domain.Accounts;
 using ApplicationCore.Domain.Problems.Languages;
+using ApplicationCore.Domain.Problems.ProblemSetups;
 
 namespace ApplicationCore.Domain.Submissions;
 
@@ -11,7 +12,7 @@ public sealed class SubmissionModel
 
     public int ProblemSetupId { get; init; }
 
-    public LanguageVersion? LanguageVersion { get; init; }
+    public ProblemSetupModel? ProblemSetup { get; init; }
 
     public DateTime CreatedOn { get; init; }
 
@@ -32,19 +33,14 @@ public sealed class SubmissionModel
     {
         if (
             !Results.Any()
-            || Results.Any(r =>
-                r.Status == SubmissionStatus.InQueue || r.Status == SubmissionStatus.Processing
-            )
+            || Results.Any(r => r.Status is SubmissionStatus.InQueue or SubmissionStatus.Processing)
         )
         {
             return SubmissionStatus.Processing;
         }
 
-        if (Results.All(r => r.Status == SubmissionStatus.Accepted))
-        {
-            return SubmissionStatus.Accepted;
-        }
-
-        return SubmissionStatus.WrongAnswer;
+        return Results.All(r => r.Status == SubmissionStatus.Accepted)
+            ? SubmissionStatus.Accepted
+            : SubmissionStatus.WrongAnswer;
     }
 }
