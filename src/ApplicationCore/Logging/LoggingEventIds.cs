@@ -19,6 +19,11 @@ public static class LoggingEventIds
         public const int UpdateUsernameFailed = 2301;
     }
 
+    public static class Jobs
+    {
+        public const int SubmissionPollingStarted = 9001;
+    }
+
     public static class Exceptions
     {
         public const int UnhandledException = 1000;

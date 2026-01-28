@@ -1,4 +1,5 @@
 using ApplicationCore.Common.Pagination;
+using ApplicationCore.Domain.Problems.ProblemSetups;
 using ApplicationCore.Dtos.Languages;
 using ApplicationCore.Dtos.Problems;
 using Ardalis.Result;
@@ -30,6 +31,11 @@ public interface IProblemAppService
     Task<Result<ProblemSetupDto>> GetProblemSetupAsync(
         Guid problemId,
         int languageVersionId,
+        CancellationToken cancellationToken
+    );
+
+    Task<Result<IEnumerable<ProblemSetupModel>>> GetProblemSetupsForExecutionAsync(
+        IEnumerable<int> setupIds,
         CancellationToken cancellationToken
     );
 }

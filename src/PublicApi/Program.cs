@@ -12,8 +12,6 @@ using PublicApi.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
-Console.WriteLine(builder.Environment.EnvironmentName);
-
 builder.Services.AddApplicationCore();
 builder.Services.AddInfrastructure(builder.Configuration);
 
@@ -144,6 +142,28 @@ builder.Services.AddRateLimiter(options =>
             opts.Window = TimeSpan.FromMinutes(5);
             opts.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
             opts.QueueLimit = 5;
+        }
+    );
+
+    options.AddPolicy(
+        "SubmissionDaily",
+        context =>
+        {
+            string userId =
+                context.User.FindFirst("sub")?.Value
+                ?? context.Connection.RemoteIpAddress?.ToString()
+                ?? "anonymous";
+
+            return RateLimitPartition.GetFixedWindowLimiter(
+                partitionKey: userId,
+                factory: _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = 50,
+                    Window = TimeSpan.FromDays(1),
+                    QueueLimit = 0,
+                    AutoReplenishment = true,
+                }
+            );
         }
     );
 });
