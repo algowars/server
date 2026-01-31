@@ -2,9 +2,9 @@ namespace ApplicationCore.Domain.Submissions;
 
 public sealed class SubmissionResult
 {
-    public required Guid Id { get; init; }
+    public Guid Id { get; set; }
 
-    public required SubmissionStatus Status { get; init; }
+    public required SubmissionStatus Status { get; set; }
 
     public DateTime? StartedAt { get; set; }
 

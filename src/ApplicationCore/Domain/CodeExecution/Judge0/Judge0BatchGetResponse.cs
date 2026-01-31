@@ -2,8 +2,8 @@ using System.Text.Json.Serialization;
 
 namespace ApplicationCore.Domain.CodeExecution.Judge0;
 
-public sealed class Judge0BatchRequest
+public sealed record Judge0BatchGetResponse
 {
     [JsonPropertyName("submissions")]
-    public required IEnumerable<Judge0SubmissionRequest> Submissions { get; init; }
+    public required List<Judge0SubmissionResponse> Submissions { get; init; }
 }
