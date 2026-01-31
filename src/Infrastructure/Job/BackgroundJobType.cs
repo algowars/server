@@ -2,6 +2,7 @@ namespace Infrastructure.Job;
 
 public enum BackgroundJobType
 {
-    SubmissionExecutor = 1,
+    SubmissionInitializer = 1,
+    SubmissionExecutor,
     SubmissionPoller,
 }

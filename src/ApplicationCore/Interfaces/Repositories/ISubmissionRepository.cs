@@ -24,6 +24,10 @@ public interface ISubmissionRepository
         CancellationToken cancellationToken
     );
 
+    Task<IEnumerable<SubmissionOutboxModel>> GetSubmissionInitializingOutboxesAsync(
+        CancellationToken cancellationToken
+    );
+
     Task<IEnumerable<SubmissionOutboxModel>> GetSubmissionExecutionOutboxesAsync(
         CancellationToken cancellationToken
     );

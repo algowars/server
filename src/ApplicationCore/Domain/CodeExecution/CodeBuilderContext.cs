@@ -2,7 +2,7 @@ namespace ApplicationCore.Domain.CodeExecution;
 
 public sealed class CodeBuilderContext
 {
-    public required string InitialCode { get; init; }
+    public required string Code { get; init; }
 
     public required string Template { get; init; }
 

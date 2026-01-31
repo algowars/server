@@ -34,7 +34,7 @@ public sealed class CodeExecutionService(IJudge0Client judge0Client) : ICodeExec
                     new Judge0SubmissionRequest
                     {
                         LanguageId = 102,
-                        SourceCode = context.Code,
+                        SourceCode = buildResult.FinalCode,
                         StdIn = buildResult.Inputs,
                         ExpectedOutput = buildResult.ExpectedOutput,
                     }

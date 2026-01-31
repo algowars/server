@@ -54,6 +54,20 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
         }
     }
 
+    public async Task<IEnumerable<SubmissionOutboxModel>> GetSubmissionInitializingOutboxesAsync(
+        CancellationToken cancellationToken
+    )
+    {
+        return await db
+            .SubmissionOutbox.Where(outbox =>
+                outbox.FinalizedOn == null && outbox.AttemptCount < MaxRetryCount
+            )
+            .Where(outbox => outbox.SubmissionOutboxTypeId == (int)SubmissionOutboxType.Initialized)
+            .Include(outbox => outbox.Submission)
+            .Select(MapOutboxExpr)
+            .ToListAsync(cancellationToken: cancellationToken);
+    }
+
     public async Task<IEnumerable<SubmissionOutboxModel>> GetSubmissionExecutionOutboxesAsync(
         CancellationToken cancellationToken
     )

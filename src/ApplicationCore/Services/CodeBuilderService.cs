@@ -20,7 +20,7 @@ public sealed class CodeBuilderService : ICodeBuilderService
 
             string finalCode = RenderTemplate(
                 context.Template,
-                context.InitialCode,
+                context.Code,
                 context.FunctionName,
                 context.InputTypeName
             );
@@ -51,7 +51,7 @@ public sealed class CodeBuilderService : ICodeBuilderService
             );
         }
 
-        if (string.IsNullOrWhiteSpace(context.InitialCode))
+        if (string.IsNullOrWhiteSpace(context.Code))
         {
             return Result<IEnumerable<CodeBuildResult>>.Invalid(
                 new ValidationError("Initial code is required.")

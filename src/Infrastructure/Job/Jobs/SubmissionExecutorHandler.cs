@@ -40,7 +40,7 @@ public sealed class SubmissionExecutorHandler(
                     .TestSuites.SelectMany(ts => ts.TestCases)
                     .Select(tc => new CodeBuilderContext
                     {
-                        InitialCode = setup.InitialCode,
+                        Code = submissionOutbox.Submission.Code,
                         Template = setup.HarnessTemplate.Template,
                         FunctionName = setup.FunctionName ?? string.Empty,
                         LanguageVersionId = setup.LanguageVersionId,

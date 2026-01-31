@@ -11,4 +11,6 @@ public sealed class CodeBuildResult
     public string? ExpectedOutput { get; init; }
 
     public string? InputTypeName { get; init; }
+    
+    public int LanguageId { get; init; }
 }
