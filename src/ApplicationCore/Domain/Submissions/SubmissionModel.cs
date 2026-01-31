@@ -1,3 +1,5 @@
+using ApplicationCore.Domain.Accounts;
+
 namespace ApplicationCore.Domain.Submissions;
 
 public sealed class SubmissionModel
@@ -14,5 +16,27 @@ public sealed class SubmissionModel
 
     public Guid CreatedById { get; init; }
 
-    public List<SubmissionResult> Results { get; init; } = [];
+    public AccountModel? CreatedBy { get; init; }
+
+    public IEnumerable<SubmissionResult> Results { get; init; } = [];
+
+    public IEnumerable<Guid> GetResultTokens()
+    {
+        return Results.Select(result => result.Id);
+    }
+
+    public SubmissionStatus GetOverallStatus()
+    {
+        if (
+            !Results.Any()
+            || Results.Any(r => r.Status is SubmissionStatus.InQueue or SubmissionStatus.Processing)
+        )
+        {
+            return SubmissionStatus.Processing;
+        }
+
+        return Results.All(r => r.Status == SubmissionStatus.Accepted)
+            ? SubmissionStatus.Accepted
+            : SubmissionStatus.WrongAnswer;
+    }
 }

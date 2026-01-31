@@ -7,8 +7,6 @@ namespace ApplicationCore.Interfaces.Repositories;
 
 public interface IProblemRepository
 {
-    Task<ProblemModel?> GetProblemByIdAsync(Guid problemId, CancellationToken cancellationToken);
-
     Task<ProblemModel?> GetProblemBySlugAsync(string slug, CancellationToken cancellationToken);
 
     Task<ProblemSetupModel?> GetProblemSetupAsync(
@@ -17,10 +15,13 @@ public interface IProblemRepository
         CancellationToken cancellationToken
     );
 
-    Task<ProblemSetupModel?> GetProblemSetupAsync(int setupId, CancellationToken cancellationToken);
-
     Task<PaginatedResult<ProblemModel>> GetProblemsAsync(
         PaginationRequest pagination,
+        CancellationToken cancellationToken
+    );
+
+    Task<IEnumerable<ProblemSetupModel>> GetProblemSetupsAsync(
+        IEnumerable<int> problemSetupIds,
         CancellationToken cancellationToken
     );
 }

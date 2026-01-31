@@ -1,8 +1,10 @@
 ﻿using ApplicationCore.Common.Pagination;
+using ApplicationCore.Domain.Problems.ProblemSetups;
 using ApplicationCore.Dtos.Problems;
 using ApplicationCore.Interfaces.Services;
 using ApplicationCore.Queries.Problems.GetProblemBySlug;
 using ApplicationCore.Queries.Problems.GetProblemSetup;
+using ApplicationCore.Queries.Problems.GetProblemSetupsForExecution;
 using ApplicationCore.Queries.Problems.GetProblemsPageable;
 using Ardalis.Result;
 using MediatR;
@@ -69,5 +71,15 @@ public sealed class ProblemAppService(IMediator mediator) : IProblemAppService
         var pageableQuery = new GetProblemsPageableQuery(pagination);
 
         return await mediator.Send(pageableQuery, cancellationToken);
+    }
+
+    public Task<Result<IEnumerable<ProblemSetupModel>>> GetProblemSetupsForExecutionAsync(
+        IEnumerable<int> setupIds,
+        CancellationToken cancellationToken
+    )
+    {
+        var query = new GetProblemSetupsForExecutionQuery(setupIds);
+
+        return mediator.Send(query, cancellationToken);
     }
 }

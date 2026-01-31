@@ -30,6 +30,9 @@ public sealed class SubmissionResultEntity
     [Column("stdout")]
     public string? Stdout { get; set; }
 
+    [Column("original_stdout")]
+    public string? OriginalStdout { get; set; }
+
     [Column("stderr")]
     public string? Stderr { get; set; }
 
