@@ -101,7 +101,7 @@ public static class DependencyInjection
                     .GetRequiredService<IOptions<ExecutionEnginesOptions>>()
                     .Value.Judge0;
 
-                string baseUrl = judge0.BaseUrl.EndsWith("/")
+                string baseUrl = judge0.BaseUrl.EndsWith('/')
                     ? judge0.BaseUrl
                     : judge0.BaseUrl + "/";
 

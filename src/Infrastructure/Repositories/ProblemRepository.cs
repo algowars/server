@@ -208,7 +208,7 @@ public sealed class ProblemRepository(AppDbContext db) : IProblemRepository
         CancellationToken cancellationToken
     )
     {
-        return await db
+        return await _db
             .ProblemSetups.Where(setup => problemSetupIds.Contains(setup.Id))
             .Select(ps => new ProblemSetupModel
             {
