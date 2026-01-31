@@ -23,4 +23,9 @@ public interface IProblemRepository
         PaginationRequest pagination,
         CancellationToken cancellationToken
     );
+
+    Task<IEnumerable<ProblemSetupModel>> GetProblemSetupsAsync(
+        IEnumerable<int> problemSetupIds,
+        CancellationToken cancellationToken
+    );
 }
