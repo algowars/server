@@ -1,6 +1,5 @@
 using ApplicationCore.Jobs;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 
 namespace Infrastructure.Jobs;
 
