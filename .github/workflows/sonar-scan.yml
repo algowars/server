@@ -47,11 +47,13 @@ jobs:
 
           dotnet restore
           dotnet build
-          dotnet test \
-          --collect:"XPlat Code Coverage" \
-          --results-directory TestResults \
-          /p:CollectCoverage=true \
-          /p:CoverletOutputFormat=opencover
+          dotnet-sonarscanner begin \
+            /k:"algowars_server" \
+            /o:"algowars" \
+            /d:sonar.token="$SONAR_TOKEN" \
+            /d:sonar.cs.opencover.reportsPaths="TestResults/coverage.opencover.xml" \
+            /d:sonar.cs.vstest.reportsPaths="TestResults/*.trx"
+
 
           dotnet-sonarscanner end /d:sonar.token="$SONAR_TOKEN"
       - name: Upload dotnet test results
