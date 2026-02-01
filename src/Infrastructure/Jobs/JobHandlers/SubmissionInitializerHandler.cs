@@ -47,7 +47,7 @@ public sealed class SubmissionInitializerHandler(
                     .TestSuites.SelectMany(ts => ts.TestCases)
                     .Select(tc => new CodeBuilderContext
                     {
-                        Code = outbox.Submission.Code,
+                        Code = outbox.Submission.Code ?? "",
                         Template = setup.HarnessTemplate?.Template ?? "",
                         FunctionName = setup.FunctionName ?? string.Empty,
                         LanguageVersionId = setup.LanguageVersionId,
@@ -61,7 +61,7 @@ public sealed class SubmissionInitializerHandler(
                 {
                     SubmissionId = outbox.SubmissionId,
                     Setup = setup,
-                    Code = outbox.Submission.Code,
+                    Code = outbox.Submission.Code ?? "",
                     CreatedById = outbox.Submission.CreatedById,
                     BuiltResults = buildResults.Value,
                 };
@@ -75,6 +75,7 @@ public sealed class SubmissionInitializerHandler(
 
         var outboxIds = outboxes.Select(o => o.Id).ToList();
         var now = DateTime.UtcNow;
+
         await submissionRepository.IncrementOutboxesCount(outboxIds, now, cancellationToken);
 
         var submissionsResult = await codeExecutionService.ExecuteAsync(

@@ -252,15 +252,13 @@ public sealed class ProblemRepository(AppDbContext db) : IProblemRepository
                     {
                         Id = ts.Id,
                         Name = ts.Name,
-                        Description = ts.Description,
                         TestSuiteType = (TestSuiteType)ts.TestSuiteTypeId,
                         TestCases = ts
                             .TestCases.Select(tc => new TestCaseModel
                             {
                                 Id = tc.Id,
-                                Input = tc.IoPayload != null ? tc.IoPayload.Input : "",
-                                ExpectedOutput =
-                                    tc.IoPayload != null ? tc.IoPayload.ExpectedOutput : "",
+                                Input = "",
+                                ExpectedOutput = "",
                                 TestCaseType = (TestCaseType)tc.TestCaseTypeId,
                             })
                             .ToList(),
@@ -321,15 +319,13 @@ public sealed class ProblemRepository(AppDbContext db) : IProblemRepository
                     {
                         Id = ts.Id,
                         Name = ts.Name,
-                        Description = ts.Description,
                         TestSuiteType = (TestSuiteType)ts.TestSuiteTypeId,
                         TestCases = ts
                             .TestCases.Select(tc => new TestCaseModel
                             {
                                 Id = tc.Id,
-                                Input = tc.IoPayload != null ? tc.IoPayload.Input : "",
-                                ExpectedOutput =
-                                    tc.IoPayload != null ? tc.IoPayload.ExpectedOutput : "",
+                                Input = "",
+                                ExpectedOutput = "",
                                 TestCaseType = (TestCaseType)tc.TestCaseTypeId,
                             })
                             .ToList(),

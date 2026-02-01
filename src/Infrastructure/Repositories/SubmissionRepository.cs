@@ -48,7 +48,7 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
                 {
                     Id = Guid.NewGuid(),
                     SubmissionId = submission.Id,
-                    SubmissionOutboxTypeId = (int)SubmissionOutboxType.ExecuteSubmission,
+                    SubmissionOutboxTypeId = (int)SubmissionOutboxType.Initialized,
                     SubmissionOutboxStatusId = (int)SubmissionOutboxStatus.Pending,
                 },
                 cancellationToken
@@ -130,7 +130,7 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
                             setters
                                 .SetProperty(
                                     o => o.SubmissionOutboxTypeId,
-                                    (int)SubmissionOutboxType.ExecuteSubmission
+                                    (int)SubmissionOutboxType.PollInitialization
                                 )
                                 .SetProperty(o => o.AttemptCount, _ => 0),
                         cancellationToken: cancellationToken

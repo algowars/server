@@ -81,7 +81,7 @@ public static class DependencyInjection
         services.AddBackgroundJobs(jobs =>
         {
             jobs.Register<SubmissionInitializerHandler>(
-                jobType: BackgroundJobType.SubmissionPoller,
+                jobType: BackgroundJobType.SubmissionInitializer,
                 interval: GetInterval("SubmissionInitializer", 5),
                 enabled: GetEnabled("SubmissionInitializer", false)
             );

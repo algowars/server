@@ -39,8 +39,8 @@ public sealed class ProblemMappings : IRegister
 
         config
             .NewConfig<TestCaseEntity, TestCaseModel>()
-            .Map(dest => dest.Input, src => src.IoPayload.Input)
-            .Map(dest => dest.ExpectedOutput, src => src.IoPayload.ExpectedOutput)
+            .Map(dest => dest.Input, src => "")
+            .Map(dest => dest.ExpectedOutput, src => "")
             .Map(dest => dest.TestCaseType, src => (TestCaseType)src.TestCaseTypeId);
     }
 }
