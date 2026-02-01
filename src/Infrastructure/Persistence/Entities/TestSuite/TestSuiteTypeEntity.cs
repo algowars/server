@@ -10,9 +10,9 @@ public sealed class TestSuiteTypeEntity
     [Column("id")]
     public int Id { get; set; }
 
-    [Column("name")]
+    [Column("name"), MaxLength(50)]
     public required string Name { get; set; }
 
-    [Column("description")]
+    [Column("description"), MaxLength(100)]
     public string? Description { get; set; }
 }

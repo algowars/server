@@ -1,4 +1,5 @@
 using ApplicationCore.Common.Pagination;
+using ApplicationCore.Domain.Problems.ProblemSetups;
 using ApplicationCore.Dtos.Languages;
 using ApplicationCore.Dtos.Problems;
 using Ardalis.Result;
@@ -19,11 +20,8 @@ public interface IProblemAppService
         CancellationToken cancellationToken
     );
 
-    Task<Result<PaginatedResult<ProblemDto>>> GetProblemsPaginatedAsync(
-        int pageNumber,
-        int pageSize,
-        DateTime timestamp,
-        string query,
+    Task<Result<IEnumerable<ProblemSetupModel>>> GetProblemSetupsForExecutionAsync(
+        IEnumerable<int> setupIds,
         CancellationToken cancellationToken
     );
 

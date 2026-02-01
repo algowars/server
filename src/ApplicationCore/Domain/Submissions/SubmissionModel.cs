@@ -1,12 +1,14 @@
+using ApplicationCore.Domain.Accounts;
+
 namespace ApplicationCore.Domain.Submissions;
 
 public sealed class SubmissionModel
 {
     public required Guid Id { get; init; }
 
-    public required string Code { get; init; }
+    public string? Code { get; init; }
 
-    public required int ProblemSetupId { get; init; }
+    public int ProblemSetupId { get; init; }
 
     public DateTime CreatedOn { get; init; }
 
@@ -14,5 +16,27 @@ public sealed class SubmissionModel
 
     public Guid CreatedById { get; init; }
 
-    public List<SubmissionResult> Results { get; init; } = [];
+    public AccountModel? CreatedBy { get; init; }
+
+    public IEnumerable<SubmissionResult> Results { get; init; } = [];
+
+    public IEnumerable<Guid> GetResultTokens()
+    {
+        return Results.Select(result => result.Id);
+    }
+
+    public SubmissionStatus GetOverallStatus()
+    {
+        if (
+            !Results.Any()
+            || Results.Any(r => r.Status is SubmissionStatus.InQueue or SubmissionStatus.Processing)
+        )
+        {
+            return SubmissionStatus.Processing;
+        }
+
+        return Results.All(r => r.Status == SubmissionStatus.Accepted)
+            ? SubmissionStatus.Accepted
+            : SubmissionStatus.WrongAnswer;
+    }
 }

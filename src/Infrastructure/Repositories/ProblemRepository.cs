@@ -203,6 +203,71 @@ public sealed class ProblemRepository(AppDbContext db) : IProblemRepository
         };
     }
 
+    public async Task<IEnumerable<ProblemSetupModel>> GetProblemSetupsAsync(
+        IEnumerable<int> problemSetupIds,
+        CancellationToken cancellationToken
+    )
+    {
+        return await _db
+            .ProblemSetups.Where(setup => problemSetupIds.Contains(setup.Id))
+            .Select(ps => new ProblemSetupModel
+            {
+                Id = ps.Id,
+                ProblemId = ps.ProblemId,
+                InitialCode = ps.InitialCode ?? "",
+                Version = ps.Version,
+                FunctionName = ps.FunctionName,
+                LanguageVersionId = ps.ProgrammingLanguageVersionId,
+                LanguageVersion =
+                    ps.LanguageVersion != null
+                        ? new LanguageVersion
+                        {
+                            Id = ps.LanguageVersion.Id,
+                            Version = ps.LanguageVersion.Version,
+                            ProgrammingLanguageId = ps.LanguageVersion.ProgrammingLanguageId,
+                            ProgrammingLanguage =
+                                ps.LanguageVersion.ProgrammingLanguage != null
+                                    ? new ProgrammingLanguage
+                                    {
+                                        Id = ps.LanguageVersion.ProgrammingLanguage.Id,
+                                        Name = ps.LanguageVersion.ProgrammingLanguage.Name,
+                                        IsArchived = ps.LanguageVersion
+                                            .ProgrammingLanguage
+                                            .IsArchived,
+                                        Versions = new List<LanguageVersion>(),
+                                    }
+                                    : null,
+                        }
+                        : null,
+                HarnessTemplate =
+                    ps.HarnessTemplate != null
+                        ? new HarnessTemplate
+                        {
+                            Id = ps.HarnessTemplate.Id,
+                            Template = ps.HarnessTemplate.Template,
+                        }
+                        : null,
+                TestSuites = ps
+                    .TestSuites.Select(ts => new TestSuiteModel
+                    {
+                        Id = ts.Id,
+                        Name = ts.Name,
+                        TestSuiteType = (TestSuiteType)ts.TestSuiteTypeId,
+                        TestCases = ts
+                            .TestCases.Select(tc => new TestCaseModel
+                            {
+                                Id = tc.Id,
+                                Input = "",
+                                ExpectedOutput = "",
+                                TestCaseType = (TestCaseType)tc.TestCaseTypeId,
+                            })
+                            .ToList(),
+                    })
+                    .ToList(),
+            })
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<ProblemSetupModel?> GetProblemSetupAsync(
         Guid problemId,
         int languageVersionId,
@@ -254,15 +319,13 @@ public sealed class ProblemRepository(AppDbContext db) : IProblemRepository
                     {
                         Id = ts.Id,
                         Name = ts.Name,
-                        Description = ts.Description,
                         TestSuiteType = (TestSuiteType)ts.TestSuiteTypeId,
                         TestCases = ts
                             .TestCases.Select(tc => new TestCaseModel
                             {
                                 Id = tc.Id,
-                                Input = tc.IoPayload != null ? tc.IoPayload.Input : "",
-                                ExpectedOutput =
-                                    tc.IoPayload != null ? tc.IoPayload.ExpectedOutput : "",
+                                Input = "",
+                                ExpectedOutput = "",
                                 TestCaseType = (TestCaseType)tc.TestCaseTypeId,
                             })
                             .ToList(),

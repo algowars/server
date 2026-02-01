@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Infrastructure.Persistence.Entities.Language;
 using Infrastructure.Persistence.Entities.TestSuite;
+using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Persistence.Entities.Problem;
 

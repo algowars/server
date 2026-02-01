@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using ApplicationCore.Domain.Problems;
+using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Persistence.Entities.Problem;
 
