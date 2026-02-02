@@ -1,5 +1,3 @@
-using System.Net.Http.Json;
-using System.Text.Json;
 using ApplicationCore.Domain.CodeExecution.Judge0;
 using ApplicationCore.Domain.Submissions;
 using ApplicationCore.Interfaces.Clients;
@@ -7,6 +5,8 @@ using Ardalis.Result;
 using Infrastructure.Configuration;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Options;
+using System.Net.Http.Json;
+using System.Text.Json;
 
 namespace Infrastructure.CodeExecution.Judge0;
 
@@ -91,10 +91,10 @@ public sealed class Judge0Client(
 
             return Result.Success(
                 body.Select(result => new Judge0SubmissionResponse
-                    {
-                        Token = result.Token,
-                        Status = new Judge0StatusModel { Id = (int)SubmissionStatus.InQueue },
-                    })
+                {
+                    Token = result.Token,
+                    Status = new Judge0StatusModel { Id = (int)SubmissionStatus.InQueue },
+                })
                     .ToList()
             );
         }
