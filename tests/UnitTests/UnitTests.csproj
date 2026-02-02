@@ -26,7 +26,6 @@
   <ItemGroup>
     <Folder Include="ApplicationCore\Domain\Problems\ProblemsSetups\" />
     <Folder Include="ApplicationCore\Domain\Problems\TestSuites\" />
-    <Folder Include="PublicApi\" />
   </ItemGroup>
 
   <ItemGroup>

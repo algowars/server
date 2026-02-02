@@ -1,4 +1,6 @@
+using ApplicationCore.Common.Pagination;
 using ApplicationCore.Dtos.Problems;
+using ApplicationCore.Dtos.Problems.Admin;
 using ApplicationCore.Interfaces.Services;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
@@ -59,6 +61,26 @@ public sealed class ProblemController(
         string errors = string.Join(", ", problemResult.Errors);
 
         return BadRequest(errors);
+    }
+
+    [HttpGet("admin")]
+    [EnableRateLimiting("Short")]
+    [Authorize(Policy = "read:admin-problems")]
+    public async Task<IActionResult> GetAdminProblemsAsync(
+        [FromQuery] DateTime timestamp,
+        CancellationToken cancellationToken,
+        [FromQuery] int page = 1,
+        [FromQuery] int size = 25
+    )
+    {
+        return ToActionResult<PaginatedResult<AdminProblemDto>>(
+            await problemAppService.GetAdminProblemsPageableAsync(
+                page,
+                size,
+                timestamp,
+                cancellationToken
+            )
+        );
     }
 
     [HttpGet("languages")]
