@@ -1,6 +1,6 @@
-using System.Security.Claims;
 using Ardalis.Result;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace PublicApi.Controllers;
 

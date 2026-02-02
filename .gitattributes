@@ -61,3 +61,7 @@
 #*.PDF   diff=astextplain
 #*.rtf   diff=astextplain
 #*.RTF   diff=astextplain
+
+# Use CRLF for C# files
+*.cs text eol=crlf
+*.csproj text eol=crlf

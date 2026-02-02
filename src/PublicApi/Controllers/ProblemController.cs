@@ -1,5 +1,7 @@
+using ApplicationCore.Dtos.Problems;
 using ApplicationCore.Interfaces.Services;
 using Asp.Versioning;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 
@@ -8,8 +10,32 @@ namespace PublicApi.Controllers;
 [ApiController]
 [Route("api/v{version:apiVersion}/[controller]")]
 [ApiVersion("1.0")]
-public sealed class ProblemController(IProblemAppService problemAppService) : BaseApiController
+public sealed class ProblemController(
+    IProblemAppService problemAppService,
+    IAccountAppService accountAppService
+) : BaseApiController
 {
+    [HttpPost]
+    [EnableRateLimiting("Short")]
+    public async Task<IActionResult> CreateProblemAsync(
+        [FromBody] CreateProblemDto createProblemDto,
+        CancellationToken cancellationToken
+    )
+    {
+        var account = await accountAppService.GetAccountBySubAsync(
+            GetSub() ?? "",
+            cancellationToken
+        );
+
+        return ToActionResult(
+            await problemAppService.CreateProblemAsync(
+                createProblemDto,
+                account.Value.Id,
+                cancellationToken
+            )
+        );
+    }
+
     [HttpGet("slug/{slug}")]
     [EnableRateLimiting("Short")]
     public async Task<IActionResult> GetBySlugAsync(
@@ -33,6 +59,16 @@ public sealed class ProblemController(IProblemAppService problemAppService) : Ba
         string errors = string.Join(", ", problemResult.Errors);
 
         return BadRequest(errors);
+    }
+
+    [HttpGet("languages")]
+    [EnableRateLimiting("Short")]
+    [Authorize(Policy = "read:languages")]
+    public async Task<IActionResult> GetAvailableLanguagesAsync(CancellationToken cancellationToken)
+    {
+        return ToActionResult(
+            await problemAppService.GetAvailableLanguagesAsync(cancellationToken)
+        );
     }
 
     [HttpGet]

@@ -1,4 +1,3 @@
-using System;
 using ApplicationCore.Domain.Problems;
 using ApplicationCore.Domain.Problems.Languages;
 using ApplicationCore.Domain.Problems.ProblemSetups;
@@ -133,7 +132,7 @@ public sealed class ProblemModelTests
 
         var languages = problem.GetAvailableLanguages().ToList();
 
-        Assert.That(languages.Single().Versions, Has.Count.EqualTo(1));
+        Assert.That(languages.Single().Versions, Has.Exactly(1).Items);
     }
 
     [Test]
@@ -287,7 +286,7 @@ public sealed class ProblemModelTests
         {
             Assert.That(result.Id, Is.EqualTo(1));
             Assert.That(result.IsArchived, Is.False);
-            Assert.That(result.Versions, Has.Count.EqualTo(1));
+            Assert.That(result.Versions, Has.Exactly(1).Items);
         }
     }
 }

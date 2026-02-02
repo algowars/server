@@ -1,4 +1,3 @@
-using System.Threading.RateLimiting;
 using ApplicationCore;
 using Asp.Versioning;
 using Infrastructure;
@@ -11,6 +10,7 @@ using Microsoft.IdentityModel.Tokens;
 using PublicApi.Authorization;
 using PublicApi.Filters;
 using PublicApi.Middleware;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 

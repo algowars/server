@@ -8,11 +8,7 @@ public sealed class ProgrammingLanguageTests
     [Test]
     public void Creating_programming_language_with_required_properties_sets_values()
     {
-        var language = new ProgrammingLanguage
-        {
-            Name = "C#",
-            IsArchived = false
-        };
+        var language = new ProgrammingLanguage { Name = "C#", IsArchived = false };
 
         using (Assert.EnterMultipleScope())
         {
@@ -24,11 +20,7 @@ public sealed class ProgrammingLanguageTests
     [Test]
     public void Versions_is_initialized_empty_by_default()
     {
-        var language = new ProgrammingLanguage
-        {
-            Name = "Python",
-            IsArchived = false
-        };
+        var language = new ProgrammingLanguage { Name = "Python", IsArchived = false };
 
         using (Assert.EnterMultipleScope())
         {
@@ -44,19 +36,19 @@ public sealed class ProgrammingLanguageTests
         {
             Id = 1,
             Version = "3.12",
-            ProgrammingLanguageId = 1
+            ProgrammingLanguageId = 1,
         };
 
         var language = new ProgrammingLanguage
         {
             Name = "Python",
             IsArchived = false,
-            Versions = { version }
+            Versions = [version],
         };
 
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(language.Versions, Has.Count.EqualTo(1));
+            Assert.That(language.Versions, Has.Exactly(1).Items);
             Assert.That(language.Versions.Single(), Is.EqualTo(version));
         }
     }
@@ -77,7 +69,7 @@ public sealed class ProgrammingLanguageTests
             CreatedById = userId,
             LastModifiedOn = modifiedOn,
             LastModifiedById = userId,
-            DeletedOn = deletedOn
+            DeletedOn = deletedOn,
         };
 
         using (Assert.EnterMultipleScope())

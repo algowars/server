@@ -1,7 +1,7 @@
-using System.Net;
-using System.Text.Json;
 using ApplicationCore.Logging;
 using Microsoft.AspNetCore.Diagnostics;
+using System.Net;
+using System.Text.Json;
 
 namespace PublicApi.Middleware;
 

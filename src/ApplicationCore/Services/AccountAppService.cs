@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using ApplicationCore.Commands.Accounts.CreateAccount;
+﻿using ApplicationCore.Commands.Accounts.CreateAccount;
 using ApplicationCore.Dtos.Accounts;
 using ApplicationCore.Interfaces.Services;
 using ApplicationCore.Queries.Accounts.GetAccountBySub;
@@ -9,6 +6,9 @@ using ApplicationCore.Queries.Accounts.GetProfileAggregate;
 using ApplicationCore.Queries.Accounts.GetProfileSettings;
 using Ardalis.Result;
 using MediatR;
+using System;
+using System.Collections.Generic;
+using System.Text;
 
 namespace ApplicationCore.Services;
 

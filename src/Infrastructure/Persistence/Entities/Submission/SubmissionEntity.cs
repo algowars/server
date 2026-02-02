@@ -1,7 +1,7 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
-using Infrastructure.Persistence.Entities.Account;
+﻿using Infrastructure.Persistence.Entities.Account;
 using Infrastructure.Persistence.Entities.Problem;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Infrastructure.Persistence.Entities.Submission;
 
