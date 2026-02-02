@@ -3,7 +3,9 @@ using ApplicationCore.Common.Pagination;
 using ApplicationCore.Domain.Problems.ProblemSetups;
 using ApplicationCore.Dtos.Languages;
 using ApplicationCore.Dtos.Problems;
+using ApplicationCore.Dtos.Problems.Admin;
 using ApplicationCore.Interfaces.Services;
+using ApplicationCore.Queries.Problems.GetAdminProblemsPageable;
 using ApplicationCore.Queries.Problems.GetAvailableLanguages;
 using ApplicationCore.Queries.Problems.GetProblemBySlug;
 using ApplicationCore.Queries.Problems.GetProblemSetup;
@@ -31,6 +33,26 @@ public sealed class ProblemAppService(IMediator mediator) : IProblemAppService
         );
 
         return mediator.Send(command, cancellationToken);
+    }
+
+    public async Task<PaginatedResult<AdminProblemDto>> GetAdminProblemsPageableAsync(
+        int pageNumber,
+        int pageSize,
+        DateTime timestamp,
+        CancellationToken cancellationToken
+    )
+    {
+        var query = new GetAdminProblemsPageableQuery(
+            new PaginationRequest
+            {
+                Page = pageNumber,
+                Size = pageSize,
+                Timestamp = timestamp,
+                Direction = SortDirection.Desc,
+            }
+        );
+
+        return await mediator.Send(query, cancellationToken);
     }
 
     public Task<Result<IEnumerable<ProgrammingLanguageDto>>> GetAvailableLanguagesAsync(
