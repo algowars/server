@@ -20,15 +20,25 @@ jobs:
           dotnet-version: ${{ matrix.dotnet-version }}
       - name: Display dotnet version
         run: dotnet --version
+
       - name: Install dependencies
         run: dotnet restore
+
       - name: build
         run: dotnet build --no-restore
+
       - name: Unit Tests
         run: dotnet test --no-restore --no-build --collect:"XPlat Code Coverage" --logger trx --results-directory "TestResults-${{ matrix.dotnet-version }}"
+
       - name: Upload dotnet test results
         uses: actions/upload-artifact@v4
         with:
           name: dotnet-results-${{ matrix.dotnet-version }}
           path: TestResults-${{ matrix.dotnet-version }}
         if: ${{ always() }}
+
+      - name: Install dotnet format
+        run: dotnet tool install -g dotnet-format
+
+      - name: Run dotnet linter
+        run: dotnet format --verify-no-changes
