@@ -43,6 +43,16 @@ public sealed class Judge0Client(
                 return Result.Error("No submissions found");
             }
 
+            if (_judge0Options.IsEncoded)
+            {
+                foreach (var s in batch.Submissions)
+                {
+                    s.SourceCode = Decode(s.SourceCode);
+                    s.Stdout = Decode(s.Stdout);
+                    s.Stderr = Decode(s.Stderr);
+                }
+            }
+
             return Result.Success(batch.Submissions);
         }
         catch (HttpRequestException ex)
@@ -74,7 +84,24 @@ public sealed class Judge0Client(
 
             string uri = QueryHelpers.AddQueryString("submissions/batch", query);
 
-            var payload = new Judge0BatchRequest { Submissions = reqs };
+            var submissions = reqs.Select(r =>
+                {
+                    if (!_judge0Options.IsEncoded)
+                    {
+                        return r;
+                    }
+
+                    return new Judge0SubmissionRequest
+                    {
+                        LanguageId = r.LanguageId,
+                        SourceCode = Encode(r.SourceCode),
+                        StdIn = Encode(r.StdIn),
+                        ExpectedOutput = Encode(r.ExpectedOutput),
+                    };
+                })
+                .ToList();
+
+            var payload = new Judge0BatchRequest { Submissions = submissions };
 
             var response = await httpClient.PostAsJsonAsync(uri, payload, cancellationToken);
 
@@ -110,5 +137,25 @@ public sealed class Judge0Client(
         {
             return Result.Error(ex.Message);
         }
+    }
+
+    private static string? Encode(string? value)
+    {
+        if (string.IsNullOrEmpty(value))
+        {
+            return value;
+        }
+
+        return Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(value));
+    }
+
+    private static string? Decode(string? value)
+    {
+        if (string.IsNullOrEmpty(value))
+        {
+            return value;
+        }
+
+        return System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(value));
     }
 }
