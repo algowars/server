@@ -1,7 +1,7 @@
+using ApplicationCore.Interfaces.Services;
 using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
-using ApplicationCore.Interfaces.Services;
 
 namespace Infrastructure.Services;
 

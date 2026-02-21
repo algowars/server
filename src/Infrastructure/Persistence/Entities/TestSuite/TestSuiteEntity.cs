@@ -1,6 +1,6 @@
+using Infrastructure.Persistence.Entities.Problem;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using Infrastructure.Persistence.Entities.Problem;
 
 namespace Infrastructure.Persistence.Entities.TestSuite;
 
@@ -11,11 +11,8 @@ public sealed class TestSuiteEntity : BaseAuditableEntity
     [Column("id")]
     public int Id { get; set; }
 
-    [Required, Column("name")]
+    [Required, Column("name"), MaxLength(100)]
     public required string Name { get; set; }
-
-    [Column("description")]
-    public string? Description { get; set; }
 
     [Column("test_suite_type_id")]
     public int TestSuiteTypeId { get; set; }

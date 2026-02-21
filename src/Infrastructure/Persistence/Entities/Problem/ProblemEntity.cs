@@ -1,6 +1,6 @@
+using ApplicationCore.Domain.Problems;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using ApplicationCore.Domain.Problems;
 
 namespace Infrastructure.Persistence.Entities.Problem;
 

@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using ApplicationCore.Common.Pagination;
+﻿using ApplicationCore.Common.Pagination;
 using ApplicationCore.Domain.Accounts;
 using ApplicationCore.Domain.Problems;
 using ApplicationCore.Domain.Problems.Languages;
@@ -9,6 +6,7 @@ using ApplicationCore.Domain.Problems.ProblemSetups;
 using ApplicationCore.Domain.Problems.TestSuites;
 using ApplicationCore.Interfaces.Repositories;
 using Infrastructure.Persistence;
+using Infrastructure.Persistence.Entities.Problem;
 using Mapster;
 using Microsoft.EntityFrameworkCore;
 
@@ -17,7 +15,7 @@ namespace Infrastructure.Repositories;
 public sealed class ProblemRepository(AppDbContext db) : IProblemRepository
 {
     private readonly AppDbContext _db = db;
-    private static readonly int AcceptedProblemStatusId = 3;
+    private const int AcceptedProblemStatusId = 3;
 
     public async Task<ProblemModel?> GetProblemByIdAsync(
         Guid problemId,
@@ -83,6 +81,75 @@ public sealed class ProblemRepository(AppDbContext db) : IProblemRepository
                     .ToList(),
             })
             .SingleOrDefaultAsync(cancellationToken);
+    }
+
+    public async Task<Guid> CreateProblemAsync(
+        ProblemModel problem,
+        CancellationToken cancellationToken
+    )
+    {
+        var normalizedTags = problem
+            .Tags.Select(t => t.Value.Trim())
+            .Where(t => t.Length > 0)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        var existingTags = await _db
+            .Tags.Where(t => normalizedTags.Contains(t.Value))
+            .ToListAsync(cancellationToken);
+
+        var existingTagValues = existingTags
+            .Select(t => t.Value)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        var newTags = normalizedTags
+            .Where(t => !existingTagValues.Contains(t))
+            .Select(t => new TagEntity { Value = t })
+            .ToList();
+
+        if (newTags.Count > 0)
+        {
+            _db.Tags.AddRange(newTags);
+        }
+
+        var problemEntity = new ProblemEntity
+        {
+            Id = Guid.NewGuid(),
+            Title = problem.Title,
+            Slug = problem.Slug,
+            Question = problem.Question,
+            Difficulty = problem.Difficulty,
+            StatusId = (int)ProblemStatus.Pending,
+            Tags = existingTags.Concat(newTags).ToList(),
+        };
+
+        _db.Problems.Add(problemEntity);
+
+        await _db.SaveChangesAsync(cancellationToken);
+
+        return problem.Id;
+    }
+
+    public async Task<IEnumerable<ProgrammingLanguage>> GetAvailableLanguagesAsync(
+        CancellationToken cancellationToken
+    )
+    {
+        return await _db
+            .ProgrammingLanguages.Where(language =>
+                !language.IsArchived && language.DeletedOn == null
+            )
+            .Select(language => new ProgrammingLanguage
+            {
+                Id = language.Id,
+                Name = language.Name,
+                Versions = language.Versions.Select(version => new LanguageVersion
+                {
+                    Id = version.Id,
+                    InitialCode = version.InitialCode,
+                    Version = version.Version,
+                }),
+            })
+            .ToListAsync<ProgrammingLanguage>(cancellationToken);
     }
 
     public async Task<ProblemModel?> GetProblemBySlugAsync(
@@ -203,6 +270,71 @@ public sealed class ProblemRepository(AppDbContext db) : IProblemRepository
         };
     }
 
+    public async Task<IEnumerable<ProblemSetupModel>> GetProblemSetupsAsync(
+        IEnumerable<int> problemSetupIds,
+        CancellationToken cancellationToken
+    )
+    {
+        return await _db
+            .ProblemSetups.Where(setup => problemSetupIds.Contains(setup.Id))
+            .Select(ps => new ProblemSetupModel
+            {
+                Id = ps.Id,
+                ProblemId = ps.ProblemId,
+                InitialCode = ps.InitialCode ?? "",
+                Version = ps.Version,
+                FunctionName = ps.FunctionName,
+                LanguageVersionId = ps.ProgrammingLanguageVersionId,
+                LanguageVersion =
+                    ps.LanguageVersion != null
+                        ? new LanguageVersion
+                        {
+                            Id = ps.LanguageVersion.Id,
+                            Version = ps.LanguageVersion.Version,
+                            ProgrammingLanguageId = ps.LanguageVersion.ProgrammingLanguageId,
+                            ProgrammingLanguage =
+                                ps.LanguageVersion.ProgrammingLanguage != null
+                                    ? new ProgrammingLanguage
+                                    {
+                                        Id = ps.LanguageVersion.ProgrammingLanguage.Id,
+                                        Name = ps.LanguageVersion.ProgrammingLanguage.Name,
+                                        IsArchived = ps.LanguageVersion
+                                            .ProgrammingLanguage
+                                            .IsArchived,
+                                        Versions = new List<LanguageVersion>(),
+                                    }
+                                    : null,
+                        }
+                        : null,
+                HarnessTemplate =
+                    ps.HarnessTemplate != null
+                        ? new HarnessTemplate
+                        {
+                            Id = ps.HarnessTemplate.Id,
+                            Template = ps.HarnessTemplate.Template,
+                        }
+                        : null,
+                TestSuites = ps
+                    .TestSuites.Select(ts => new TestSuiteModel
+                    {
+                        Id = ts.Id,
+                        Name = ts.Name,
+                        TestSuiteType = (TestSuiteType)ts.TestSuiteTypeId,
+                        TestCases = ts
+                            .TestCases.Select(tc => new TestCaseModel
+                            {
+                                Id = tc.Id,
+                                Input = "",
+                                ExpectedOutput = "",
+                                TestCaseType = (TestCaseType)tc.TestCaseTypeId,
+                            })
+                            .ToList(),
+                    })
+                    .ToList(),
+            })
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<ProblemSetupModel?> GetProblemSetupAsync(
         Guid problemId,
         int languageVersionId,
@@ -254,15 +386,13 @@ public sealed class ProblemRepository(AppDbContext db) : IProblemRepository
                     {
                         Id = ts.Id,
                         Name = ts.Name,
-                        Description = ts.Description,
                         TestSuiteType = (TestSuiteType)ts.TestSuiteTypeId,
                         TestCases = ts
                             .TestCases.Select(tc => new TestCaseModel
                             {
                                 Id = tc.Id,
-                                Input = tc.IoPayload != null ? tc.IoPayload.Input : "",
-                                ExpectedOutput =
-                                    tc.IoPayload != null ? tc.IoPayload.ExpectedOutput : "",
+                                Input = "",
+                                ExpectedOutput = "",
                                 TestCaseType = (TestCaseType)tc.TestCaseTypeId,
                             })
                             .ToList(),

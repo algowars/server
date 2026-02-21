@@ -1,4 +1,5 @@
 using ApplicationCore.Common.Pagination;
+using ApplicationCore.Domain.Problems.ProblemSetups;
 using ApplicationCore.Dtos.Languages;
 using ApplicationCore.Dtos.Problems;
 using Ardalis.Result;
@@ -7,6 +8,16 @@ namespace ApplicationCore.Interfaces.Services;
 
 public interface IProblemAppService
 {
+    Task<Result<Guid>> CreateProblemAsync(
+        CreateProblemDto createProblemDto,
+        Guid createdById,
+        CancellationToken cancellationToken
+    );
+
+    Task<Result<IEnumerable<ProgrammingLanguageDto>>> GetAvailableLanguagesAsync(
+        CancellationToken cancellationToken
+    );
+
     Task<Result<ProblemDto>> GetProblemBySlugAsync(
         string slug,
         CancellationToken cancellationToken
@@ -19,11 +30,8 @@ public interface IProblemAppService
         CancellationToken cancellationToken
     );
 
-    Task<Result<PaginatedResult<ProblemDto>>> GetProblemsPaginatedAsync(
-        int pageNumber,
-        int pageSize,
-        DateTime timestamp,
-        string query,
+    Task<Result<IEnumerable<ProblemSetupModel>>> GetProblemSetupsForExecutionAsync(
+        IEnumerable<int> setupIds,
         CancellationToken cancellationToken
     );
 

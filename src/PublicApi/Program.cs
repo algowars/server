@@ -1,14 +1,16 @@
-using System.Threading.RateLimiting;
 using ApplicationCore;
 using Asp.Versioning;
 using Infrastructure;
+using Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using PublicApi.Authorization;
 using PublicApi.Filters;
 using PublicApi.Middleware;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -146,6 +148,28 @@ builder.Services.AddRateLimiter(options =>
             opts.QueueLimit = 5;
         }
     );
+
+    options.AddPolicy(
+        "SubmissionDaily",
+        context =>
+        {
+            string userId =
+                context.User.FindFirst("sub")?.Value
+                ?? context.Connection.RemoteIpAddress?.ToString()
+                ?? "anonymous";
+
+            return RateLimitPartition.GetFixedWindowLimiter(
+                partitionKey: userId,
+                factory: _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = 50,
+                    Window = TimeSpan.FromDays(1),
+                    QueueLimit = 0,
+                    AutoReplenishment = true,
+                }
+            );
+        }
+    );
 });
 
 var app = builder.Build();
@@ -169,6 +193,13 @@ app.UseXfo(options => options.Deny()); // Prevent clickjacking
 app.UseCsp(options =>
     options.DefaultSources(s => s.Self()).StyleSources(s => s.Self().UnsafeInline())
 );
+
+if (app.Environment.IsDevelopment())
+{
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.Migrate();
+}
 
 app.UseCors("AllowFrontend");
 

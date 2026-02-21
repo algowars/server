@@ -2,6 +2,7 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using PublicApi.Contracts.Submission;
 
 namespace PublicApi.Controllers;
@@ -16,6 +17,7 @@ public sealed class SubmissionController(
 {
     [HttpPost("execute")]
     [Authorize]
+    [EnableRateLimiting("SubmissionDaily")]
     public async Task<IActionResult> CreateSubmissionAsync(
         [FromBody] CreateSubmissionDto createSubmissionDto,
         CancellationToken cancellationToken

@@ -1,35 +1,57 @@
-using System.Net.Http.Json;
 using ApplicationCore.Domain.CodeExecution.Judge0;
+using ApplicationCore.Domain.Submissions;
 using ApplicationCore.Interfaces.Clients;
 using Ardalis.Result;
+using Infrastructure.Configuration;
+using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.Extensions.Options;
+using System.Net.Http.Json;
+using System.Text.Json;
 
 namespace Infrastructure.CodeExecution.Judge0;
 
-public sealed class Judge0Client(HttpClient http) : IJudge0Client
+public sealed class Judge0Client(
+    HttpClient httpClient,
+    IOptions<Judge0Options> judge0Options,
+    JsonSerializerOptions jsonOptions
+) : IJudge0Client
 {
-    public async Task<Result<Judge0SubmissionResponse>> SubmitAsync(
-        Judge0SubmissionRequest req,
-        CancellationToken ct
+    private readonly Judge0Options _judge0Options = judge0Options.Value;
+
+    public async Task<Result<List<Judge0SubmissionResponse>>> GetAsync(
+        IEnumerable<Guid> tokens,
+        CancellationToken cancellationToken
     )
     {
         try
         {
-            string uri = "submissions?base64_encoded=false&wait=false";
+            var query = new Dictionary<string, string?>() { ["tokens"] = string.Join(",", tokens) };
 
-            using var resp = await http.PostAsJsonAsync(uri, ToPayload(req), ct);
-            if (!resp.IsSuccessStatusCode)
+            string uri = QueryHelpers.AddQueryString("submissions/batch", query);
+
+            var response = await httpClient.GetAsync(uri, cancellationToken);
+
+            response.EnsureSuccessStatusCode();
+
+            var batch = await response.Content.ReadFromJsonAsync<Judge0BatchGetResponse>(
+                jsonOptions,
+                cancellationToken
+            );
+
+            if (batch == null || batch.Submissions.Count == 0)
             {
-                string body = await resp.Content.ReadAsStringAsync(ct);
-                return Result.Error(body);
+                return Result.Error("No submissions found");
             }
 
-            var token = await resp.Content.ReadFromJsonAsync<TokenOnly>(cancellationToken: ct);
-            if (token is null)
-            {
-                return Result.Error("Judge0 returned empty token.");
-            }
-
-            return Result.Success(new Judge0SubmissionResponse { Token = token.token });
+            return Result.Success(batch.Submissions);
+        }
+        catch (HttpRequestException ex)
+        {
+            return Result.Error($"HTTP request failed: {ex.Message}");
+        }
+        catch (JsonException ex)
+        {
+            return Result.Error($"JSON deserialization failed: {ex.Message}");
         }
         catch (Exception ex)
         {
@@ -37,135 +59,56 @@ public sealed class Judge0Client(HttpClient http) : IJudge0Client
         }
     }
 
-    public async Task<Result<IEnumerable<Judge0SubmissionResponse>>> SubmitAsync(
+    public async Task<Result<List<Judge0SubmissionResponse>>> SubmitAsync(
         IEnumerable<Judge0SubmissionRequest> reqs,
-        CancellationToken ct
+        CancellationToken cancellationToken
     )
     {
-        var list = reqs?.ToList();
-        if (list is null || list.Count == 0)
-        {
-            return Result.Error("There should be at least one submission in a batch.");
-        }
-
         try
         {
-            string uri = "submissions/batch?base64_encoded=false&wait=false";
-
-            var payload = new Judge0BatchRequest
+            var query = new Dictionary<string, string?>()
             {
-                Submissions = list.Select(r => new Judge0SubmissionRequest()
-                    {
-                        LanguageId = r.LanguageId,
-                        SourceCode = r.SourceCode,
-                        StdIn = r.StdIn,
-                        ExpectedOutput = r.ExpectedOutput,
-                    })
-                    .ToList(),
+                ["base64_encoded"] = _judge0Options.IsEncoded.ToString().ToLowerInvariant(),
+                ["fields"] = "*",
             };
 
-            using var response = await http.PostAsJsonAsync(uri, payload, ct);
-            string body = await response.Content.ReadAsStringAsync(ct);
+            string uri = QueryHelpers.AddQueryString("submissions/batch", query);
 
-            if (!response.IsSuccessStatusCode)
+            var payload = new Judge0BatchRequest { Submissions = reqs };
+
+            var response = await httpClient.PostAsJsonAsync(uri, payload, cancellationToken);
+
+            response.EnsureSuccessStatusCode();
+
+            var body = await response.Content.ReadFromJsonAsync<
+                List<Judge0SubmissionTokenOnlyResponse>
+            >(jsonOptions, cancellationToken);
+
+            if (body == null || body.Count == 0)
             {
-                return Result.Error(body);
-            }
-
-            var tokens = await response.Content.ReadFromJsonAsync<List<TokenOnly>>(
-                cancellationToken: ct
-            );
-
-            if (tokens is null || tokens.Count == 0)
-            {
-                return Result.Error("Judge0 returned empty token list.");
-            }
-
-            return Result.Success(
-                tokens.Select(t => new Judge0SubmissionResponse { Token = t.token })
-            );
-        }
-        catch (Exception ex)
-        {
-            return Result.Error(ex.Message);
-        }
-    }
-
-    public async Task<Result<Judge0SubmissionResponse>> GetAsync(string token, CancellationToken ct)
-    {
-        try
-        {
-            string uri = $"submissions/{token}?base64_encoded=false";
-            using var resp = await http.GetAsync(uri, ct);
-
-            if (!resp.IsSuccessStatusCode)
-            {
-                string body = await resp.Content.ReadAsStringAsync(ct);
-                return Result.Error(body);
-            }
-
-            var detail = await resp.Content.ReadFromJsonAsync<Judge0SubmissionResponse>(
-                cancellationToken: ct
-            );
-            return detail is null
-                ? Result.Error("Judge0 returned empty submission detail.")
-                : Result.Success(detail);
-        }
-        catch (Exception ex)
-        {
-            return Result.Error(ex.Message);
-        }
-    }
-
-    public async Task<Result<IEnumerable<Judge0SubmissionResponse>>> GetAsync(
-        IEnumerable<string> tokens,
-        CancellationToken ct
-    )
-    {
-        var list = tokens?.ToList();
-        if (list is null || list.Count == 0)
-        {
-            return Result.Success(Enumerable.Empty<Judge0SubmissionResponse>());
-        }
-
-        try
-        {
-            string uri = $"submissions/batch?tokens={string.Join(",", list)}&base64_encoded=false";
-            using var resp = await http.GetAsync(uri, ct);
-
-            if (!resp.IsSuccessStatusCode)
-            {
-                string body = await resp.Content.ReadAsStringAsync(ct);
-                return Result.Error(body);
-            }
-
-            var details = await resp.Content.ReadFromJsonAsync<Judge0SubmissionResponse[]>(
-                cancellationToken: ct
-            );
-
-            if (details is null)
-            {
-                return Result.Error("Judge0 returned empty batch result.");
+                return Result.Error("No submissions found");
             }
 
             return Result.Success(
-                details.Select(d => new Judge0SubmissionResponse { Token = d.Token })
+                body.Select(result => new Judge0SubmissionResponse
+                {
+                    Token = result.Token,
+                    Status = new Judge0StatusModel { Id = (int)SubmissionStatus.InQueue },
+                })
+                    .ToList()
             );
+        }
+        catch (HttpRequestException ex)
+        {
+            return Result.Error($"HTTP request failed: {ex.Message}");
+        }
+        catch (JsonException ex)
+        {
+            return Result.Error($"JSON deserialization failed: {ex.Message}");
         }
         catch (Exception ex)
         {
             return Result.Error(ex.Message);
         }
     }
-
-    private static object ToPayload(Judge0SubmissionRequest req) =>
-        new
-        {
-            language_id = req.LanguageId,
-            source_code = req.SourceCode,
-            stdin = req.StdIn,
-            expected_output = req.ExpectedOutput,
-        };
-
-    private sealed record TokenOnly(string token);
 }

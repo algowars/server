@@ -78,17 +78,28 @@ public sealed partial class AccountController(IAccountAppService accountAppServi
             return Unauthorized();
         }
 
-        var permissions = User.Claims.Where(c => c.Type == "permissions").Select(c => c.Value);
+        IEnumerable<string> permissions = User
+            .Claims.Where(c => c.Type == "permissions")
+            .Select(c => c.Value)
+            .ToArray();
 
         var accountResult = await accountAppService.GetAccountBySubAsync(sub, cancellationToken);
 
         if (accountResult.IsSuccess)
         {
-            return Ok(accountResult.Value);
+            return Ok(
+                new AccountDto
+                {
+                    Id = accountResult.Value.Id,
+                    Username = accountResult.Value.Username,
+                    ImageUrl = accountResult.Value.ImageUrl,
+                    Permissions = permissions,
+                    CreatedOn = accountResult.Value.CreatedOn,
+                }
+            );
         }
 
         string errors = string.Join(", ", accountResult.Errors);
-
         return BadRequest(errors);
     }
 }

@@ -1,3 +1,4 @@
+using ApplicationCore.Commands.Problem.CreateProblem;
 using ApplicationCore.Common.Pagination;
 using ApplicationCore.Domain.Problems;
 using ApplicationCore.Domain.Problems.Languages;
@@ -7,7 +8,11 @@ namespace ApplicationCore.Interfaces.Repositories;
 
 public interface IProblemRepository
 {
-    Task<ProblemModel?> GetProblemByIdAsync(Guid problemId, CancellationToken cancellationToken);
+    Task<Guid> CreateProblemAsync(ProblemModel problem, CancellationToken cancellationToken);
+
+    Task<IEnumerable<ProgrammingLanguage>> GetAvailableLanguagesAsync(
+        CancellationToken cancellationToken
+    );
 
     Task<ProblemModel?> GetProblemBySlugAsync(string slug, CancellationToken cancellationToken);
 
@@ -17,10 +22,13 @@ public interface IProblemRepository
         CancellationToken cancellationToken
     );
 
-    Task<ProblemSetupModel?> GetProblemSetupAsync(int setupId, CancellationToken cancellationToken);
-
     Task<PaginatedResult<ProblemModel>> GetProblemsAsync(
         PaginationRequest pagination,
+        CancellationToken cancellationToken
+    );
+
+    Task<IEnumerable<ProblemSetupModel>> GetProblemSetupsAsync(
+        IEnumerable<int> problemSetupIds,
         CancellationToken cancellationToken
     );
 }

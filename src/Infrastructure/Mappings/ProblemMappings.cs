@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using ApplicationCore.Domain.Problems;
+﻿using ApplicationCore.Domain.Problems;
 using ApplicationCore.Domain.Problems.Languages;
 using ApplicationCore.Domain.Problems.ProblemSetups;
 using ApplicationCore.Domain.Problems.TestSuites;
@@ -9,6 +6,9 @@ using Infrastructure.Persistence.Entities.Language;
 using Infrastructure.Persistence.Entities.Problem;
 using Infrastructure.Persistence.Entities.TestSuite;
 using Mapster;
+using System;
+using System.Collections.Generic;
+using System.Text;
 
 namespace Infrastructure.Mappings;
 
@@ -39,8 +39,8 @@ public sealed class ProblemMappings : IRegister
 
         config
             .NewConfig<TestCaseEntity, TestCaseModel>()
-            .Map(dest => dest.Input, src => src.IoPayload.Input)
-            .Map(dest => dest.ExpectedOutput, src => src.IoPayload.ExpectedOutput)
+            .Map(dest => dest.Input, src => "")
+            .Map(dest => dest.ExpectedOutput, src => "")
             .Map(dest => dest.TestCaseType, src => (TestCaseType)src.TestCaseTypeId);
     }
 }

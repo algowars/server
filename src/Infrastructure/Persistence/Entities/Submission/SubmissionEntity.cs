@@ -1,6 +1,7 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Infrastructure.Persistence.Entities.Account;
+using Infrastructure.Persistence.Entities.Problem;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using Infrastructure.Persistence.Entities.Account;
 
 namespace Infrastructure.Persistence.Entities.Submission;
 
@@ -15,6 +16,9 @@ public sealed class SubmissionEntity
 
     [Required, Column("problem_setup_id")]
     public required int ProblemSetupId { get; set; }
+
+    [ForeignKey(nameof(ProblemSetupId))]
+    public ProblemSetupEntity? ProblemSetup { get; set; }
 
     [Column("completed_at")]
     public DateTime? CompletedAt { get; set; }

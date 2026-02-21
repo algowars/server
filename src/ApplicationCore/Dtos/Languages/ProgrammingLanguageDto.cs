@@ -8,5 +8,5 @@ public sealed record ProgrammingLanguageDto
 
     public bool IsArchived { get; init; }
 
-    public ICollection<LanguageVersionDto> Versions { get; init; } = [];
+    public IEnumerable<LanguageVersionDto> Versions { get; init; } = [];
 }
