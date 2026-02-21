@@ -1,6 +1,9 @@
 name: Continuous Integration
 
 on:
+  push:
+    branches:
+      - master
   pull_request:
     branches:
       - master
@@ -36,9 +39,16 @@ jobs:
           name: dotnet-results-${{ matrix.dotnet-version }}
           path: TestResults-${{ matrix.dotnet-version }}
         if: ${{ always() }}
-
+        
       - name: Install dotnet format
         run: dotnet tool install -g dotnet-format
 
       - name: Run dotnet linter
         run: dotnet format --verify-no-changes
+        
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: "TestResults-${{ matrix.dotnet-version }}/**/coverage.cobertura.xml"
+          fail_ci_if_error: false
+        if: ${{ always() }}
