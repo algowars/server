@@ -100,6 +100,6 @@ public sealed partial class AccountController(IAccountAppService accountAppServi
         }
 
         string errors = string.Join(", ", accountResult.Errors);
-        return BadRequest(errors);
+        return NotFound(errors);
     }
 }

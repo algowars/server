@@ -1,10 +1,10 @@
+using System.Linq;
 using ApplicationCore.Common.Pagination;
 using ApplicationCore.Dtos.Accounts;
 using ApplicationCore.Dtos.Languages;
 using ApplicationCore.Dtos.Problems.Admin;
 using ApplicationCore.Interfaces.Repositories;
 using Ardalis.Result;
-using System.Linq;
 
 namespace ApplicationCore.Queries.Problems.GetAdminProblemsPageable;
 
@@ -27,6 +27,7 @@ public class GetAdminProblemsPageableHandler(IProblemRepository repository)
                 Id: problem.Id,
                 Title: problem.Title,
                 Status: problem.Status,
+                Slug: problem.Slug,
                 CreatedOn: problem.CreatedOn,
                 ProgrammingLanguages: problem
                     .ProblemSetups?.Select(setup => setup.LanguageVersion?.ProgrammingLanguage)
@@ -44,7 +45,7 @@ public class GetAdminProblemsPageableHandler(IProblemRepository repository)
                     {
                         Id = problem.CreatedBy.Id,
                         Username = problem.CreatedBy.Username,
-                        CreatedOn = problem.CreatedOn,
+                        CreatedOn = problem.CreatedBy.CreatedOn,
                     }
                     : null
             ));
