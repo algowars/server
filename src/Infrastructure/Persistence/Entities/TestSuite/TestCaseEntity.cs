@@ -13,12 +13,6 @@ public sealed class TestCaseEntity : BaseAuditableEntity
     [Column("test_suite_id")]
     public int TestSuiteId { get; set; }
 
-    [Column("test_case_type_id")]
-    public int TestCaseTypeId { get; set; }
-
-    [ForeignKey(nameof(TestCaseTypeId))]
-    public TestCaseTypeEntity? TestCaseType { get; set; }
-
     [ForeignKey(nameof(TestSuiteId))]
     public TestSuiteEntity? TestSuite { get; set; }
 
