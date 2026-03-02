@@ -16,5 +16,7 @@ public sealed class TestCaseEntity : BaseAuditableEntity
     [ForeignKey(nameof(TestSuiteId))]
     public TestSuiteEntity? TestSuite { get; set; }
 
-    public IEnumerable<TestCaseInputParamEntity> InputParams { get; set; } = [];
+    public IEnumerable<TestCaseInputEntity> InputParams { get; set; } = [];
+
+    public TestCaseExpectedOutputEntity? ExpectedOutput { get; set; }
 }
