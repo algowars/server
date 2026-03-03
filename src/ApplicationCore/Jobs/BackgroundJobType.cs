@@ -2,5 +2,7 @@ namespace ApplicationCore.Jobs;
 
 public enum BackgroundJobType
 {
-    SubmissionInitializer = 1,
+    SubmissionExecution = 1,
+    SubmissionEvaluator,
+    SubmissionPoller,
 }

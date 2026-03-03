@@ -1,4 +1,6 @@
 ﻿using ApplicationCore.Commands.Submissions.CreateSubmission;
+using ApplicationCore.Commands.Submissions.IncrementSubmissionOutboxes;
+using ApplicationCore.Domain.Submissions;
 using ApplicationCore.Domain.Submissions.Outboxes;
 using ApplicationCore.Interfaces.Services;
 using ApplicationCore.Queries.Submissions.GetSubmissionOutboxes;
@@ -28,5 +30,26 @@ public sealed class SubmissionAppService(IMediator mediator) : ISubmissionAppSer
         var query = new GetSubmissionOutboxesQuery();
 
         return mediator.Send(query, cancellationToken);
+    }
+
+    public Task<Result<Unit>> IncrementOutboxesCountAsync(
+        IEnumerable<Guid> outboxIds,
+        DateTime timestamp,
+        CancellationToken cancellationToken
+    )
+    {
+        var command = new IncrementSubmissionOutboxesCommand(outboxIds, timestamp);
+
+        return mediator.Send(command, cancellationToken);
+    }
+
+    public Task<Result<Unit>> ProcessSubmissionExecutionAsync(
+        IEnumerable<SubmissionModel> results,
+        CancellationToken cancellationToken
+    )
+    {
+        var command = new ProcessSubmissionExecutionAsync(results);
+
+        return mediator.Send(command, cancellationToken);
     }
 }

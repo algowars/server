@@ -1,3 +1,4 @@
+using System.Text.Json;
 using ApplicationCore.Interfaces.Clients;
 using ApplicationCore.Interfaces.Repositories;
 using ApplicationCore.Interfaces.Services;
@@ -13,7 +14,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using System.Text.Json;
 
 namespace Infrastructure;
 
@@ -108,7 +108,7 @@ public static class DependencyInjection
                 client.BaseAddress = new Uri(baseUrl);
                 client.Timeout = TimeSpan.FromSeconds(judge0.DefaultTimeoutInSeconds);
 
-                client.DefaultRequestHeaders.Add("x-rapidapi-key", judge0.ApiKey);
+                //client.DefaultRequestHeaders.Add("x-rapidapi-key", judge0.ApiKey);
                 client.DefaultRequestHeaders.Add("x-rapidapi-host", judge0.Host);
                 client.DefaultRequestHeaders.Add("Accept", "application/json");
             }

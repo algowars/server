@@ -1,4 +1,5 @@
-﻿using ApplicationCore.Domain.Submissions;
+﻿using System.Linq.Expressions;
+using ApplicationCore.Domain.Submissions;
 using ApplicationCore.Domain.Submissions.Outboxes;
 using ApplicationCore.Interfaces.Repositories;
 using EFCore.BulkExtensions;
@@ -6,7 +7,6 @@ using Infrastructure.Persistence;
 using Infrastructure.Persistence.Entities.Submission;
 using Infrastructure.Persistence.Entities.Submission.Outbox;
 using Microsoft.EntityFrameworkCore;
-using System.Linq.Expressions;
 
 namespace Infrastructure.Repositories;
 
@@ -63,7 +63,7 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
         }
     }
 
-    public Task IncrementOutboxesCount(
+    public Task IncrementOutboxesCountAsync(
         IEnumerable<Guid> outboxIds,
         DateTime now,
         CancellationToken cancellationToken
@@ -81,7 +81,7 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
             );
     }
 
-    public async Task ProcessSubmissionInitialization(
+    public async Task ProcessSubmissionInitializationAsync(
         IEnumerable<SubmissionModel> submissions,
         CancellationToken cancellationToken
     )

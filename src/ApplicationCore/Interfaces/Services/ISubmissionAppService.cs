@@ -1,5 +1,7 @@
-﻿using ApplicationCore.Domain.Submissions.Outboxes;
+﻿using ApplicationCore.Domain.Submissions;
+using ApplicationCore.Domain.Submissions.Outboxes;
 using Ardalis.Result;
+using MediatR;
 
 namespace ApplicationCore.Interfaces.Services;
 
@@ -13,6 +15,17 @@ public interface ISubmissionAppService
     );
 
     Task<Result<IEnumerable<SubmissionOutboxModel>>> GetSubmissionOutboxesAsync(
+        CancellationToken cancellationToken
+    );
+
+    Task<Result<Unit>> IncrementOutboxesCountAsync(
+        IEnumerable<Guid> outboxIds,
+        DateTime timestamp,
+        CancellationToken cancellationToken
+    );
+
+    Task<Result<Unit>> ProcessSubmissionExecutionAsync(
+        IEnumerable<SubmissionModel> results,
         CancellationToken cancellationToken
     );
 }
