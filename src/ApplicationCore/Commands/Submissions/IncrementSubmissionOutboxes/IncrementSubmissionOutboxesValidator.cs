@@ -2,7 +2,7 @@
 
 namespace ApplicationCore.Commands.Submissions.IncrementSubmissionOutboxes;
 
-internal sealed class IncrementSubmissionOutboxesValidator
+public sealed class IncrementSubmissionOutboxesValidator
     : AbstractValidator<IncrementSubmissionOutboxesCommand>
 {
     public IncrementSubmissionOutboxesValidator()

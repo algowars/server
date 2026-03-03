@@ -5,7 +5,7 @@ using MediatR;
 
 namespace ApplicationCore.Commands.Submissions.ProcessSubmissionExecutions;
 
-internal sealed class ProcessSubmissionExecutionsHandler(
+public sealed class ProcessSubmissionExecutionsHandler(
     ISubmissionRepository submissionRepository,
     IValidator<ProcessSubmissionExecutionsCommand> validator
 ) : AbstractCommandHandler<ProcessSubmissionExecutionsCommand, Unit>(validator)

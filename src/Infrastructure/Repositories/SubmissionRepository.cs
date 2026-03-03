@@ -130,7 +130,7 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
                             setters
                                 .SetProperty(
                                     o => o.SubmissionOutboxTypeId,
-                                    (int)SubmissionOutboxType.PollInitialization
+                                    (int)SubmissionOutboxType.Evaluate
                                 )
                                 .SetProperty(o => o.AttemptCount, _ => 0),
                         cancellationToken: cancellationToken

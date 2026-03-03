@@ -5,7 +5,7 @@ using MediatR;
 
 namespace ApplicationCore.Commands.Submissions.IncrementSubmissionOutboxes;
 
-internal sealed class IncrementSubmissionOutboxesHandler(
+public sealed class IncrementSubmissionOutboxesHandler(
     ISubmissionRepository submissionRepository,
     IValidator<IncrementSubmissionOutboxesCommand> validator
 ) : AbstractCommandHandler<IncrementSubmissionOutboxesCommand, Unit>(validator)

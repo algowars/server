@@ -1,5 +1,6 @@
 ﻿using ApplicationCore.Commands.Submissions.CreateSubmission;
 using ApplicationCore.Commands.Submissions.IncrementSubmissionOutboxes;
+using ApplicationCore.Commands.Submissions.ProcessSubmissionExecutions;
 using ApplicationCore.Domain.Submissions;
 using ApplicationCore.Domain.Submissions.Outboxes;
 using ApplicationCore.Interfaces.Services;
@@ -48,7 +49,7 @@ public sealed class SubmissionAppService(IMediator mediator) : ISubmissionAppSer
         CancellationToken cancellationToken
     )
     {
-        var command = new ProcessSubmissionExecutionAsync(results);
+        var command = new ProcessSubmissionExecutionsCommand(results);
 
         return mediator.Send(command, cancellationToken);
     }

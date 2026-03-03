@@ -5,7 +5,7 @@ using ApplicationCore.Jobs;
 
 namespace Infrastructure.Jobs.JobHandlers;
 
-internal sealed class SubmissionExecutionHandler(
+public sealed class SubmissionExecutionHandler(
     ISubmissionAppService submissionAppService,
     IProblemAppService problemAppService,
     ICodeBuilderService codeBuilderService,

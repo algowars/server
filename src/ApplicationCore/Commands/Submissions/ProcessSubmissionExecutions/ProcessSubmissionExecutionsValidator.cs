@@ -4,6 +4,4 @@ using System.Text;
 
 namespace ApplicationCore.Commands.Submissions.ProcessSubmissionExecutions;
 
-internal class ProcessSubmissionExecutionsValidator
-{
-}
+public sealed class ProcessSubmissionExecutionsValidator { }
