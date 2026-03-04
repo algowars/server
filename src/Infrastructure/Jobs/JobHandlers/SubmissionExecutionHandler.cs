@@ -1,39 +1,37 @@
-using ApplicationCore.Domain.CodeExecution;
+﻿using ApplicationCore.Domain.CodeExecution;
 using ApplicationCore.Domain.Submissions.Outboxes;
-using ApplicationCore.Interfaces.Repositories;
 using ApplicationCore.Interfaces.Services;
 using ApplicationCore.Jobs;
 
 namespace Infrastructure.Jobs.JobHandlers;
 
-public sealed class SubmissionInitializerHandler(
+public sealed class SubmissionExecutionHandler(
     ISubmissionAppService submissionAppService,
     IProblemAppService problemAppService,
     ICodeBuilderService codeBuilderService,
-    ISubmissionRepository submissionRepository,
     ICodeExecutionService codeExecutionService
 ) : IBackgroundJob
 {
-    public BackgroundJobType JobType => BackgroundJobType.SubmissionInitializer;
+    public BackgroundJobType JobType => BackgroundJobType.SubmissionExecution;
 
     public async Task ExecuteAsync(CancellationToken cancellationToken)
     {
-        var outboxesResult = await submissionAppService.GetSubmissionOutboxesAsync(
+        var outboxResults = await submissionAppService.GetSubmissionOutboxesAsync(
             cancellationToken
         );
 
-        if (!outboxesResult.IsSuccess || !outboxesResult.Value.Any())
+        if (!outboxResults.IsSuccess || !outboxResults.Value.Any())
         {
             return;
         }
 
-        var outboxes = outboxesResult
-            .Value.Where(outbox => outbox.Type == SubmissionOutboxType.Initialized)
-            .ToList();
+        var outboxes = outboxResults.Value.Where(outbox =>
+            outbox.Type == SubmissionOutboxType.Initialized
+        );
 
         var setupsMap = (
             await problemAppService.GetProblemSetupsForExecutionAsync(
-                outboxes.Select(s => s.Submission.ProblemSetupId),
+                outboxes.Select(outbox => outbox.Submission.ProblemSetupId),
                 cancellationToken
             )
         ).Value.ToDictionary(setup => setup.Id);
@@ -73,18 +71,18 @@ public sealed class SubmissionInitializerHandler(
             return;
         }
 
-        var outboxIds = outboxes.Select(o => o.Id).ToList();
+        var outboxIds = outboxes.Select(outbox => outbox.Id).ToList();
         var now = DateTime.UtcNow;
 
-        await submissionRepository.IncrementOutboxesCount(outboxIds, now, cancellationToken);
+        await submissionAppService.IncrementOutboxesCountAsync(outboxIds, now, cancellationToken);
 
-        var submissionsResult = await codeExecutionService.ExecuteAsync(
+        var submissionResults = await codeExecutionService.ExecuteAsync(
             executionContexts,
             cancellationToken
         );
 
-        await submissionRepository.ProcessSubmissionInitialization(
-            submissionsResult.Value,
+        await submissionAppService.ProcessSubmissionExecutionAsync(
+            submissionResults.Value,
             cancellationToken
         );
     }

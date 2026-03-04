@@ -326,7 +326,6 @@ public sealed class ProblemRepository(AppDbContext db) : IProblemRepository
                                 Id = tc.Id,
                                 Input = "",
                                 ExpectedOutput = "",
-                                TestCaseType = (TestCaseType)tc.TestCaseTypeId,
                             })
                             .ToList(),
                     })
@@ -393,7 +392,6 @@ public sealed class ProblemRepository(AppDbContext db) : IProblemRepository
                                 Id = tc.Id,
                                 Input = "",
                                 ExpectedOutput = "",
-                                TestCaseType = (TestCaseType)tc.TestCaseTypeId,
                             })
                             .ToList(),
                     })

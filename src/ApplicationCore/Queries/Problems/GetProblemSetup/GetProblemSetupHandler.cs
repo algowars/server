@@ -40,13 +40,11 @@ public sealed class GetProblemSetupHandler(IProblemRepository problemRepository)
                 .TestSuites.Where(ts => ts.TestSuiteType == TestSuiteType.Public)
                 .Select(ts => new TestSuiteDto()
                 {
-                    TestCases = ts
-                        .TestCases.Where(tc => tc.TestCaseType == TestCaseType.Sample)
-                        .Select(tc => new TestCaseDto()
-                        {
-                            Input = tc.Input,
-                            ExpectedOutput = tc.ExpectedOutput,
-                        }),
+                    TestCases = ts.TestCases.Select(tc => new TestCaseDto()
+                    {
+                        Input = tc.Input,
+                        ExpectedOutput = tc.ExpectedOutput,
+                    }),
                 }),
         };
     }

@@ -6,6 +6,11 @@
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
+  <ItemGroup>
+    <Compile Remove="PublicApi\**" />
+    <EmbeddedResource Remove="PublicApi\**" />
+    <None Remove="PublicApi\**" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="coverlet.collector" Version="6.0.4" />
@@ -26,7 +31,7 @@
   <ItemGroup>
     <Folder Include="ApplicationCore\Domain\Problems\ProblemsSetups\" />
     <Folder Include="ApplicationCore\Domain\Problems\TestSuites\" />
-    <Folder Include="PublicApi\" />
+    <Folder Include="Infrastructure\" />
   </ItemGroup>
 
   <ItemGroup>

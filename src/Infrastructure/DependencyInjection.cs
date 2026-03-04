@@ -1,3 +1,4 @@
+using System.Text.Json;
 using ApplicationCore.Interfaces.Clients;
 using ApplicationCore.Interfaces.Repositories;
 using ApplicationCore.Interfaces.Services;
@@ -13,7 +14,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using System.Text.Json;
 
 namespace Infrastructure;
 
@@ -66,7 +66,7 @@ public static class DependencyInjection
         services.AddScoped<IProblemRepository, ProblemRepository>();
         services.AddScoped<ISubmissionRepository, SubmissionRepository>();
 
-        services.AddScoped<SubmissionInitializerHandler>();
+        services.AddScoped<SubmissionExecutionHandler>();
 
         var jobsSection = configuration.GetSection("BackgroundJobs");
 
@@ -80,10 +80,10 @@ public static class DependencyInjection
 
         services.AddBackgroundJobs(jobs =>
         {
-            jobs.Register<SubmissionInitializerHandler>(
-                jobType: BackgroundJobType.SubmissionInitializer,
-                interval: GetInterval("SubmissionInitializer", 5),
-                enabled: GetEnabled("SubmissionInitializer", false)
+            jobs.Register<SubmissionExecutionHandler>(
+                jobType: BackgroundJobType.SubmissionExecution,
+                interval: GetInterval("SubmissionExecutionHandler", 5),
+                enabled: GetEnabled("SubmissionExecutionHandler", false)
             );
         });
 
@@ -108,7 +108,7 @@ public static class DependencyInjection
                 client.BaseAddress = new Uri(baseUrl);
                 client.Timeout = TimeSpan.FromSeconds(judge0.DefaultTimeoutInSeconds);
 
-                client.DefaultRequestHeaders.Add("x-rapidapi-key", judge0.ApiKey);
+                //client.DefaultRequestHeaders.Add("x-rapidapi-key", judge0.ApiKey);
                 client.DefaultRequestHeaders.Add("x-rapidapi-host", judge0.Host);
                 client.DefaultRequestHeaders.Add("Accept", "application/json");
             }

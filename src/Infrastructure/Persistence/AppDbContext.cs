@@ -45,10 +45,6 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
 
     public DbSet<TestCaseEntity> TestCases { get; set; }
 
-    public DbSet<TestCaseIoPayloadEntity> TestCaseIoPayloads { get; set; }
-
-    public DbSet<TestCaseTypeEntity> TestCaseTypes { get; set; }
-
     public DbSet<TestSuiteEntity> TestSuites { get; set; }
 
     public DbSet<TestSuiteTypeEntity> TestSuiteTypes { get; set; }

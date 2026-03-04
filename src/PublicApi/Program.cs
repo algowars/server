@@ -1,3 +1,4 @@
+using System.Threading.RateLimiting;
 using ApplicationCore;
 using Asp.Versioning;
 using Infrastructure;
@@ -10,7 +11,6 @@ using Microsoft.IdentityModel.Tokens;
 using PublicApi.Authorization;
 using PublicApi.Filters;
 using PublicApi.Middleware;
-using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -193,13 +193,6 @@ app.UseXfo(options => options.Deny()); // Prevent clickjacking
 app.UseCsp(options =>
     options.DefaultSources(s => s.Self()).StyleSources(s => s.Self().UnsafeInline())
 );
-
-if (app.Environment.IsDevelopment())
-{
-    using var scope = app.Services.CreateScope();
-    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    db.Database.Migrate();
-}
 
 app.UseCors("AllowFrontend");
 
