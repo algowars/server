@@ -27,7 +27,7 @@ public sealed class IncrementSubmissionOutboxesHandler(
         }
         catch (Exception ex)
         {
-            return Result.Error(ex.Message);
+            return Result<Unit>.Error(ex.Message);
         }
     }
 }

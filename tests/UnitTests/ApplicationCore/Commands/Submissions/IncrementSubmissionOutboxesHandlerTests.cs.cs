@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using ApplicationCore.Commands.Submissions.IncrementSubmissionOutboxes;
 using ApplicationCore.Interfaces.Repositories;
+using Ardalis.Result;
 using FluentValidation;
 using FluentValidation.Results;
-using MediatR;
 using Moq;
 
 namespace UnitTests.ApplicationCore.Commands.Submissions;
@@ -39,7 +40,7 @@ internal class IncrementSubmissionOutboxesHandlerTests
     }
 
     [Test]
-    public void Handle_ShouldIncrementOutboxesCountSuccessfully()
+    public async Task Handle_ShouldIncrementOutboxesCountSuccessfully()
     {
         _mockSubmissionRepository
             .Setup(r =>
@@ -55,7 +56,7 @@ internal class IncrementSubmissionOutboxesHandlerTests
             [Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid()],
             DateTime.UtcNow
         );
-        var result = _sut.Handle(command, CancellationToken.None).Result;
+        var result = await _sut.Handle(command, CancellationToken.None);
 
         Assert.That(result.IsSuccess, Is.True);
         _mockSubmissionRepository.Verify(
@@ -70,5 +71,22 @@ internal class IncrementSubmissionOutboxesHandlerTests
     }
 
     [Test]
-    public void Handle_RepositoryError_
+    public async Task Handle_RepositoryError_ShouldReturnErrorResult()
+    {
+        _mockSubmissionRepository
+            .Setup(r =>
+                r.IncrementOutboxesCountAsync(
+                    It.IsAny<IEnumerable<Guid>>(),
+                    It.IsAny<DateTime>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .ThrowsAsync(new Exception("Database error"));
+        var command = new IncrementSubmissionOutboxesCommand(
+            [Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid()],
+            DateTime.UtcNow
+        );
+        var result = await _sut.Handle(command, CancellationToken.None);
+        Assert.That(result.IsError, Is.True);
+    }
 }
