@@ -1,7 +1,6 @@
 ﻿using ApplicationCore.Domain.CodeExecution;
 using ApplicationCore.Domain.Submissions.Outboxes;
 using ApplicationCore.Interfaces.Services;
-using ApplicationCore.Jobs;
 
 namespace Infrastructure.Jobs.JobHandlers;
 
@@ -10,11 +9,11 @@ public sealed class SubmissionExecutionHandler(
     IProblemAppService problemAppService,
     ICodeBuilderService codeBuilderService,
     ICodeExecutionService codeExecutionService
-) : IBackgroundJob
+) : JobBase
 {
-    public BackgroundJobType JobType => BackgroundJobType.SubmissionExecution;
+    public override JobType JobType => JobType.SubmissionExecution;
 
-    public async Task ExecuteAsync(CancellationToken cancellationToken)
+    protected override async Task ExecuteJobAsync(CancellationToken cancellationToken)
     {
         var outboxResults = await submissionAppService.GetSubmissionOutboxesAsync(
             cancellationToken

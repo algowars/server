@@ -18,7 +18,7 @@ public sealed class ProcessSubmissionExecutionsHandler(
         try
         {
             await submissionRepository.ProcessSubmissionInitializationAsync(
-                request.submissions,
+                request.Submissions,
                 cancellationToken
             );
 

@@ -27,40 +27,30 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
 
     public async Task SaveAsync(SubmissionModel submission, CancellationToken cancellationToken)
     {
-        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+        await db.Submissions.AddAsync(
+            new SubmissionEntity
+            {
+                Id = submission.Id,
+                ProblemSetupId = submission.ProblemSetupId,
+                Code = submission.Code ?? "",
+                CreatedOn = DateTime.UtcNow,
+                CreatedById = submission.CreatedById,
+            },
+            cancellationToken
+        );
 
-        try
-        {
-            await db.Submissions.AddAsync(
-                new SubmissionEntity
-                {
-                    Id = submission.Id,
-                    ProblemSetupId = submission.ProblemSetupId,
-                    Code = submission.Code ?? "",
-                    CreatedOn = DateTime.UtcNow,
-                    CreatedById = submission.CreatedById,
-                },
-                cancellationToken
-            );
+        await db.SubmissionOutboxes.AddAsync(
+            new SubmissionOutboxEntity
+            {
+                Id = Guid.NewGuid(),
+                SubmissionId = submission.Id,
+                SubmissionOutboxTypeId = (int)SubmissionOutboxType.Initialized,
+                SubmissionOutboxStatusId = (int)SubmissionOutboxStatus.Pending,
+            },
+            cancellationToken
+        );
 
-            await db.SubmissionOutboxes.AddAsync(
-                new SubmissionOutboxEntity
-                {
-                    Id = Guid.NewGuid(),
-                    SubmissionId = submission.Id,
-                    SubmissionOutboxTypeId = (int)SubmissionOutboxType.Initialized,
-                    SubmissionOutboxStatusId = (int)SubmissionOutboxStatus.Pending,
-                },
-                cancellationToken
-            );
-
-            await db.SaveChangesAsync(cancellationToken);
-            await transaction.CommitAsync(cancellationToken);
-        }
-        catch
-        {
-            await transaction.RollbackAsync(cancellationToken);
-        }
+        await db.SaveChangesAsync(cancellationToken);
     }
 
     public Task IncrementOutboxesCountAsync(

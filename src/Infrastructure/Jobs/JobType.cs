@@ -1,6 +1,6 @@
-namespace ApplicationCore.Jobs;
+﻿namespace Infrastructure.Jobs;
 
-public enum BackgroundJobType
+public enum JobType
 {
     SubmissionExecution = 1,
     SubmissionEvaluator,

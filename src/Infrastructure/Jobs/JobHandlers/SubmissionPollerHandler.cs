@@ -1,9 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿namespace Infrastructure.Jobs.JobHandlers;
 
-namespace Infrastructure.Jobs.JobHandlers;
-
-internal class SubmissionPollerHandler
+internal class SubmissionPollerHandler : JobBase
 {
+    public override JobType JobType => JobType.SubmissionPoller;
+
+    protected override Task ExecuteJobAsync(CancellationToken cancellationToken)
+    {
+        throw new NotImplementedException();
+    }
 }

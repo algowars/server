@@ -1,12 +1,13 @@
-﻿using ApplicationCore.Jobs;
+﻿using Infrastructure.Persistence;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Infrastructure.Jobs.JobHandlers;
 
-internal sealed class SubmissionEvaluatorHandler : IBackgroundJob
+internal sealed class SubmissionEvaluatorHandler() : JobBase
 {
-    public BackgroundJobType JobType => BackgroundJobType.SubmissionEvaluator;
+    public override JobType JobType => JobType.SubmissionEvaluator;
 
-    public Task ExecuteAsync(CancellationToken cancellationToken)
+    protected override async Task ExecuteJobAsync(CancellationToken cancellationToken)
     {
         throw new NotImplementedException();
     }
