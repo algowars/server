@@ -27,27 +27,27 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
 
     public async Task SaveAsync(SubmissionModel submission, CancellationToken cancellationToken)
     {
-        await db.Submissions.AddAsync(
+        DateTime createdOn = DateTime.UtcNow;
+        db.Submissions.Add(
             new SubmissionEntity
             {
                 Id = submission.Id,
                 ProblemSetupId = submission.ProblemSetupId,
                 Code = submission.Code ?? "",
-                CreatedOn = DateTime.UtcNow,
+                CreatedOn = createdOn,
                 CreatedById = submission.CreatedById,
-            },
-            cancellationToken
+            }
         );
 
-        await db.SubmissionOutboxes.AddAsync(
+        db.SubmissionOutboxes.Add(
             new SubmissionOutboxEntity
             {
                 Id = Guid.NewGuid(),
                 SubmissionId = submission.Id,
                 SubmissionOutboxTypeId = (int)SubmissionOutboxType.Initialized,
                 SubmissionOutboxStatusId = (int)SubmissionOutboxStatus.Pending,
-            },
-            cancellationToken
+                CreatedOn = createdOn,
+            }
         );
 
         await db.SaveChangesAsync(cancellationToken);
@@ -148,18 +148,6 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
         StartedAt = result.StartedAt,
         Stdout = result.Stdout,
     };
-
-    private static readonly Expression<Func<SubmissionEntity, SubmissionModel>> MapSubmissionExpr =
-        submission => new SubmissionModel
-        {
-            Id = submission.Id,
-            Code = submission.Code,
-            ProblemSetupId = submission.ProblemSetupId,
-            CreatedOn = submission.CreatedOn,
-            CompletedAt = submission.CompletedAt,
-            CreatedById = submission.CreatedById,
-            Results = submission.Results.AsQueryable().Select(MapResultExpr),
-        };
 
     private static readonly Expression<
         Func<SubmissionOutboxEntity, SubmissionOutboxModel>

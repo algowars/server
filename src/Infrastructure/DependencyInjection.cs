@@ -76,7 +76,7 @@ public static class DependencyInjection
         IConfiguration configuration
     )
     {
-        services.AddDbContextFactory<AppDbContext>(
+        services.AddDbContext<AppDbContext>(
             (sp, o) =>
             {
                 var cs = sp.GetRequiredService<IOptions<ConnectionStringOptions>>().Value;

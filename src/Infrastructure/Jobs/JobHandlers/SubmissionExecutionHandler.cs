@@ -1,88 +1,92 @@
 ﻿using ApplicationCore.Domain.CodeExecution;
 using ApplicationCore.Domain.Submissions.Outboxes;
 using ApplicationCore.Interfaces.Services;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Infrastructure.Jobs.JobHandlers;
 
-public sealed class SubmissionExecutionHandler(
-    ISubmissionAppService submissionAppService,
-    IProblemAppService problemAppService,
-    ICodeBuilderService codeBuilderService,
-    ICodeExecutionService codeExecutionService
-) : JobBase
+public sealed class SubmissionExecutionHandler(IServiceScopeFactory serviceScopeFactory) : JobBase
 {
     public override JobType JobType => JobType.SubmissionExecution;
 
     protected override async Task ExecuteJobAsync(CancellationToken cancellationToken)
     {
-        var outboxResults = await submissionAppService.GetSubmissionOutboxesAsync(
-            cancellationToken
-        );
+        //using var scope = serviceScopeFactory.CreateScope();
+        //var submissionAppService =
+        //    scope.ServiceProvider.GetRequiredService<ISubmissionAppService>();
+        //var problemAppService = scope.ServiceProvider.GetRequiredService<IProblemAppService>();
+        //var codeBuilderService = scope.ServiceProvider.GetRequiredService<ICodeBuilderService>();
+        //var codeExecutionService =
+        //    scope.ServiceProvider.GetRequiredService<ICodeExecutionService>();
 
-        if (!outboxResults.IsSuccess || !outboxResults.Value.Any())
-        {
-            return;
-        }
+        //var outboxResults = await submissionAppService.GetSubmissionOutboxesAsync(
+        //    cancellationToken
+        //);
 
-        var outboxes = outboxResults.Value.Where(outbox =>
-            outbox.Type == SubmissionOutboxType.Initialized
-        );
+        //if (!outboxResults.IsSuccess || !outboxResults.Value.Any())
+        //{
+        //    return;
+        //}
 
-        var setupsMap = (
-            await problemAppService.GetProblemSetupsForExecutionAsync(
-                outboxes.Select(outbox => outbox.Submission.ProblemSetupId),
-                cancellationToken
-            )
-        ).Value.ToDictionary(setup => setup.Id);
+        //var outboxes = outboxResults.Value.Where(outbox =>
+        //    outbox.Type == SubmissionOutboxType.Initialized
+        //);
 
-        var executionContexts = outboxes
-            .Select(outbox =>
-            {
-                var setup = setupsMap[outbox.Submission.ProblemSetupId];
+        //var setupsMap = (
+        //    await problemAppService.GetProblemSetupsForExecutionAsync(
+        //        outboxes.Select(outbox => outbox.Submission.ProblemSetupId),
+        //        cancellationToken
+        //    )
+        //).Value.ToDictionary(setup => setup.Id);
 
-                var builderContexts = setup
-                    .TestSuites.SelectMany(ts => ts.TestCases)
-                    .Select(tc => new CodeBuilderContext
-                    {
-                        Code = outbox.Submission.Code ?? "",
-                        Template = setup.HarnessTemplate?.Template ?? "",
-                        FunctionName = setup.FunctionName ?? string.Empty,
-                        LanguageVersionId = setup.LanguageVersionId,
-                        Inputs = tc.Input,
-                        ExpectedOutput = "",
-                    });
+        //var executionContexts = outboxes
+        //    .Select(outbox =>
+        //    {
+        //        var setup = setupsMap[outbox.Submission.ProblemSetupId];
 
-                var buildResults = codeBuilderService.Build(builderContexts);
+        //        var builderContexts = setup
+        //            .TestSuites.SelectMany(ts => ts.TestCases)
+        //            .Select(tc => new CodeBuilderContext
+        //            {
+        //                Code = outbox.Submission.Code ?? "",
+        //                Template = setup.HarnessTemplate?.Template ?? "",
+        //                FunctionName = setup.FunctionName ?? string.Empty,
+        //                LanguageVersionId = setup.LanguageVersionId,
+        //                Inputs = tc.Input,
+        //                ExpectedOutput = "",
+        //            });
 
-                return new CodeExecutionContext
-                {
-                    SubmissionId = outbox.SubmissionId,
-                    Setup = setup,
-                    Code = outbox.Submission.Code ?? "",
-                    CreatedById = outbox.Submission.CreatedById,
-                    BuiltResults = buildResults.Value,
-                };
-            })
-            .ToList();
+        //        var buildResults = codeBuilderService.Build(builderContexts);
 
-        if (executionContexts.Count == 0)
-        {
-            return;
-        }
+        //        return new CodeExecutionContext
+        //        {
+        //            SubmissionId = outbox.SubmissionId,
+        //            Setup = setup,
+        //            Code = outbox.Submission.Code ?? "",
+        //            CreatedById = outbox.Submission.CreatedById,
+        //            BuiltResults = buildResults.Value,
+        //        };
+        //    })
+        //    .ToList();
 
-        var outboxIds = outboxes.Select(outbox => outbox.Id).ToList();
-        var now = DateTime.UtcNow;
+        //if (executionContexts.Count == 0)
+        //{
+        //    return;
+        //}
 
-        await submissionAppService.IncrementOutboxesCountAsync(outboxIds, now, cancellationToken);
+        //var outboxIds = outboxes.Select(outbox => outbox.Id).ToList();
+        //var now = DateTime.UtcNow;
 
-        var submissionResults = await codeExecutionService.ExecuteAsync(
-            executionContexts,
-            cancellationToken
-        );
+        //await submissionAppService.IncrementOutboxesCountAsync(outboxIds, now, cancellationToken);
 
-        await submissionAppService.ProcessSubmissionExecutionAsync(
-            submissionResults.Value,
-            cancellationToken
-        );
+        //var submissionResults = await codeExecutionService.ExecuteAsync(
+        //    executionContexts,
+        //    cancellationToken
+        //);
+
+        //await submissionAppService.ProcessSubmissionExecutionAsync(
+        //    submissionResults.Value,
+        //    cancellationToken
+        //);
     }
 }
