@@ -4,6 +4,6 @@ public enum ProblemStatus
 {
     Draft = 1,
     Pending = 2,
-    Accepted = 3,
+    Published = 3,
     Rejected = 4,
 }

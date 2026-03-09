@@ -22,13 +22,13 @@ public sealed class GetProblemsPageableHandler(IProblemRepository repository)
                 cancellationToken
             );
 
-            var dtoItems = (problemPage.Results ?? [])
-                .Select(p => new ProblemDto
+            var dtoItems = problemPage
+                .Results.Select(p => new ProblemDto
                 {
                     Id = p.Id,
                     Title = p.Title,
                     Slug = p.Slug,
-                    Tags = (p.Tags ?? []).Select(t => t.Value).ToList(),
+                    Tags = [.. p.Tags.Select(t => t.Value)],
                     Difficulty = p.Difficulty,
                     Version = p.Version,
                     AvailableLanguages = [],

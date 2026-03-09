@@ -24,15 +24,8 @@ public sealed class CreateSubmissionHandler(
             CreatedById = request.CreatedById,
         };
 
-        try
-        {
-            await submissionRepository.SaveAsync(submission, cancellationToken);
+        await submissionRepository.SaveAsync(submission, cancellationToken);
 
-            return Result.Success(submission.Id);
-        }
-        catch (Exception ex)
-        {
-            return Result.Error(ex.Message);
-        }
+        return Result.Success(submission.Id);
     }
 }

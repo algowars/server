@@ -40,7 +40,7 @@ public sealed class SubmissionOutboxEntity
     public DateTime CreatedOn { get; set; }
 
     [Column("process_on")]
-    public DateTime ProcessOn { get; set; }
+    public DateTime? ProcessOn { get; set; }
 
     [Column("finalized_on")]
     public DateTime? FinalizedOn { get; set; }

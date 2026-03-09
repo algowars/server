@@ -17,7 +17,6 @@ public sealed class SubmissionController(
 {
     [HttpPost("execute")]
     [Authorize]
-    [EnableRateLimiting("SubmissionDaily")]
     public async Task<IActionResult> CreateSubmissionAsync(
         [FromBody] CreateSubmissionDto createSubmissionDto,
         CancellationToken cancellationToken

@@ -15,7 +15,6 @@ namespace Infrastructure.Repositories;
 public sealed class ProblemRepository(AppDbContext db) : IProblemRepository
 {
     private readonly AppDbContext _db = db;
-    private const int AcceptedProblemStatusId = 3;
 
     public async Task<ProblemModel?> GetProblemByIdAsync(
         Guid problemId,
@@ -149,7 +148,7 @@ public sealed class ProblemRepository(AppDbContext db) : IProblemRepository
                     Version = version.Version,
                 }),
             })
-            .ToListAsync<ProgrammingLanguage>(cancellationToken);
+            .ToListAsync(cancellationToken);
     }
 
     public async Task<ProblemModel?> GetProblemBySlugAsync(
@@ -236,7 +235,7 @@ public sealed class ProblemRepository(AppDbContext db) : IProblemRepository
             .Where(p =>
                 p.CreatedOn <= pagination.Timestamp
                 && p.DeletedOn == null
-                && p.StatusId == AcceptedProblemStatusId
+                && p.StatusId == (int)ProblemStatus.Published
             );
 
         var ordered =
@@ -326,7 +325,6 @@ public sealed class ProblemRepository(AppDbContext db) : IProblemRepository
                                 Id = tc.Id,
                                 Input = "",
                                 ExpectedOutput = "",
-                                TestCaseType = (TestCaseType)tc.TestCaseTypeId,
                             })
                             .ToList(),
                     })
@@ -393,7 +391,6 @@ public sealed class ProblemRepository(AppDbContext db) : IProblemRepository
                                 Id = tc.Id,
                                 Input = "",
                                 ExpectedOutput = "",
-                                TestCaseType = (TestCaseType)tc.TestCaseTypeId,
                             })
                             .ToList(),
                     })

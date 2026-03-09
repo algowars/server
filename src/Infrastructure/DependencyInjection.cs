@@ -1,7 +1,7 @@
+using System.Text.Json;
 using ApplicationCore.Interfaces.Clients;
 using ApplicationCore.Interfaces.Repositories;
 using ApplicationCore.Interfaces.Services;
-using ApplicationCore.Jobs;
 using Infrastructure.CodeExecution.Judge0;
 using Infrastructure.Configuration;
 using Infrastructure.Jobs;
@@ -13,7 +13,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using System.Text.Json;
+using Quartz;
 
 namespace Infrastructure;
 
@@ -25,12 +25,33 @@ public static class DependencyInjection
     )
     {
         services
+            .AddOptions(configuration)
+            .AddPersistence(configuration)
+            .AddRepositories()
+            .AddServices()
+            .AddConfiguredBackgroundJobs(configuration)
+            .AddJudge0Client(configuration);
+
+        return services;
+    }
+
+    private static IServiceCollection AddOptions(
+        this IServiceCollection services,
+        IConfiguration configuration
+    )
+    {
+        services
             .AddOptions<ConnectionStringOptions>()
             .Bind(configuration.GetSection(ConnectionStringOptions.SectionName))
             .Validate(
                 o => !string.IsNullOrWhiteSpace(o.DefaultConnection),
                 "DefaultConnection connection string is required"
             )
+            .ValidateOnStart();
+
+        services
+            .AddOptions<ExecutionEnginesOptions>()
+            .Bind(configuration.GetSection("ExecutionEngines"))
             .ValidateOnStart();
 
         services.AddSingleton(
@@ -47,11 +68,14 @@ public static class DependencyInjection
             }
         );
 
-        services
-            .AddOptions<ExecutionEnginesOptions>()
-            .Bind(configuration.GetSection("ExecutionEngines"))
-            .ValidateOnStart();
+        return services;
+    }
 
+    private static IServiceCollection AddPersistence(
+        this IServiceCollection services,
+        IConfiguration configuration
+    )
+    {
         services.AddDbContext<AppDbContext>(
             (sp, o) =>
             {
@@ -60,14 +84,30 @@ public static class DependencyInjection
             }
         );
 
-        services.AddScoped<ISlugService, SlugService>();
+        return services;
+    }
 
+    private static IServiceCollection AddRepositories(this IServiceCollection services)
+    {
         services.AddScoped<IAccountRepository, AccountRepository>();
         services.AddScoped<IProblemRepository, ProblemRepository>();
         services.AddScoped<ISubmissionRepository, SubmissionRepository>();
 
-        services.AddScoped<SubmissionInitializerHandler>();
+        return services;
+    }
 
+    private static IServiceCollection AddServices(this IServiceCollection services)
+    {
+        services.AddScoped<ISlugService, SlugService>();
+
+        return services;
+    }
+
+    private static IServiceCollection AddConfiguredBackgroundJobs(
+        this IServiceCollection services,
+        IConfiguration configuration
+    )
+    {
         var jobsSection = configuration.GetSection("BackgroundJobs");
 
         bool GetEnabled(string jobKey, bool defaultEnabled) =>
@@ -78,21 +118,53 @@ public static class DependencyInjection
                 jobsSection.GetValue<double?>($"{jobKey}:IntervalSeconds") ?? defaultSeconds
             );
 
-        services.AddBackgroundJobs(jobs =>
+        services.AddQuartz(q =>
         {
-            jobs.Register<SubmissionInitializerHandler>(
-                jobType: BackgroundJobType.SubmissionInitializer,
-                interval: GetInterval("SubmissionInitializer", 5),
-                enabled: GetEnabled("SubmissionInitializer", false)
+            q.AddJobWithTrigger<SubmissionExecutionHandler>(
+                JobType.SubmissionExecution,
+                GetInterval("SubmissionExecution", 5),
+                GetEnabled("SubmissionExecution", false)
+            );
+
+            q.AddJobWithTrigger<SubmissionEvaluatorHandler>(
+                JobType.SubmissionEvaluator,
+                GetInterval("SubmissionEvaluator", 10),
+                GetEnabled("SubmissionEvaluator", false)
             );
         });
 
-        AddJudge0Client(services, configuration);
+        services.AddQuartzHostedService(q => q.WaitForJobsToComplete = true);
 
         return services;
     }
 
-    private static void AddJudge0Client(IServiceCollection services, IConfiguration configuration)
+    private static void AddJobWithTrigger<TJob>(
+        this IServiceCollectionQuartzConfigurator q,
+        JobType jobType,
+        TimeSpan interval,
+        bool enabled
+    )
+        where TJob : IJob
+    {
+        if (!enabled)
+        {
+            return;
+        }
+
+        var jobKey = new JobKey(jobType.ToString());
+
+        q.AddJob<TJob>(opts => opts.WithIdentity(jobKey));
+        q.AddTrigger(opts =>
+            opts.ForJob(jobKey)
+                .WithIdentity($"{jobType}-trigger")
+                .WithSimpleSchedule(s => s.WithInterval(interval).RepeatForever())
+        );
+    }
+
+    private static IServiceCollection AddJudge0Client(
+        this IServiceCollection services,
+        IConfiguration configuration
+    )
     {
         services.AddHttpClient<IJudge0Client, Judge0Client>(
             (serviceProvider, client) =>
@@ -108,24 +180,10 @@ public static class DependencyInjection
                 client.BaseAddress = new Uri(baseUrl);
                 client.Timeout = TimeSpan.FromSeconds(judge0.DefaultTimeoutInSeconds);
 
-                client.DefaultRequestHeaders.Add("x-rapidapi-key", judge0.ApiKey);
                 client.DefaultRequestHeaders.Add("x-rapidapi-host", judge0.Host);
                 client.DefaultRequestHeaders.Add("Accept", "application/json");
             }
         );
-    }
-
-    private static IServiceCollection AddBackgroundJobs(
-        this IServiceCollection services,
-        Action<JobRegistry> configure
-    )
-    {
-        var registry = new JobRegistry();
-        configure(registry);
-
-        services.AddSingleton(registry);
-        services.AddSingleton<JobRunner>();
-        services.AddHostedService<BackgroundJobService>();
 
         return services;
     }

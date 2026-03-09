@@ -11,13 +11,13 @@ public interface ISubmissionRepository
 
     Task SaveAsync(SubmissionModel submission, CancellationToken cancellationToken);
 
-    Task IncrementOutboxesCount(
+    Task IncrementOutboxesCountAsync(
         IEnumerable<Guid> outboxIds,
         DateTime now,
         CancellationToken cancellationToken
     );
 
-    Task ProcessSubmissionInitialization(
+    Task ProcessSubmissionInitializationAsync(
         IEnumerable<SubmissionModel> submissions,
         CancellationToken cancellationToken
     );

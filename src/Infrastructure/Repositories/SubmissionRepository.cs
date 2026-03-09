@@ -1,4 +1,5 @@
-﻿using ApplicationCore.Domain.Submissions;
+﻿using System.Linq.Expressions;
+using ApplicationCore.Domain.Submissions;
 using ApplicationCore.Domain.Submissions.Outboxes;
 using ApplicationCore.Interfaces.Repositories;
 using EFCore.BulkExtensions;
@@ -6,7 +7,6 @@ using Infrastructure.Persistence;
 using Infrastructure.Persistence.Entities.Submission;
 using Infrastructure.Persistence.Entities.Submission.Outbox;
 using Microsoft.EntityFrameworkCore;
-using System.Linq.Expressions;
 
 namespace Infrastructure.Repositories;
 
@@ -27,43 +27,33 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
 
     public async Task SaveAsync(SubmissionModel submission, CancellationToken cancellationToken)
     {
-        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+        DateTime createdOn = DateTime.UtcNow;
+        db.Submissions.Add(
+            new SubmissionEntity
+            {
+                Id = submission.Id,
+                ProblemSetupId = submission.ProblemSetupId,
+                Code = submission.Code ?? "",
+                CreatedOn = createdOn,
+                CreatedById = submission.CreatedById,
+            }
+        );
 
-        try
-        {
-            await db.Submissions.AddAsync(
-                new SubmissionEntity
-                {
-                    Id = submission.Id,
-                    ProblemSetupId = submission.ProblemSetupId,
-                    Code = submission.Code ?? "",
-                    CreatedOn = DateTime.UtcNow,
-                    CreatedById = submission.CreatedById,
-                },
-                cancellationToken
-            );
+        db.SubmissionOutboxes.Add(
+            new SubmissionOutboxEntity
+            {
+                Id = Guid.NewGuid(),
+                SubmissionId = submission.Id,
+                SubmissionOutboxTypeId = (int)SubmissionOutboxType.Initialized,
+                SubmissionOutboxStatusId = (int)SubmissionOutboxStatus.Pending,
+                CreatedOn = createdOn,
+            }
+        );
 
-            await db.SubmissionOutboxes.AddAsync(
-                new SubmissionOutboxEntity
-                {
-                    Id = Guid.NewGuid(),
-                    SubmissionId = submission.Id,
-                    SubmissionOutboxTypeId = (int)SubmissionOutboxType.Initialized,
-                    SubmissionOutboxStatusId = (int)SubmissionOutboxStatus.Pending,
-                },
-                cancellationToken
-            );
-
-            await db.SaveChangesAsync(cancellationToken);
-            await transaction.CommitAsync(cancellationToken);
-        }
-        catch
-        {
-            await transaction.RollbackAsync(cancellationToken);
-        }
+        await db.SaveChangesAsync(cancellationToken);
     }
 
-    public Task IncrementOutboxesCount(
+    public Task IncrementOutboxesCountAsync(
         IEnumerable<Guid> outboxIds,
         DateTime now,
         CancellationToken cancellationToken
@@ -81,7 +71,7 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
             );
     }
 
-    public async Task ProcessSubmissionInitialization(
+    public async Task ProcessSubmissionInitializationAsync(
         IEnumerable<SubmissionModel> submissions,
         CancellationToken cancellationToken
     )
@@ -130,7 +120,7 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
                             setters
                                 .SetProperty(
                                     o => o.SubmissionOutboxTypeId,
-                                    (int)SubmissionOutboxType.PollInitialization
+                                    (int)SubmissionOutboxType.Evaluate
                                 )
                                 .SetProperty(o => o.AttemptCount, _ => 0),
                         cancellationToken: cancellationToken
@@ -158,18 +148,6 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
         StartedAt = result.StartedAt,
         Stdout = result.Stdout,
     };
-
-    private static readonly Expression<Func<SubmissionEntity, SubmissionModel>> MapSubmissionExpr =
-        submission => new SubmissionModel
-        {
-            Id = submission.Id,
-            Code = submission.Code,
-            ProblemSetupId = submission.ProblemSetupId,
-            CreatedOn = submission.CreatedOn,
-            CompletedAt = submission.CompletedAt,
-            CreatedById = submission.CreatedById,
-            Results = submission.Results.AsQueryable().Select(MapResultExpr),
-        };
 
     private static readonly Expression<
         Func<SubmissionOutboxEntity, SubmissionOutboxModel>
