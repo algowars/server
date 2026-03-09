@@ -120,8 +120,6 @@ public static class DependencyInjection
 
         services.AddQuartz(q =>
         {
-            q.UseMicrosoftDependencyInjectionJobFactory();
-
             q.AddJobWithTrigger<SubmissionExecutionHandler>(
                 JobType.SubmissionExecution,
                 GetInterval("SubmissionExecution", 5),
