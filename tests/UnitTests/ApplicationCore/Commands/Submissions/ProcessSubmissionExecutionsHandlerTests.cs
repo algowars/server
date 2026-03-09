@@ -1,14 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-using ApplicationCore.Commands.Submissions.ProcessSubmissionExecutions;
-using ApplicationCore.Domain.Submissions;
+﻿using ApplicationCore.Commands.Submissions.ProcessSubmissionExecutions;
 using ApplicationCore.Interfaces.Repositories;
 using FluentValidation;
 using FluentValidation.Results;
 using Moq;
-using NUnit.Framework;
 
 namespace UnitTests.ApplicationCore.Commands.Submissions;
 
