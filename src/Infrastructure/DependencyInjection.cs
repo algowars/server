@@ -180,6 +180,7 @@ public static class DependencyInjection
                 client.BaseAddress = new Uri(baseUrl);
                 client.Timeout = TimeSpan.FromSeconds(judge0.DefaultTimeoutInSeconds);
 
+                client.DefaultRequestHeaders.Add("x-rapidapi-key", judge0.ApiKey);
                 client.DefaultRequestHeaders.Add("x-rapidapi-host", judge0.Host);
                 client.DefaultRequestHeaders.Add("Accept", "application/json");
             }
