@@ -4,4 +4,5 @@ public enum JobType
 {
     SubmissionExecution = 1,
     PollExecution,
+    SubmissionPoller,
 }

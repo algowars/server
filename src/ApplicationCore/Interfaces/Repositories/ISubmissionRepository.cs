@@ -21,4 +21,9 @@ public interface ISubmissionRepository
         IEnumerable<SubmissionModel> submissions,
         CancellationToken cancellationToken
     );
+
+    Task ProcessPollExecutionAsync(
+        IEnumerable<SubmissionModel> submissions,
+        CancellationToken cancellationToken
+    );
 }
