@@ -196,6 +196,76 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
         }
     }
 
+    public async Task ProcessSubmissionPollingAsync(
+        IEnumerable<SubmissionModel> submissions,
+        CancellationToken cancellationToken
+    )
+    {
+        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+
+        try
+        {
+            var submissionList = submissions.ToList();
+
+            var executionIds = submissionList
+                .SelectMany(s => s.Results.Select(r => r.Id))
+                .ToList();
+
+            var existingEntities = await db
+                .SubmissionResults.Where(r => executionIds.Contains(r.ExecutionId))
+                .ToListAsync(cancellationToken);
+
+            var entityMap = existingEntities.ToDictionary(e => e.ExecutionId);
+
+            foreach (var (_, result) in submissionList.SelectMany(s => s.Results, (s, r) => (s.Id, r)))
+            {
+                if (!entityMap.TryGetValue(result.Id, out var entity))
+                {
+                    continue;
+                }
+
+                entity.StatusId = (int)result.Status;
+                entity.Stdout = result.Stdout;
+                entity.RuntimeMs = result.RuntimeMs;
+                entity.MemoryKb = result.MemoryKb;
+                entity.FinishedAt = result.FinishedAt;
+            }
+
+            await db.BulkUpdateAsync(existingEntities, cancellationToken: cancellationToken);
+
+            var completedSubmissionIds = submissionList
+                .Where(s => s.GetOverallStatus() != SubmissionStatus.Processing)
+                .Select(s => s.Id)
+                .ToList();
+
+            if (completedSubmissionIds.Count > 0)
+            {
+                await db
+                    .SubmissionOutboxes.Where(o =>
+                        completedSubmissionIds.Contains(o.SubmissionId)
+                        && o.SubmissionOutboxTypeId == (int)SubmissionOutboxType.PollExecution
+                    )
+                    .ExecuteUpdateAsync(
+                        setters =>
+                            setters
+                                .SetProperty(
+                                    o => o.SubmissionOutboxTypeId,
+                                    (int)SubmissionOutboxType.EvaluateSubmission
+                                )
+                                .SetProperty(o => o.AttemptCount, _ => 0),
+                        cancellationToken: cancellationToken
+                    );
+            }
+
+            await transaction.CommitAsync(cancellationToken);
+        }
+        catch
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            throw;
+        }
+    }
+
     private static readonly Expression<
         Func<SubmissionResultEntity, SubmissionResult>
     > MapResultExpr = result => new SubmissionResult
