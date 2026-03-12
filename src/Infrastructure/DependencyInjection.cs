@@ -126,10 +126,10 @@ public static class DependencyInjection
                 GetEnabled("SubmissionExecution", false)
             );
 
-            q.AddJobWithTrigger<SubmissionEvaluatorHandler>(
-                JobType.SubmissionEvaluator,
-                GetInterval("SubmissionEvaluator", 10),
-                GetEnabled("SubmissionEvaluator", false)
+            q.AddJobWithTrigger<PollExecutionHandler>(
+                JobType.PollExecution,
+                GetInterval("PollExecution", 10),
+                GetEnabled("PollExecution", false)
             );
         });
 

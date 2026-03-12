@@ -53,4 +53,12 @@ public sealed class SubmissionAppService(IMediator mediator) : ISubmissionAppSer
 
         return await mediator.Send(command, cancellationToken);
     }
+
+    public Task<Result<Unit>> ProcessPollExecutionAsync(
+        IEnumerable<SubmissionModel> results,
+        CancellationToken cancellationToken
+    )
+    {
+        throw new NotImplementedException();
+    }
 }

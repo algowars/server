@@ -1,9 +1,11 @@
 ﻿using ApplicationCore.Domain.Submissions.Outboxes;
 using ApplicationCore.Interfaces.Services;
 using Microsoft.Extensions.DependencyInjection;
+using Quartz;
 
 namespace Infrastructure.Jobs.JobHandlers;
 
+[DisallowConcurrentExecution]
 public sealed class SubmissionExecutionHandler(IServiceScopeFactory serviceScopeFactory) : JobBase
 {
     public override JobType JobType => JobType.SubmissionExecution;
@@ -14,8 +16,7 @@ public sealed class SubmissionExecutionHandler(IServiceScopeFactory serviceScope
         var submissionAppService =
             scope.ServiceProvider.GetRequiredService<ISubmissionAppService>();
         var problemAppService = scope.ServiceProvider.GetRequiredService<IProblemAppService>();
-        var codeBuildingService =
-            scope.ServiceProvider.GetRequiredService<ICodeBuildingService>();
+        var codeBuildingService = scope.ServiceProvider.GetRequiredService<ICodeBuildingService>();
         var codeExecutionService =
             scope.ServiceProvider.GetRequiredService<ICodeExecutionService>();
 

@@ -15,18 +15,11 @@ public sealed class ProcessSubmissionExecutionsHandler(
         CancellationToken cancellationToken
     )
     {
-        try
-        {
-            await submissionRepository.ProcessSubmissionInitializationAsync(
-                request.Submissions,
-                cancellationToken
-            );
+        await submissionRepository.ProcessSubmissionInitializationAsync(
+            request.Submissions,
+            cancellationToken
+        );
 
-            return Result.Success();
-        }
-        catch (Exception ex)
-        {
-            return Result<Unit>.Error(ex.Message);
-        }
+        return Result.Success();
     }
 }

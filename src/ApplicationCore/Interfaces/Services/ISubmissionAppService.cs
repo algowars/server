@@ -28,4 +28,9 @@ public interface ISubmissionAppService
         IEnumerable<SubmissionModel> results,
         CancellationToken cancellationToken
     );
+
+    Task<Result<Unit>> ProcessPollExecutionAsync(
+        IEnumerable<SubmissionModel> results,
+        CancellationToken cancellationToken
+    );
 }
