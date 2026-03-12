@@ -1,9 +1,10 @@
+using ApplicationCore.Commands.Submissions.ProcessPollExecutions;
 using ApplicationCore.Interfaces.Repositories;
 using Ardalis.Result;
 using FluentValidation;
 using MediatR;
 
-namespace ApplicationCore.Commands.Submissions.ProcessPollExecution;
+namespace ApplicationCore.Commands.Submissions.ProcessPollExecutions;
 
 public sealed class ProcessPollExecutionsHandler(
     ISubmissionRepository submissionRepository,
@@ -15,7 +16,7 @@ public sealed class ProcessPollExecutionsHandler(
         CancellationToken cancellationToken
     )
     {
-        await submissionRepository.ProcessPollExecutionAsync(
+        await submissionRepository.ProcessPollSubmissionsAsync(
             request.Submissions,
             cancellationToken
         );
