@@ -1,4 +1,4 @@
-﻿using ApplicationCore.Domain.Submissions.Outboxes;
+using ApplicationCore.Domain.Submissions.Outboxes;
 using ApplicationCore.Interfaces.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Quartz;
@@ -6,15 +6,17 @@ using Quartz;
 namespace Infrastructure.Jobs.JobHandlers;
 
 [DisallowConcurrentExecution]
-internal sealed class SubmissionPollerHandler(IServiceScopeFactory serviceScopeFactory) : JobBase
+public sealed class SubmissionEvaluatorHandler(IServiceScopeFactory serviceScopeFactory) : JobBase
 {
-    public override JobType JobType => JobType.SubmissionPoller;
+    public override JobType JobType => JobType.SubmissionEvaluator;
 
     protected override async Task ExecuteJobAsync(CancellationToken cancellationToken)
     {
         using var scope = serviceScopeFactory.CreateScope();
         var submissionAppService =
             scope.ServiceProvider.GetRequiredService<ISubmissionAppService>();
+        var comparisonBuildingService =
+            scope.ServiceProvider.GetRequiredService<IComparisonBuildingService>();
         var codeExecutionService =
             scope.ServiceProvider.GetRequiredService<ICodeExecutionService>();
 
@@ -27,11 +29,25 @@ internal sealed class SubmissionPollerHandler(IServiceScopeFactory serviceScopeF
             return;
         }
 
-        var outboxes = outboxResults
-            .Value.Where(outbox => outbox.Type == SubmissionOutboxType.PollExecution)
+        var outboxes = outboxResults.Value
+            .Where(outbox => outbox.Type == SubmissionOutboxType.EvaluateSubmission)
             .ToList();
 
         if (outboxes.Count == 0)
+        {
+            return;
+        }
+
+        var buildResult = comparisonBuildingService.BuildComparisonContexts(outboxes);
+
+        if (!buildResult.IsSuccess)
+        {
+            return;
+        }
+
+        var comparisonContexts = buildResult.Value.ToList();
+
+        if (comparisonContexts.Count == 0)
         {
             return;
         }
@@ -41,18 +57,18 @@ internal sealed class SubmissionPollerHandler(IServiceScopeFactory serviceScopeF
 
         await submissionAppService.IncrementOutboxesCountAsync(outboxIds, now, cancellationToken);
 
-        var submissionResults = await codeExecutionService.GetSubmissionResultsAsync(
-            outboxes.Select(outbox => outbox.Submission),
+        var evaluationResult = await codeExecutionService.EvaluateAsync(
+            comparisonContexts,
             cancellationToken
         );
 
-        if (!submissionResults.IsSuccess)
+        if (!evaluationResult.IsSuccess)
         {
             return;
         }
 
-        await submissionAppService.ProcessPollExecutionAsync(
-            submissionResults.Value,
+        await submissionAppService.ProcessEvaluationAsync(
+            evaluationResult.Value,
             cancellationToken
         );
     }

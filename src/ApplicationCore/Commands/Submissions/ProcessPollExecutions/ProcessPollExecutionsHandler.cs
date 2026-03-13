@@ -3,7 +3,7 @@ using Ardalis.Result;
 using FluentValidation;
 using MediatR;
 
-namespace ApplicationCore.Commands.Submissions.ProcessPollExecution;
+namespace ApplicationCore.Commands.Submissions.ProcessPollExecutions;
 
 public sealed class ProcessPollExecutionsHandler(
     ISubmissionRepository submissionRepository,

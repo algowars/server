@@ -1,9 +1,8 @@
 using FluentValidation;
 
-namespace ApplicationCore.Commands.Submissions.ProcessPollExecution;
+namespace ApplicationCore.Commands.Submissions.ProcessPollExecutions;
 
-public sealed class ProcessPollExecutionValidator
-    : AbstractValidator<ProcessPollExecutionsCommand>
+public sealed class ProcessPollExecutionValidator : AbstractValidator<ProcessPollExecutionsCommand>
 {
     public ProcessPollExecutionValidator()
     {

@@ -21,6 +21,7 @@ public static class DependencyInjection
         services.AddScoped<ISubmissionAppService, SubmissionAppService>();
         services.AddScoped<ICodeBuilderService, CodeBuilderService>();
         services.AddScoped<ICodeBuildingService, CodeBuildingService>();
+        services.AddScoped<IComparisonBuildingService, ComparisonBuildingService>();
         services.AddScoped<ICodeExecutionService, CodeExecutionService>();
 
         return services;

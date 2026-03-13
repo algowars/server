@@ -44,4 +44,7 @@ public sealed class SubmissionResultEntity
 
     [Column("memory_kb")]
     public int? MemoryKb { get; set; }
+
+    [Column("expected_output")]
+    public string? ExpectedOutput { get; set; }
 }

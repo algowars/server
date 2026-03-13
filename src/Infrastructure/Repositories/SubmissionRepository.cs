@@ -1,4 +1,5 @@
 ﻿using System.Linq.Expressions;
+using ApplicationCore.Domain.CodeExecution;
 using ApplicationCore.Domain.Submissions;
 using ApplicationCore.Domain.Submissions.Outboxes;
 using ApplicationCore.Interfaces.Repositories;
@@ -94,6 +95,7 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
                             FinishedAt = sr.FinishedAt,
                             RuntimeMs = sr.RuntimeMs,
                             MemoryKb = sr.MemoryKb,
+                            ExpectedOutput = sr.ExpectedOutput,
                         }
                 )
                 .ToList();
@@ -266,6 +268,65 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
         }
     }
 
+    public async Task ProcessEvaluationAsync(
+        IEnumerable<ComparisonContext> contexts,
+        CancellationToken cancellationToken
+    )
+    {
+        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+
+        try
+        {
+            var contextList = contexts.ToList();
+
+            var allBuiltResults = contextList.SelectMany(c => c.BuiltResults).ToList();
+            var executionIds = allBuiltResults.Select(r => r.ExecutionId).ToList();
+
+            var existingEntities = await db
+                .SubmissionResults.Where(r => executionIds.Contains(r.ExecutionId))
+                .ToListAsync(cancellationToken);
+
+            var entityMap = existingEntities.ToDictionary(e => e.ExecutionId);
+
+            foreach (var builtResult in allBuiltResults)
+            {
+                if (!entityMap.TryGetValue(builtResult.ExecutionId, out var entity))
+                {
+                    continue;
+                }
+
+                entity.ResultId = builtResult.ResultId;
+            }
+
+            await db.BulkUpdateAsync(existingEntities, cancellationToken: cancellationToken);
+
+            var submissionIds = contextList.Select(c => c.SubmissionId).Distinct().ToList();
+
+            await db
+                .SubmissionOutboxes.Where(o =>
+                    submissionIds.Contains(o.SubmissionId)
+                    && o.SubmissionOutboxTypeId == (int)SubmissionOutboxType.EvaluateSubmission
+                )
+                .ExecuteUpdateAsync(
+                    setters =>
+                        setters
+                            .SetProperty(
+                                o => o.SubmissionOutboxTypeId,
+                                (int)SubmissionOutboxType.PollEvaluation
+                            )
+                            .SetProperty(o => o.AttemptCount, _ => 0),
+                    cancellationToken: cancellationToken
+                );
+
+            await transaction.CommitAsync(cancellationToken);
+        }
+        catch
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            throw;
+        }
+    }
+
     private static readonly Expression<
         Func<SubmissionResultEntity, SubmissionResult>
     > MapResultExpr = result => new SubmissionResult
@@ -277,6 +338,7 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
         RuntimeMs = result.RuntimeMs,
         StartedAt = result.StartedAt,
         Stdout = result.Stdout,
+        ExpectedOutput = result.ExpectedOutput,
     };
 
     private static readonly Expression<

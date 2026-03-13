@@ -1,4 +1,5 @@
-﻿using ApplicationCore.Domain.Submissions;
+﻿using ApplicationCore.Domain.CodeExecution;
+using ApplicationCore.Domain.Submissions;
 using ApplicationCore.Domain.Submissions.Outboxes;
 
 namespace ApplicationCore.Interfaces.Repositories;
@@ -29,6 +30,11 @@ public interface ISubmissionRepository
 
     Task ProcessSubmissionPollingAsync(
         IEnumerable<SubmissionModel> submissions,
+        CancellationToken cancellationToken
+    );
+
+    Task ProcessEvaluationAsync(
+        IEnumerable<ComparisonContext> contexts,
         CancellationToken cancellationToken
     );
 }

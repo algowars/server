@@ -40,7 +40,7 @@ public sealed class CodeExecutionService(IJudge0Client judge0Client) : ICodeExec
                     }
                 );
 
-                results.Add(new SubmissionResult { Status = SubmissionStatus.InQueue });
+                results.Add(new SubmissionResult { Status = SubmissionStatus.InQueue, ExpectedOutput = buildResult.ExpectedOutput });
 
                 indexMap.Add((results, results.Count - 1));
             }
@@ -129,6 +129,67 @@ public sealed class CodeExecutionService(IJudge0Client judge0Client) : ICodeExec
 
         return Result.Success<IEnumerable<SubmissionModel>>(submissionList);
     }
+
+    public async Task<Result<IEnumerable<ComparisonContext>>> EvaluateAsync(
+        IEnumerable<ComparisonContext> contexts,
+        CancellationToken cancellationToken
+    )
+    {
+        var contextList = contexts.ToList();
+
+        if (contextList.Count == 0)
+        {
+            return Result.Success(Enumerable.Empty<ComparisonContext>());
+        }
+
+        var judge0Requests = new List<Judge0SubmissionRequest>();
+        var indexMap = new List<ComparisonBuildResult>();
+
+        foreach (var context in contextList)
+        {
+            foreach (var buildResult in context.BuiltResults)
+            {
+                judge0Requests.Add(new Judge0SubmissionRequest
+                {
+                    LanguageId = ComparisonLanguageId,
+                    SourceCode = ComparisonSourceCode,
+                    StdIn = buildResult.ActualOutput,
+                    ExpectedOutput = buildResult.ExpectedOutput,
+                });
+
+                indexMap.Add(buildResult);
+            }
+        }
+
+        if (judge0Requests.Count == 0)
+        {
+            return Result.Success<IEnumerable<ComparisonContext>>(contextList);
+        }
+
+        var judge0Response = await judge0Client.SubmitAsync(judge0Requests, cancellationToken);
+
+        if (!judge0Response.IsSuccess)
+        {
+            return Result.Error("Failed to submit comparisons for evaluation.");
+        }
+
+        var responseList = judge0Response.Value.ToList();
+
+        if (responseList.Count != indexMap.Count)
+        {
+            return Result.Error("Mismatch between Judge0 responses and submitted comparisons.");
+        }
+
+        for (int i = 0; i < responseList.Count; i++)
+        {
+            indexMap[i].ResultId = responseList[i].Token;
+        }
+
+        return Result.Success<IEnumerable<ComparisonContext>>(contextList);
+    }
+
+    private const int ComparisonLanguageId = 71;
+    private const string ComparisonSourceCode = "print(input())";
 
     private static SubmissionStatus MapJudge0SubmissionStatus(Judge0StatusModel status) =>
         status.Id switch

@@ -131,6 +131,12 @@ public static class DependencyInjection
                 GetInterval("PollExecution", 10),
                 GetEnabled("PollExecution", false)
             );
+
+            q.AddJobWithTrigger<SubmissionEvaluatorHandler>(
+                JobType.SubmissionEvaluator,
+                GetInterval("SubmissionEvaluator", 5),
+                GetEnabled("SubmissionEvaluator", false)
+            );
         });
 
         services.AddQuartzHostedService(q => q.WaitForJobsToComplete = true);

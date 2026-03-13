@@ -1,4 +1,5 @@
-﻿using ApplicationCore.Domain.Submissions;
+﻿using ApplicationCore.Domain.CodeExecution;
+using ApplicationCore.Domain.Submissions;
 using ApplicationCore.Domain.Submissions.Outboxes;
 using Ardalis.Result;
 using MediatR;
@@ -34,8 +35,8 @@ public interface ISubmissionAppService
         CancellationToken cancellationToken
     );
 
-    Task<Result<Unit>> ProcessSubmissionPollingAsync(
-        IEnumerable<SubmissionModel> results,
+    Task<Result<Unit>> ProcessEvaluationAsync(
+        IEnumerable<ComparisonContext> contexts,
         CancellationToken cancellationToken
     );
 }
