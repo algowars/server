@@ -20,6 +20,7 @@ public static class DependencyInjection
         services.AddScoped<IProblemAppService, ProblemAppService>();
         services.AddScoped<ISubmissionAppService, SubmissionAppService>();
         services.AddScoped<ICodeBuilderService, CodeBuilderService>();
+        services.AddScoped<ICodeBuildingService, CodeBuildingService>();
         services.AddScoped<ICodeExecutionService, CodeExecutionService>();
 
         return services;

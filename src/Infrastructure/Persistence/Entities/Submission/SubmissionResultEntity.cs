@@ -12,6 +12,12 @@ public sealed class SubmissionResultEntity
     [Required, Column("submission_id")]
     public Guid SubmissionId { get; set; }
 
+    [Required, Column("execution_id")]
+    public Guid ExecutionId { get; set; }
+
+    [Column("result_id")]
+    public Guid ResultId { get; set; }
+
     [ForeignKey(nameof(SubmissionId))]
     public SubmissionEntity? Submission { get; set; }
 
@@ -29,9 +35,6 @@ public sealed class SubmissionResultEntity
 
     [Column("stdout")]
     public string? Stdout { get; set; }
-
-    [Column("original_stdout")]
-    public string? OriginalStdout { get; set; }
 
     [Column("stderr")]
     public string? Stderr { get; set; }

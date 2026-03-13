@@ -1,10 +1,11 @@
-﻿using ApplicationCore.Domain.CodeExecution;
-using ApplicationCore.Domain.Submissions.Outboxes;
+﻿using ApplicationCore.Domain.Submissions.Outboxes;
 using ApplicationCore.Interfaces.Services;
 using Microsoft.Extensions.DependencyInjection;
+using Quartz;
 
 namespace Infrastructure.Jobs.JobHandlers;
 
+[DisallowConcurrentExecution]
 public sealed class SubmissionExecutionHandler(IServiceScopeFactory serviceScopeFactory) : JobBase
 {
     public override JobType JobType => JobType.SubmissionExecution;
@@ -15,7 +16,7 @@ public sealed class SubmissionExecutionHandler(IServiceScopeFactory serviceScope
         var submissionAppService =
             scope.ServiceProvider.GetRequiredService<ISubmissionAppService>();
         var problemAppService = scope.ServiceProvider.GetRequiredService<IProblemAppService>();
-        var codeBuilderService = scope.ServiceProvider.GetRequiredService<ICodeBuilderService>();
+        var codeBuildingService = scope.ServiceProvider.GetRequiredService<ICodeBuildingService>();
         var codeExecutionService =
             scope.ServiceProvider.GetRequiredService<ICodeExecutionService>();
 
@@ -39,35 +40,14 @@ public sealed class SubmissionExecutionHandler(IServiceScopeFactory serviceScope
             )
         ).Value.ToDictionary(setup => setup.Id);
 
-        var executionContexts = outboxes
-            .Select(outbox =>
-            {
-                var setup = setupsMap[outbox.Submission.ProblemSetupId];
+        var buildResult = codeBuildingService.BuildExecutionContexts(outboxes, setupsMap);
 
-                var builderContexts = setup
-                    .TestSuites.SelectMany(ts => ts.TestCases)
-                    .Select(tc => new CodeBuilderContext
-                    {
-                        Code = outbox.Submission.Code ?? "",
-                        Template = setup.HarnessTemplate?.Template ?? "",
-                        FunctionName = setup.FunctionName ?? string.Empty,
-                        LanguageVersionId = setup.LanguageVersionId,
-                        Inputs = tc.Input,
-                        ExpectedOutput = "",
-                    });
+        if (!buildResult.IsSuccess)
+        {
+            return;
+        }
 
-                var buildResults = codeBuilderService.Build(builderContexts);
-
-                return new CodeExecutionContext
-                {
-                    SubmissionId = outbox.SubmissionId,
-                    Setup = setup,
-                    Code = outbox.Submission.Code ?? "",
-                    CreatedById = outbox.Submission.CreatedById,
-                    BuiltResults = buildResults.Value,
-                };
-            })
-            .ToList();
+        var executionContexts = buildResult.Value.ToList();
 
         if (executionContexts.Count == 0)
         {

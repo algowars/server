@@ -1,14 +1,12 @@
-﻿using ApplicationCore.Domain.Submissions.Outboxes;
+using ApplicationCore.Domain.Submissions.Outboxes;
 using ApplicationCore.Interfaces.Services;
 using Microsoft.Extensions.DependencyInjection;
-using Quartz;
 
 namespace Infrastructure.Jobs.JobHandlers;
 
-[DisallowConcurrentExecution]
-internal sealed class SubmissionPollerHandler(IServiceScopeFactory serviceScopeFactory) : JobBase
+public sealed class PollExecutionHandler(IServiceScopeFactory serviceScopeFactory) : JobBase
 {
-    public override JobType JobType => JobType.SubmissionPoller;
+    public override JobType JobType => JobType.PollExecution;
 
     protected override async Task ExecuteJobAsync(CancellationToken cancellationToken)
     {
@@ -27,34 +25,23 @@ internal sealed class SubmissionPollerHandler(IServiceScopeFactory serviceScopeF
             return;
         }
 
-        var outboxes = outboxResults.Value
-            .Where(outbox => outbox.Type == SubmissionOutboxType.PollExecution)
-            .ToList();
+        var outboxes = outboxResults.Value.Where(outbox =>
+            outbox.Type == SubmissionOutboxType.PollEvaluation
+        );
 
-        if (outboxes.Count == 0)
+        if (!outboxes.Any())
         {
             return;
         }
-
-        var outboxIds = outboxes.Select(outbox => outbox.Id).ToList();
-        var now = DateTime.UtcNow;
-
-        await submissionAppService.IncrementOutboxesCountAsync(outboxIds, now, cancellationToken);
 
         var submissionResults = await codeExecutionService.GetSubmissionResultsAsync(
             outboxes.Select(outbox => outbox.Submission),
             cancellationToken
         );
 
-        if (!submissionResults.IsSuccess)
-        {
-            return;
-        }
-
-        await submissionAppService.ProcessSubmissionPollingAsync(
+        await submissionAppService.ProcessPollExecutionAsync(
             submissionResults.Value,
             cancellationToken
         );
     }
 }
-
