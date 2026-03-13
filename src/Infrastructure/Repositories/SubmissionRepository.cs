@@ -178,13 +178,22 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
 
             if (completedSubmissionIds.Count > 0)
             {
+                var now = DateTime.UtcNow;
+
                 await db
                     .SubmissionOutboxes.Where(o =>
                         completedSubmissionIds.Contains(o.SubmissionId)
                         && o.SubmissionOutboxTypeId == (int)SubmissionOutboxType.PollEvaluation
                     )
                     .ExecuteUpdateAsync(
-                        setters => setters.SetProperty(o => o.FinalizedOn, DateTime.UtcNow),
+                        setters => setters.SetProperty(o => o.FinalizedOn, now),
+                        cancellationToken: cancellationToken
+                    );
+
+                await db
+                    .Submissions.Where(s => completedSubmissionIds.Contains(s.Id))
+                    .ExecuteUpdateAsync(
+                        setters => setters.SetProperty(s => s.CompletedAt, now),
                         cancellationToken: cancellationToken
                     );
             }

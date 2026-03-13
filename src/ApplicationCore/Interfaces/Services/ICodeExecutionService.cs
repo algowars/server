@@ -16,6 +16,11 @@ public interface ICodeExecutionService
         CancellationToken cancellationToken
     );
 
+    Task<Result<IEnumerable<SubmissionModel>>> GetEvaluationResultsAsync(
+        IEnumerable<SubmissionModel> submissions,
+        CancellationToken cancellationToken
+    );
+
     Task<Result<IEnumerable<ComparisonContext>>> EvaluateAsync(
         IEnumerable<ComparisonContext> contexts,
         CancellationToken cancellationToken

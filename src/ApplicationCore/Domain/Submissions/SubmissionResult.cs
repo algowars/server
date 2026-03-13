@@ -19,4 +19,6 @@ public sealed class SubmissionResult
     public int? MemoryKb { get; set; }
 
     public string? ExpectedOutput { get; set; }
+
+    public Guid EvaluationId { get; set; }
 }

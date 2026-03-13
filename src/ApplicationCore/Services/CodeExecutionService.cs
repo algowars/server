@@ -130,6 +130,49 @@ public sealed class CodeExecutionService(IJudge0Client judge0Client) : ICodeExec
         return Result.Success<IEnumerable<SubmissionModel>>(submissionList);
     }
 
+    public async Task<Result<IEnumerable<SubmissionModel>>> GetEvaluationResultsAsync(
+        IEnumerable<SubmissionModel> submissions,
+        CancellationToken cancellationToken
+    )
+    {
+        var submissionList = submissions.ToList();
+
+        if (!submissionList.Any())
+        {
+            return Result.Success(Enumerable.Empty<SubmissionModel>());
+        }
+
+        var tokenMap = submissionList
+            .SelectMany(s => s.Results.Select(r => (Submission: s, Result: r, Token: r.EvaluationId)))
+            .Where(x => x.Token != Guid.Empty)
+            .ToDictionary(x => x.Token, x => (x.Submission, x.Result));
+
+        if (tokenMap.Count == 0)
+        {
+            return Result.Success<IEnumerable<SubmissionModel>>(submissionList);
+        }
+
+        var judge0Results = await judge0Client.GetAsync(tokenMap.Keys, cancellationToken);
+
+        if (!judge0Results.IsSuccess)
+        {
+            return Result.Error("Failed to retrieve evaluation results.");
+        }
+
+        foreach (var judge0Result in judge0Results.Value)
+        {
+            if (!tokenMap.TryGetValue(judge0Result.Token, out var entry))
+            {
+                continue;
+            }
+
+            entry.Result.Status = MapJudge0SubmissionStatus(judge0Result.Status);
+            entry.Result.FinishedAt = DateTime.UtcNow;
+        }
+
+        return Result.Success<IEnumerable<SubmissionModel>>(submissionList);
+    }
+
     public async Task<Result<IEnumerable<ComparisonContext>>> EvaluateAsync(
         IEnumerable<ComparisonContext> contexts,
         CancellationToken cancellationToken
