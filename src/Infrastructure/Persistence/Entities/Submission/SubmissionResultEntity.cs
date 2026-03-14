@@ -30,8 +30,14 @@ public sealed class SubmissionResultEntity
     [Column("stdout")]
     public string? Stdout { get; set; }
 
-    [Column("original_stdout")]
-    public string? OriginalStdout { get; set; }
+    [Column("program_output")]
+    public string? ProgramOutput { get; set; }
+
+    [Column("execution_id")]
+    public Guid ExecutionId { get; set; }
+
+    [Column("result_id")]
+    public Guid? ResultId { get; set; }
 
     [Column("stderr")]
     public string? Stderr { get; set; }

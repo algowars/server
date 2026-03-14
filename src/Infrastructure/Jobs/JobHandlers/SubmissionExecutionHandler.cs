@@ -2,9 +2,11 @@
 using ApplicationCore.Domain.Submissions.Outboxes;
 using ApplicationCore.Interfaces.Services;
 using Microsoft.Extensions.DependencyInjection;
+using Quartz;
 
 namespace Infrastructure.Jobs.JobHandlers;
 
+[DisallowConcurrentExecution]
 public sealed class SubmissionExecutionHandler(IServiceScopeFactory serviceScopeFactory) : JobBase
 {
     public override JobType JobType => JobType.SubmissionExecution;
@@ -22,6 +24,7 @@ public sealed class SubmissionExecutionHandler(IServiceScopeFactory serviceScope
         var outboxResults = await submissionAppService.GetSubmissionOutboxesAsync(
             cancellationToken
         );
+        
 
         if (!outboxResults.IsSuccess || !outboxResults.Value.Any())
         {
@@ -30,7 +33,7 @@ public sealed class SubmissionExecutionHandler(IServiceScopeFactory serviceScope
 
         var outboxes = outboxResults.Value.Where(outbox =>
             outbox.Type == SubmissionOutboxType.Initialized
-        );
+        ).ToList();
 
         var setupsMap = (
             await problemAppService.GetProblemSetupsForExecutionAsync(

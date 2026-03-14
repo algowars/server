@@ -126,10 +126,10 @@ public static class DependencyInjection
                 GetEnabled("SubmissionExecution", false)
             );
 
-            q.AddJobWithTrigger<SubmissionEvaluatorHandler>(
-                JobType.SubmissionEvaluator,
-                GetInterval("SubmissionEvaluator", 10),
-                GetEnabled("SubmissionEvaluator", false)
+            q.AddJobWithTrigger<PollSubmissionExecutionHander>(
+                JobType.PollSubmissionExecution,
+                GetInterval("PollSubmissionExecution", 10),
+                GetEnabled("PollSubmissionExecution", false)
             );
         });
 
@@ -181,6 +181,7 @@ public static class DependencyInjection
                 client.Timeout = TimeSpan.FromSeconds(judge0.DefaultTimeoutInSeconds);
 
                 client.DefaultRequestHeaders.Add("x-rapidapi-host", judge0.Host);
+                client.DefaultRequestHeaders.Add("x-rapidapi-key", judge0.ApiKey);
                 client.DefaultRequestHeaders.Add("Accept", "application/json");
             }
         );

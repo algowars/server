@@ -71,6 +71,71 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
             );
     }
 
+    public async Task ProcessPollingSubmissionExecutionsAsync(
+        IEnumerable<SubmissionModel> submissionModels,
+        CancellationToken cancellationToken
+    )
+    {
+        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+
+        try
+        {
+            var resultEntities = submissionModels
+                .SelectMany(
+                    s => s.Results,
+                    (s, sr) =>
+                        new SubmissionResultEntity
+                        {
+                            Id = sr.Id,
+                            SubmissionId = s.Id,
+                            StatusId = (int)sr.Status,
+                            StartedAt = sr.StartedAt,
+                            FinishedAt = sr.FinishedAt,
+                            ProgramOutput = sr.Stdout,
+                            RuntimeMs = sr.RuntimeMs,
+                            MemoryKb = sr.MemoryKb,
+                        }
+                )
+                .ToList();
+
+            if (resultEntities.Count != 0)
+            {
+                await db.BulkInsertOrUpdateAsync(
+                    resultEntities,
+                    cancellationToken: cancellationToken
+                );
+
+                var submissionIds = resultEntities
+                    .Select(re => re.SubmissionId)
+                    .Distinct()
+                    .ToList();
+
+                await db
+                    .SubmissionOutboxes.Where(outbox =>
+                        submissionIds.Contains(outbox.SubmissionId)
+                        && outbox.SubmissionOutboxTypeId == (int)SubmissionOutboxType.Execute
+                    )
+                    .ExecuteUpdateAsync(
+                        setters =>
+                            setters
+                                .SetProperty(
+                                    o => o.SubmissionOutboxTypeId,
+                                    (int)SubmissionOutboxType.Evaluate
+                                )
+                                .SetProperty(o => o.AttemptCount, _ => 0),
+                        cancellationToken: cancellationToken
+                    );
+            }
+
+            await transaction.CommitAsync(cancellationToken);
+        }
+        catch
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            throw;
+        }
+    }
+
     public async Task ProcessSubmissionInitializationAsync(
         IEnumerable<SubmissionModel> submissions,
         CancellationToken cancellationToken
@@ -86,12 +151,12 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
                     (s, sr) =>
                         new SubmissionResultEntity
                         {
-                            Id = sr.Id,
                             SubmissionId = s.Id,
                             StatusId = (int)sr.Status,
+                            ExecutionId = sr.Id,
                             StartedAt = sr.StartedAt,
                             FinishedAt = sr.FinishedAt,
-                            OriginalStdout = sr.Stdout,
+                            ProgramOutput = sr.Stdout,
                             RuntimeMs = sr.RuntimeMs,
                             MemoryKb = sr.MemoryKb,
                         }
@@ -120,7 +185,7 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
                             setters
                                 .SetProperty(
                                     o => o.SubmissionOutboxTypeId,
-                                    (int)SubmissionOutboxType.Evaluate
+                                    (int)SubmissionOutboxType.PollExecution
                                 )
                                 .SetProperty(o => o.AttemptCount, _ => 0),
                         cancellationToken: cancellationToken
@@ -129,7 +194,7 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
 
             await transaction.CommitAsync(cancellationToken);
         }
-        catch
+        catch (Exception ex)
         {
             await transaction.RollbackAsync(cancellationToken);
             throw;
