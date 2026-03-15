@@ -12,6 +12,9 @@ public sealed class TestCaseInputEntity
     [Column("test_case_id")]
     public int TestCaseId { get; set; }
 
+    [ForeignKey(nameof(TestCaseId))]
+    public TestCaseEntity? TestCase { get; set; }
+
     [Column("value")]
     public required string Value { get; set; }
 
@@ -20,7 +23,4 @@ public sealed class TestCaseInputEntity
 
     [ForeignKey(nameof(TestCasesInputsValueTypeId))]
     public TestCasesInputsValueTypeEntity? TestCasesInputsValueType { get; set; }
-
-    [ForeignKey(nameof(TestCaseId))]
-    public TestCaseEntity? TestCase { get; set; }
 }
