@@ -3,6 +3,10 @@ namespace ApplicationCore.Domain.Submissions;
 public sealed class SubmissionResult
 {
     public Guid Id { get; set; }
+    
+    public Guid ExecutionId { get; set; }
+    
+    public Guid? ResultId { get; set; }
 
     public required SubmissionStatus Status { get; set; }
 

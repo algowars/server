@@ -80,7 +80,7 @@ public sealed class CodeExecutionService(IJudge0Client judge0Client) : ICodeExec
             (var results, int resultIndex) = indexMap[i];
 
             var result = results[resultIndex];
-            result.Id = response.Token;
+            result.ExecutionId = response.Token;
             result.Status = MapJudge0SubmissionStatus(response.Status);
         }
 
@@ -99,7 +99,7 @@ public sealed class CodeExecutionService(IJudge0Client judge0Client) : ICodeExec
         }
 
         var tokenMap = submissionList
-            .SelectMany(s => s.Results.Select(r => (Submission: s, Token: r.Id)))
+            .SelectMany(s => s.Results.Select(r => (Submission: s, Token: r.ExecutionId)))
             .ToDictionary(x => x.Token, x => x.Submission);
 
         var judge0Results = await judge0Client.GetAsync(tokenMap.Keys, cancellationToken);
@@ -116,7 +116,7 @@ public sealed class CodeExecutionService(IJudge0Client judge0Client) : ICodeExec
                 continue;
             }
 
-            var submissionResult = submission.Results.First(r => r.Id == result.Token);
+            var submissionResult = submission.Results.First(r => r.ExecutionId == result.Token);
 
             submissionResult.Status = MapJudge0SubmissionStatus(result.Status);
             submissionResult.Stdout = result.Stdout;
