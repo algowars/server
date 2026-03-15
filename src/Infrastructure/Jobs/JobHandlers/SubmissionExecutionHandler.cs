@@ -24,16 +24,15 @@ public sealed class SubmissionExecutionHandler(IServiceScopeFactory serviceScope
         var outboxResults = await submissionAppService.GetSubmissionOutboxesAsync(
             cancellationToken
         );
-        
 
         if (!outboxResults.IsSuccess || !outboxResults.Value.Any())
         {
             return;
         }
 
-        var outboxes = outboxResults.Value.Where(outbox =>
-            outbox.Type == SubmissionOutboxType.Initialized
-        ).ToList();
+        var outboxes = outboxResults
+            .Value.Where(outbox => outbox.Type == SubmissionOutboxType.Initialized)
+            .ToList();
 
         var setupsMap = (
             await problemAppService.GetProblemSetupsForExecutionAsync(
@@ -55,7 +54,7 @@ public sealed class SubmissionExecutionHandler(IServiceScopeFactory serviceScope
                         Template = setup.HarnessTemplate?.Template ?? "",
                         FunctionName = setup.FunctionName ?? string.Empty,
                         LanguageVersionId = setup.LanguageVersionId,
-                        Inputs = tc.Input,
+                        Inputs = tc.Inputs,
                         ExpectedOutput = "",
                     });
 

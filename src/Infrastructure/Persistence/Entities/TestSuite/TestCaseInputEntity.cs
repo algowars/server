@@ -20,4 +20,7 @@ public sealed class TestCaseInputEntity
 
     [ForeignKey(nameof(TestCasesInputsValueTypeId))]
     public TestCasesInputsValueTypeEntity? TestCasesInputsValueType { get; set; }
+
+    [ForeignKey(nameof(TestCaseId))]
+    public TestCaseEntity? TestCase { get; set; }
 }

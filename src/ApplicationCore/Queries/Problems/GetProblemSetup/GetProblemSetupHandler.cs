@@ -3,6 +3,7 @@ using ApplicationCore.Dtos.Problems;
 using ApplicationCore.Dtos.Problems.Tests;
 using ApplicationCore.Interfaces.Repositories;
 using Ardalis.Result;
+using Microsoft.VisualBasic;
 
 namespace ApplicationCore.Queries.Problems.GetProblemSetup;
 
@@ -42,7 +43,7 @@ public sealed class GetProblemSetupHandler(IProblemRepository problemRepository)
                 {
                     TestCases = ts.TestCases.Select(tc => new TestCaseDto()
                     {
-                        Input = tc.Input,
+                        Input = string.Join(",", tc.Inputs.Select(input => input.Value.Trim())),
                         ExpectedOutput = tc.ExpectedOutput,
                     }),
                 }),
