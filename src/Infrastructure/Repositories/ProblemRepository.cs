@@ -350,7 +350,7 @@ public sealed class ProblemRepository(AppDbContext db) : IProblemRepository
     )
     {
         return await _db
-            .ProblemSetups.Where(setup => setup.Id == 1)
+            .ProblemSetups.Where(setup => setup.Problem.Id == problemId && setup.ProgrammingLanguageVersionId == languageVersionId)
             .Include(s => s.HarnessTemplate)
             .Select(ps => new ProblemSetupModel
             {
@@ -399,7 +399,17 @@ public sealed class ProblemRepository(AppDbContext db) : IProblemRepository
                             .TestCases.Select(tc => new TestCaseModel
                             {
                                 Id = tc.Id,
-                                Inputs = new List<TestCaseInputParamModel> { }.AsReadOnly(),
+                                Inputs = tc.InputParams.Select(param => new TestCaseInputParamModel
+                                {
+                                    Id = param.Id,
+                                    Value = param.Value,
+                                    TestCaseInputValueTypeId = param.TestCasesInputsValueTypeId,
+                                    InputType = new TestCaseInputValueTypeModel
+                                    {
+                                        Id = param.TestCasesInputsValueType.Id,
+                                        Name = param.TestCasesInputsValueType.Name,
+                                    },
+                                }),
                                 ExpectedOutput = "",
                             })
                             .ToList(),
