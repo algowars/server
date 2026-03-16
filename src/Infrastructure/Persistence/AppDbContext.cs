@@ -1,4 +1,3 @@
-using ApplicationCore.Domain.Problems.TestSuites;
 using Infrastructure.Persistence.Entities.Account;
 using Infrastructure.Persistence.Entities.Language;
 using Infrastructure.Persistence.Entities.Problem;
@@ -55,6 +54,9 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
 
         ModelProblems(modelBuilder);
         ModelProblemSetupsTestSuites(modelBuilder);
+        ModelTestSuiteTestCases(modelBuilder);
+        ModelTestCaseInputs(modelBuilder);
+        ModelTestCaseExpectedOutput(modelBuilder);
     }
 
     private static void ModelProblems(ModelBuilder modelBuilder)
@@ -94,5 +96,35 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
                     j.HasKey("problem_setup_id", "test_suite_id");
                 }
             );
+    }
+
+    private static void ModelTestSuiteTestCases(ModelBuilder modelBuilder)
+    {
+        modelBuilder
+            .Entity<TestSuiteEntity>()
+            .HasMany(ts => ts.TestCases)
+            .WithOne(tc => tc.TestSuite)
+            .HasForeignKey(tc => tc.TestSuiteId)
+            .HasConstraintName("fk_test_cases_test_suite_id");
+    }
+
+    private static void ModelTestCaseInputs(ModelBuilder modelBuilder)
+    {
+        modelBuilder
+            .Entity<TestCaseEntity>()
+            .HasMany(tc => tc.InputParams)
+            .WithOne(i => i.TestCase)
+            .HasForeignKey(i => i.TestCaseId)
+            .HasConstraintName("fk_test_cases_inputs_test_case_id");
+    }
+
+    private static void ModelTestCaseExpectedOutput(ModelBuilder modelBuilder)
+    {
+        modelBuilder
+            .Entity<TestCaseEntity>()
+            .HasOne(tc => tc.ExpectedOutput)
+            .WithOne(o => o.TestCase)
+            .HasForeignKey<TestCaseExpectedOutputEntity>(o => o.TestCaseId)
+            .HasConstraintName("fk_test_cases_expected_outputs_test_case_id");
     }
 }

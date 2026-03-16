@@ -12,12 +12,12 @@ public sealed class TestCaseExpectedOutputEntity
     [Column("test_case_id")]
     public int TestCaseId { get; set; }
 
+    [ForeignKey(nameof(TestCaseId))]
+    public TestCaseEntity? TestCase { get; set; }
+
     [Column("value")]
     public required string Value { get; set; }
 
-    [Column("output_type_id")]
-    public int OutputTypeId { get; set; }
-
-    [ForeignKey(nameof(OutputTypeId))]
-    public TestCasesOutputTypeEntity? TestCasesOutputType { get; set; }
+    [Column("output_type"), MaxLength(50)]
+    public required string OutputType { get; set; }
 }

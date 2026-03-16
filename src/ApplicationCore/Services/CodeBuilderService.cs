@@ -18,11 +18,17 @@ public sealed class CodeBuilderService : ICodeBuilderService
                 return validation;
             }
 
+            string joinedInputs = string.Join(
+                ",",
+                context.Inputs.Select(input => input.Value.Trim())
+            );
+
             string finalCode = RenderTemplate(
                 context.Template,
                 context.Code,
                 context.FunctionName,
-                context.InputTypeName ?? ""
+                context.InputTypeName ?? "",
+                joinedInputs
             );
 
             results.Add(
@@ -30,7 +36,7 @@ public sealed class CodeBuilderService : ICodeBuilderService
                 {
                     FinalCode = finalCode,
                     FunctionName = context.FunctionName,
-                    Inputs = context.Inputs,
+                    Inputs = joinedInputs,
                     ExpectedOutput = context.ExpectedOutput,
                     InputTypeName = context.InputTypeName,
                 }
@@ -79,7 +85,8 @@ public sealed class CodeBuilderService : ICodeBuilderService
         string template,
         string userCode,
         string functionName,
-        string inputTypeName
+        string inputTypeName,
+        string joinedInputs
     )
     {
         string inputParser = ResolveInputParser(inputTypeName);
@@ -87,7 +94,8 @@ public sealed class CodeBuilderService : ICodeBuilderService
         return template
             .Replace("{{USER_CODE}}", userCode)
             .Replace("{{FUNCTION_NAME}}", functionName)
-            .Replace("{{INPUT_PARSER}}", inputParser);
+            .Replace("{{INPUT_PARSER}}", inputParser)
+            .Replace("{{INPUTS}}", joinedInputs);
     }
 
     private static string ResolveInputParser(string inputTypeName)
