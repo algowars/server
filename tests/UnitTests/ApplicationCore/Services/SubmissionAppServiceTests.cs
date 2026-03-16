@@ -1,5 +1,11 @@
 ﻿using ApplicationCore.Commands.Submissions.CreateSubmission;
+using ApplicationCore.Commands.Submissions.IncrementSubmissionOutboxes;
+using ApplicationCore.Commands.Submissions.ProcessSubmissionExecutions;
+using ApplicationCore.Domain.Submissions;
+using ApplicationCore.Domain.Submissions.Outboxes;
+using ApplicationCore.Queries.Submissions.GetSubmissionOutboxes;
 using ApplicationCore.Services;
+using Ardalis.Result;
 using MediatR;
 using Moq;
 
@@ -43,6 +49,99 @@ public sealed class SubmissionAppServiceTests
                         && cmd.Code == code
                         && cmd.CreatedById == createdById
                     ),
+                    cancellationToken
+                ),
+            Times.Once
+        );
+    }
+
+    [Test]
+    public async Task GetSubmissionOutboxesAsync_sends_GetSubmissionOutboxesQuery_via_mediator()
+    {
+        var cancellationToken = CancellationToken.None;
+        var submissionId = Guid.NewGuid();
+        var expectedOutboxes = new List<SubmissionOutboxModel>
+        {
+            new()
+            {
+                Id = Guid.NewGuid(),
+                SubmissionId = submissionId,
+                Submission = new SubmissionModel { Id = submissionId, CreatedById = Guid.NewGuid() },
+                Type = SubmissionOutboxType.Initialized,
+                Status = SubmissionOutboxStatus.Pending,
+            },
+        };
+
+        _mockMediator
+            .Setup(m => m.Send(It.IsAny<GetSubmissionOutboxesQuery>(), cancellationToken))
+            .ReturnsAsync(Result.Success<IEnumerable<SubmissionOutboxModel>>(expectedOutboxes));
+
+        var result = await _sut.GetSubmissionOutboxesAsync(cancellationToken);
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(result.IsSuccess, Is.True);
+            Assert.That(result.Value, Has.Exactly(1).Items);
+        }
+
+        _mockMediator.Verify(
+            m => m.Send(It.IsAny<GetSubmissionOutboxesQuery>(), cancellationToken),
+            Times.Once
+        );
+    }
+
+    [Test]
+    public async Task IncrementOutboxesCountAsync_sends_IncrementSubmissionOutboxesCommand_via_mediator()
+    {
+        var cancellationToken = CancellationToken.None;
+        var outboxIds = new List<Guid> { Guid.NewGuid(), Guid.NewGuid() };
+        var timestamp = DateTime.UtcNow;
+
+        _mockMediator
+            .Setup(m =>
+                m.Send(It.IsAny<IncrementSubmissionOutboxesCommand>(), cancellationToken)
+            )
+            .ReturnsAsync(Result.Success());
+
+        var result = await _sut.IncrementOutboxesCountAsync(outboxIds, timestamp, cancellationToken);
+
+        Assert.That(result.IsSuccess, Is.True);
+
+        _mockMediator.Verify(
+            m =>
+                m.Send(
+                    It.Is<IncrementSubmissionOutboxesCommand>(cmd =>
+                        cmd.OutboxIds == outboxIds && cmd.Timestamp == timestamp
+                    ),
+                    cancellationToken
+                ),
+            Times.Once
+        );
+    }
+
+    [Test]
+    public async Task ProcessSubmissionExecutionAsync_sends_ProcessSubmissionExecutionsCommand_via_mediator()
+    {
+        var cancellationToken = CancellationToken.None;
+        var submissions = new List<SubmissionModel>
+        {
+            new() { Id = Guid.NewGuid(), CreatedById = Guid.NewGuid() },
+        };
+
+        _mockMediator
+            .Setup(m =>
+                m.Send(It.IsAny<ProcessSubmissionExecutionsCommand>(), cancellationToken)
+            )
+            .ReturnsAsync(Result.Success());
+
+        var result = await _sut.ProcessSubmissionExecutionAsync(submissions, cancellationToken);
+
+        Assert.That(result.IsSuccess, Is.True);
+
+        _mockMediator.Verify(
+            m =>
+                m.Send(
+                    It.Is<ProcessSubmissionExecutionsCommand>(cmd => cmd.Submissions == submissions),
                     cancellationToken
                 ),
             Times.Once
