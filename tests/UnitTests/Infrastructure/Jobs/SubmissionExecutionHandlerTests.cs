@@ -97,7 +97,19 @@ public sealed class SubmissionExecutionHandlerTests
                 {
                     TestCases =
                     [
-                        new TestCaseModel { Id = 1, Input = "1", ExpectedOutput = "1" },
+                        new TestCaseModel
+                        {
+                            Id = 1,
+                            Inputs =
+                            [
+                                new TestCaseInputParamModel
+                                {
+                                    Value = "1",
+                                    InputType = new TestCaseInputValueTypeModel { Name = "number" },
+                                },
+                            ],
+                            ExpectedOutput = "1",
+                        },
                     ],
                 },
             ],

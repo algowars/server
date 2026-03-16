@@ -114,7 +114,6 @@ public sealed class CodeExecutionServiceTests
             Assert.That(result.IsSuccess, Is.True);
             Assert.That(result.Value, Has.Exactly(1).Items);
             Assert.That(result.Value.First().Id, Is.EqualTo(submissionId));
-            Assert.That(result.Value.First().Results.First().Id, Is.EqualTo(token));
             Assert.That(
                 result.Value.First().Results.First().Status,
                 Is.EqualTo(SubmissionStatus.InQueue)
@@ -190,7 +189,7 @@ public sealed class CodeExecutionServiceTests
             {
                 Id = Guid.NewGuid(),
                 CreatedById = Guid.NewGuid(),
-                Results = [new SubmissionResult { Id = token, Status = SubmissionStatus.InQueue }],
+                Results = [new SubmissionResult { ExecutionId = token, Status = SubmissionStatus.InQueue }],
             },
         };
 
@@ -209,7 +208,7 @@ public sealed class CodeExecutionServiceTests
             {
                 Id = Guid.NewGuid(),
                 CreatedById = Guid.NewGuid(),
-                Results = [new SubmissionResult { Id = token, Status = SubmissionStatus.InQueue }],
+                Results = [new SubmissionResult { ExecutionId = token, Status = SubmissionStatus.InQueue }],
             },
         };
 

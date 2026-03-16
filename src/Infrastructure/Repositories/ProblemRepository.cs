@@ -323,7 +323,17 @@ public sealed class ProblemRepository(AppDbContext db) : IProblemRepository
                             .TestCases.Select(tc => new TestCaseModel
                             {
                                 Id = tc.Id,
-                                Input = "",
+                                Inputs = tc.InputParams.Select(param => new TestCaseInputParamModel
+                                {
+                                    Id = param.Id,
+                                    Value = param.Value,
+                                    TestCaseInputValueTypeId = param.TestCasesInputsValueTypeId,
+                                    InputType = new TestCaseInputValueTypeModel
+                                    {
+                                        Id = param.TestCasesInputsValueType.Id,
+                                        Name = param.TestCasesInputsValueType.Name,
+                                    },
+                                }),
                                 ExpectedOutput = "",
                             })
                             .ToList(),
@@ -389,7 +399,7 @@ public sealed class ProblemRepository(AppDbContext db) : IProblemRepository
                             .TestCases.Select(tc => new TestCaseModel
                             {
                                 Id = tc.Id,
-                                Input = "",
+                                Inputs = new List<TestCaseInputParamModel> { }.AsReadOnly(),
                                 ExpectedOutput = "",
                             })
                             .ToList(),

@@ -1,4 +1,5 @@
 using ApplicationCore.Domain.CodeExecution;
+using ApplicationCore.Domain.Problems.TestSuites;
 using ApplicationCore.Services;
 using Ardalis.Result;
 
@@ -15,6 +16,13 @@ public sealed class CodeBuilderServiceTests
         _sut = new CodeBuilderService();
     }
 
+    private static TestCaseInputParamModel InputParam(string value, string typeName = "number") =>
+        new()
+        {
+            Value = value,
+            InputType = new TestCaseInputValueTypeModel { Name = typeName },
+        };
+
     [Test]
     public void Build_returns_success_with_rendered_code_for_valid_context()
     {
@@ -25,7 +33,7 @@ public sealed class CodeBuilderServiceTests
                 Code = "function twoSum(nums, target) { return [0, 1]; }",
                 Template = "{{USER_CODE}}\nconsole.log({{FUNCTION_NAME}}({{INPUT_PARSER}}));",
                 FunctionName = "twoSum",
-                Inputs = "1,2",
+                Inputs = [InputParam("1"), InputParam("2")],
                 ExpectedOutput = "[0,1]",
             },
         };
@@ -57,7 +65,7 @@ public sealed class CodeBuilderServiceTests
                 Code = code,
                 Template = "{{USER_CODE}}",
                 FunctionName = "add",
-                Inputs = "1",
+                Inputs = [InputParam("1")],
                 ExpectedOutput = "2",
             },
         };
@@ -77,7 +85,7 @@ public sealed class CodeBuilderServiceTests
                 Code = "function myFunc() {}",
                 Template = "{{FUNCTION_NAME}}()",
                 FunctionName = "myFunc",
-                Inputs = "1",
+                Inputs = [InputParam("1")],
                 ExpectedOutput = "result",
             },
         };
@@ -97,7 +105,7 @@ public sealed class CodeBuilderServiceTests
                 Code = "",
                 Template = "{{USER_CODE}}",
                 FunctionName = "test",
-                Inputs = "1",
+                Inputs = [InputParam("1")],
                 ExpectedOutput = "result",
             },
         };
@@ -117,7 +125,7 @@ public sealed class CodeBuilderServiceTests
                 Code = "function test() {}",
                 Template = "{{USER_CODE}}",
                 FunctionName = "",
-                Inputs = "1",
+                Inputs = [InputParam("1")],
                 ExpectedOutput = "result",
             },
         };
@@ -137,7 +145,7 @@ public sealed class CodeBuilderServiceTests
                 Code = "function test() {}",
                 Template = "",
                 FunctionName = "test",
-                Inputs = "1",
+                Inputs = [InputParam("1")],
                 ExpectedOutput = "result",
             },
         };
@@ -157,7 +165,7 @@ public sealed class CodeBuilderServiceTests
                 Code = "function a() {}",
                 Template = "{{USER_CODE}}",
                 FunctionName = "a",
-                Inputs = "1",
+                Inputs = [InputParam("1")],
                 ExpectedOutput = "1",
             },
             new()
@@ -165,7 +173,7 @@ public sealed class CodeBuilderServiceTests
                 Code = "function b() {}",
                 Template = "{{USER_CODE}}",
                 FunctionName = "b",
-                Inputs = "2",
+                Inputs = [InputParam("2")],
                 ExpectedOutput = "2",
             },
         };
@@ -201,7 +209,7 @@ public sealed class CodeBuilderServiceTests
                 Code = "function f() {}",
                 Template = "{{INPUT_PARSER}}",
                 FunctionName = "f",
-                Inputs = "42",
+                Inputs = [InputParam("42", "number")],
                 ExpectedOutput = "42",
                 InputTypeName = "number",
             },
@@ -225,7 +233,12 @@ public sealed class CodeBuilderServiceTests
                 Code = "function f() {}",
                 Template = "{{INPUT_PARSER}}",
                 FunctionName = "f",
-                Inputs = "1,2,3",
+                Inputs =
+                [
+                    InputParam("1", "array:number"),
+                    InputParam("2", "array:number"),
+                    InputParam("3", "array:number"),
+                ],
                 ExpectedOutput = "6",
                 InputTypeName = "array:number",
             },
@@ -249,7 +262,7 @@ public sealed class CodeBuilderServiceTests
                 Code = "function f() {}",
                 Template = "{{INPUT_PARSER}}",
                 FunctionName = "f",
-                Inputs = "hello",
+                Inputs = [InputParam("hello", "string")],
                 ExpectedOutput = "hello",
                 InputTypeName = "string",
             },

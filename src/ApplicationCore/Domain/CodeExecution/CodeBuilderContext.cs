@@ -1,3 +1,5 @@
+using ApplicationCore.Domain.Problems.TestSuites;
+
 namespace ApplicationCore.Domain.CodeExecution;
 
 public sealed class CodeBuilderContext
@@ -10,7 +12,7 @@ public sealed class CodeBuilderContext
 
     public int? LanguageVersionId { get; init; }
 
-    public required string Inputs { get; init; }
+    public required IEnumerable<TestCaseInputParamModel> Inputs { get; init; }
 
     public required string ExpectedOutput { get; init; }
 
