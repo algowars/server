@@ -47,12 +47,12 @@ public sealed class GetSubmissionOutboxesHandlerTests
         var query = new GetSubmissionOutboxesQuery();
         var result = await _handler.Handle(query, CancellationToken.None);
 
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.IsSuccess, Is.True);
             Assert.That(result.Value, Has.Exactly(1).Items);
             Assert.That(result.Value.First().SubmissionId, Is.EqualTo(submissionId));
-        });
+        }
     }
 
     [Test]
@@ -65,11 +65,11 @@ public sealed class GetSubmissionOutboxesHandlerTests
         var query = new GetSubmissionOutboxesQuery();
         var result = await _handler.Handle(query, CancellationToken.None);
 
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.IsSuccess, Is.True);
             Assert.That(result.Value, Is.Empty);
-        });
+        }
     }
 
     [Test]
@@ -82,10 +82,10 @@ public sealed class GetSubmissionOutboxesHandlerTests
         var query = new GetSubmissionOutboxesQuery();
         var result = await _handler.Handle(query, CancellationToken.None);
 
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.Status, Is.EqualTo(ResultStatus.Error));
             Assert.That(result.Errors, Has.Some.EqualTo("Database error"));
-        });
+        }
     }
 }

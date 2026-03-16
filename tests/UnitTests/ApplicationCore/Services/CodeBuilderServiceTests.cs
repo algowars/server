@@ -32,7 +32,7 @@ public sealed class CodeBuilderServiceTests
 
         var result = _sut.Build(contexts);
 
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.IsSuccess, Is.True);
             Assert.That(result.Value, Has.Exactly(1).Items);
@@ -43,7 +43,7 @@ public sealed class CodeBuilderServiceTests
             Assert.That(result.Value.First().FunctionName, Is.EqualTo("twoSum"));
             Assert.That(result.Value.First().Inputs, Is.EqualTo("1,2"));
             Assert.That(result.Value.First().ExpectedOutput, Is.EqualTo("[0,1]"));
-        });
+        }
     }
 
     [Test]
@@ -172,11 +172,11 @@ public sealed class CodeBuilderServiceTests
 
         var result = _sut.Build(contexts);
 
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.IsSuccess, Is.True);
             Assert.That(result.Value, Has.Exactly(2).Items);
-        });
+        }
     }
 
     [Test]
@@ -184,11 +184,11 @@ public sealed class CodeBuilderServiceTests
     {
         var result = _sut.Build([]);
 
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.IsSuccess, Is.True);
             Assert.That(result.Value, Is.Empty);
-        });
+        }
     }
 
     [Test]

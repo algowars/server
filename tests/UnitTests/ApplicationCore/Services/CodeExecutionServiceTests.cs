@@ -55,11 +55,11 @@ public sealed class CodeExecutionServiceTests
     {
         var result = await _sut.ExecuteAsync([], CancellationToken.None);
 
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.IsSuccess, Is.True);
             Assert.That(result.Value, Is.Empty);
-        });
+        }
     }
 
     [Test]
@@ -77,7 +77,7 @@ public sealed class CodeExecutionServiceTests
         var context = CreateContext();
         var result = await _sut.ExecuteAsync([context], CancellationToken.None);
 
-        Assert.That(result.IsError, Is.True);
+        Assert.That(result.IsError(), Is.True);
     }
 
     [Test]
@@ -109,7 +109,7 @@ public sealed class CodeExecutionServiceTests
         var context = CreateContext(submissionId);
         var result = await _sut.ExecuteAsync([context], CancellationToken.None);
 
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.IsSuccess, Is.True);
             Assert.That(result.Value, Has.Exactly(1).Items);
@@ -119,7 +119,7 @@ public sealed class CodeExecutionServiceTests
                 result.Value.First().Results.First().Status,
                 Is.EqualTo(SubmissionStatus.InQueue)
             );
-        });
+        }
     }
 
     [Test]
@@ -137,7 +137,7 @@ public sealed class CodeExecutionServiceTests
         var context = CreateContext();
         var result = await _sut.ExecuteAsync([context], CancellationToken.None);
 
-        Assert.That(result.IsError, Is.True);
+        Assert.That(result.IsError(), Is.True);
     }
 
     [Test]
@@ -154,12 +154,12 @@ public sealed class CodeExecutionServiceTests
 
         var result = await _sut.ExecuteAsync([context], CancellationToken.None);
 
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.IsSuccess, Is.True);
             Assert.That(result.Value, Has.Exactly(1).Items);
             Assert.That(result.Value.First().Results, Is.Empty);
-        });
+        }
     }
 
     [Test]
@@ -167,11 +167,11 @@ public sealed class CodeExecutionServiceTests
     {
         var result = await _sut.GetSubmissionResultsAsync([], CancellationToken.None);
 
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.IsSuccess, Is.True);
             Assert.That(result.Value, Is.Empty);
-        });
+        }
     }
 
     [Test]
@@ -196,7 +196,7 @@ public sealed class CodeExecutionServiceTests
 
         var result = await _sut.GetSubmissionResultsAsync(submissions, CancellationToken.None);
 
-        Assert.That(result.IsError, Is.True);
+        Assert.That(result.IsError(), Is.True);
     }
 
     [Test]
@@ -235,7 +235,7 @@ public sealed class CodeExecutionServiceTests
 
         var result = await _sut.GetSubmissionResultsAsync(submissions, CancellationToken.None);
 
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.IsSuccess, Is.True);
             var updatedResult = result.Value.First().Results.First();
@@ -243,6 +243,6 @@ public sealed class CodeExecutionServiceTests
             Assert.That(updatedResult.Stdout, Is.EqualTo("expected"));
             Assert.That(updatedResult.MemoryKb, Is.EqualTo(2048));
             Assert.That(updatedResult.RuntimeMs, Is.EqualTo(50));
-        });
+        }
     }
 }

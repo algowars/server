@@ -57,7 +57,7 @@ internal class ProcessSubmissionExecutionsHandlerTests
 
         var result = await _sut.Handle(command, CancellationToken.None);
 
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.IsSuccess, Is.True);
             _mockSubmissionRepository.Verify(
@@ -68,7 +68,7 @@ internal class ProcessSubmissionExecutionsHandlerTests
                     ),
                 Times.Once
             );
-        });
+        }
     }
 
     [Test]
@@ -91,11 +91,11 @@ internal class ProcessSubmissionExecutionsHandlerTests
 
         var result = await _sut.Handle(command, CancellationToken.None);
 
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.IsError(), Is.True);
             Assert.That(result.Errors, Has.Some.EqualTo("Database error"));
-        });
+        }
     }
 
     [Test]

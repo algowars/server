@@ -78,11 +78,11 @@ public sealed class SubmissionAppServiceTests
 
         var result = await _sut.GetSubmissionOutboxesAsync(cancellationToken);
 
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.IsSuccess, Is.True);
             Assert.That(result.Value, Has.Exactly(1).Items);
-        });
+        }
 
         _mockMediator.Verify(
             m => m.Send(It.IsAny<GetSubmissionOutboxesQuery>(), cancellationToken),

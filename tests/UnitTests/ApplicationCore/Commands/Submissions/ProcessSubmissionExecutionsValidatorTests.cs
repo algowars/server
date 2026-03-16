@@ -46,13 +46,13 @@ internal class ProcessSubmissionExecutionsValidatorTests
 
         ValidationResult result = _validator.Validate(command);
 
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.IsValid, Is.False);
             Assert.That(
                 result.Errors,
                 Has.Exactly(1).Matches<ValidationFailure>(e => e.PropertyName == "Submissions")
             );
-        });
+        }
     }
 }
