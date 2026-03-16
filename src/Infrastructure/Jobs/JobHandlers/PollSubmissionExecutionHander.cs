@@ -13,48 +13,37 @@ internal sealed class PollSubmissionExecutionHander(IServiceScopeFactory service
 
     protected override async Task ExecuteJobAsync(CancellationToken cancellationToken)
     {
-        try
+        using var scope = serviceScopeFactory.CreateScope();
+        var submissionAppService =
+            scope.ServiceProvider.GetRequiredService<ISubmissionAppService>();
+        var codeExecutionService =
+            scope.ServiceProvider.GetRequiredService<ICodeExecutionService>();
+
+        var outboxResults = await submissionAppService.GetSubmissionOutboxesAsync(
+            cancellationToken
+        );
+
+        if (!outboxResults.IsSuccess || !outboxResults.Value.Any())
         {
-            using var scope = serviceScopeFactory.CreateScope();
-            var submissionAppService =
-                scope.ServiceProvider.GetRequiredService<ISubmissionAppService>();
-            var codeExecutionService =
-                scope.ServiceProvider.GetRequiredService<ICodeExecutionService>();
-
-            var outboxResults = await submissionAppService.GetSubmissionOutboxesAsync(
-                cancellationToken
-            );
-
-            if (!outboxResults.IsSuccess || !outboxResults.Value.Any())
-            {
-                return;
-            }
-
-            var outboxes = outboxResults
-                .Value.Where(outbox => outbox.Type == SubmissionOutboxType.PollExecution)
-                .ToList();
-
-            var submissionResults = await codeExecutionService.GetSubmissionResultsAsync(
-                outboxes.Select(o => o.Submission),
-                cancellationToken
-            );
-
-            var outboxIds = outboxes.Select(outbox => outbox.Id).ToList();
-            var now = DateTime.UtcNow;
-            await submissionAppService.IncrementOutboxesCountAsync(
-                outboxIds,
-                now,
-                cancellationToken
-            );
-
-            await submissionAppService.ProcessPollingSubmissionExecutionsAsync(
-                submissionResults.Value,
-                cancellationToken
-            );
+            return;
         }
-        catch (Exception ex)
-        {
-            Console.WriteLine(ex);
-        }
+
+        var outboxes = outboxResults
+            .Value.Where(outbox => outbox.Type == SubmissionOutboxType.PollExecution)
+            .ToList();
+
+        var submissionResults = await codeExecutionService.GetSubmissionResultsAsync(
+            outboxes.Select(o => o.Submission),
+            cancellationToken
+        );
+
+        var outboxIds = outboxes.Select(outbox => outbox.Id).ToList();
+        var now = DateTime.UtcNow;
+        await submissionAppService.IncrementOutboxesCountAsync(outboxIds, now, cancellationToken);
+
+        await submissionAppService.ProcessPollingSubmissionExecutionsAsync(
+            submissionResults.Value,
+            cancellationToken
+        );
     }
 }
