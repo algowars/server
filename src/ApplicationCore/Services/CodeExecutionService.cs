@@ -40,7 +40,7 @@ public sealed class CodeExecutionService(IJudge0Client judge0Client) : ICodeExec
                     }
                 );
 
-                results.Add(new SubmissionResult { Status = SubmissionStatus.InQueue });
+                results.Add(new SubmissionResult { Id = Guid.NewGuid(), Status = SubmissionStatus.InQueue });
 
                 indexMap.Add((results, results.Count - 1));
             }
