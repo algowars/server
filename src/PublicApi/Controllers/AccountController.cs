@@ -78,10 +78,10 @@ public sealed partial class AccountController(IAccountAppService accountAppServi
             return Unauthorized();
         }
 
-        IEnumerable<string> permissions = User
-            .Claims.Where(c => c.Type == "permissions")
-            .Select(c => c.Value)
-            .ToArray();
+        IEnumerable<string> permissions =
+        [
+            .. User.Claims.Where(c => c.Type == "permissions").Select(c => c.Value),
+        ];
 
         var accountResult = await accountAppService.GetAccountBySubAsync(sub, cancellationToken);
 
@@ -100,6 +100,6 @@ public sealed partial class AccountController(IAccountAppService accountAppServi
         }
 
         string errors = string.Join(", ", accountResult.Errors);
-        return BadRequest(errors);
+        return NotFound(errors);
     }
 }

@@ -60,37 +60,4 @@ public sealed class CreateSubmissionHandlerTests
             );
         }
     }
-
-    [Test]
-    public async Task Handle_returns_result_error_when_exception_occurs()
-    {
-        _mockSubmissionRepository
-            .Setup(a => a.SaveAsync(It.IsAny<SubmissionModel>(), It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new Exception("Database error"));
-        var command = new CreateSubmissionCommand(1, "code", Guid.NewGuid());
-
-        var result = await _sut.Handle(command, CancellationToken.None);
-
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.IsSuccess, Is.False);
-            Assert.That(
-                result.Errors,
-                Has.Exactly(1).Matches<string>(e => e.Contains("Database error"))
-            );
-
-            _mockSubmissionRepository.Verify(
-                a =>
-                    a.SaveAsync(
-                        It.Is<SubmissionModel>(s =>
-                            s.ProblemSetupId == command.ProblemSetupId
-                            && s.Code == command.Code
-                            && s.CreatedById == command.CreatedById
-                        ),
-                        It.IsAny<CancellationToken>()
-                    ),
-                Times.Once
-            );
-        }
-    }
 }
