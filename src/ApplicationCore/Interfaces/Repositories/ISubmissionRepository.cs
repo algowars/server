@@ -24,5 +24,5 @@ public interface ISubmissionRepository
         IEnumerable<SubmissionModel> submissions,
         CancellationToken cancellationToken
     );
-    
+
 }

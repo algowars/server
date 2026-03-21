@@ -1,8 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using ApplicationCore.Commands.Submissions.IncrementSubmissionOutboxes;
+﻿using ApplicationCore.Commands.Submissions.IncrementSubmissionOutboxes;
 using FluentValidation.Results;
 using NUnit.Framework;
+using System;
+using System.Collections.Generic;
 
 namespace UnitTests.ApplicationCore.Commands.Submissions;
 

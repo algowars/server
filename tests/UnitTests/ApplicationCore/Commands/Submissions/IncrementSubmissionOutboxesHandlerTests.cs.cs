@@ -1,13 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-using ApplicationCore.Commands.Submissions.IncrementSubmissionOutboxes;
+﻿using ApplicationCore.Commands.Submissions.IncrementSubmissionOutboxes;
 using ApplicationCore.Interfaces.Repositories;
 using Ardalis.Result;
 using FluentValidation;
 using FluentValidation.Results;
 using Moq;
+using System;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace UnitTests.ApplicationCore.Commands.Submissions;
 

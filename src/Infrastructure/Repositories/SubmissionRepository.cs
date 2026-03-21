@@ -1,5 +1,4 @@
-﻿using System.Linq.Expressions;
-using ApplicationCore.Domain.Submissions;
+﻿using ApplicationCore.Domain.Submissions;
 using ApplicationCore.Domain.Submissions.Outboxes;
 using ApplicationCore.Interfaces.Repositories;
 using EFCore.BulkExtensions;
@@ -7,6 +6,7 @@ using Infrastructure.Persistence;
 using Infrastructure.Persistence.Entities.Submission;
 using Infrastructure.Persistence.Entities.Submission.Outbox;
 using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
 
 namespace Infrastructure.Repositories;
 

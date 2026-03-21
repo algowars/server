@@ -1,6 +1,6 @@
+using Infrastructure.Persistence.Entities.Problem;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using Infrastructure.Persistence.Entities.Problem;
 
 namespace Infrastructure.Persistence.Entities.TestSuite;
 
