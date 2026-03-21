@@ -4,7 +4,7 @@ public sealed class TestCaseModel
 {
     public required int Id { get; init; }
 
-    public required string Input { get; init; }
+    public IEnumerable<TestCaseInputParamModel> Inputs { get; init; }
 
     public required string ExpectedOutput { get; init; }
 }

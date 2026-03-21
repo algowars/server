@@ -17,8 +17,12 @@ public interface ISubmissionRepository
         CancellationToken cancellationToken
     );
 
+    Task ProcessPollingSubmissionExecutionsAsync(
+        IEnumerable<SubmissionModel> submissionModels, CancellationToken cancellationToken);
+
     Task ProcessSubmissionInitializationAsync(
         IEnumerable<SubmissionModel> submissions,
         CancellationToken cancellationToken
     );
+    
 }

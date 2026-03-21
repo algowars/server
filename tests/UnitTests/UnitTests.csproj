@@ -37,7 +37,7 @@
   <ItemGroup>
     <Folder Include="ApplicationCore\Domain\Problems\ProblemsSetups\" />
     <Folder Include="ApplicationCore\Domain\Problems\TestSuites\" />
-    <Folder Include="Infrastructure\" />
+    <Folder Include="Infrastructure\Jobs\JobHandlers\" />
   </ItemGroup>
 
   <ItemGroup>
