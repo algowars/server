@@ -1,19 +1,42 @@
 using ApplicationCore;
+using Asp.Versioning;
 using Infrastructure;
-using PublicApi;
-using PublicApi.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
-Console.WriteLine(builder.Environment.EnvironmentName);
+builder.Services.RegisterAppSettings(builder.Configuration);
 
 builder.Services.AddApplicationCore();
-builder.Services.AddInfrastructure(builder.Configuration);
-builder.Services.AddApiServices(builder.Configuration);
+builder.Services.AddInfrastructure();
+
+builder.Services.AddControllers();
+builder.Services.AddApiVersioning(o =>
+{
+    o.DefaultApiVersion = new ApiVersion(1, 0);
+    o.AssumeDefaultVersionWhenUnspecified = true;
+    o.ReportApiVersions = true;
+});
+
+builder.Services.AddMediatR(cfg =>
+{
+    cfg.LicenseKey = builder.Configuration.GetSection("MediatRSettings:LicenseKey").Get<string>();
+    cfg.RegisterServicesFromAssembly(typeof(Program).Assembly);
+});
+
+builder.Services.AddOpenApi();
+
+string[] allowedOrigins =
+    builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
+    ?? Array.Empty<string>();
+
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+        policy.WithOrigins(allowedOrigins).AllowAnyHeader().AllowAnyMethod().AllowCredentials()
+    );
+});
 
 var app = builder.Build();
-
-app.UseRateLimiter();
 
 if (app.Environment.IsDevelopment())
 {
@@ -21,10 +44,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.UseSecurityHeaders();
-app.UseCors("AllowFrontend");
-app.UseGlobalExceptionHandler();
-app.UseAuthentication();
+app.UseCors();
 app.UseAuthorization();
 app.MapControllers();
 

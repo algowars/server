@@ -1,11 +1,11 @@
-﻿using Asp.Versioning;
+﻿using System.Threading.RateLimiting;
+using Asp.Versioning;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
 using PublicApi.Authorization;
 using PublicApi.Filters;
-using System.Threading.RateLimiting;
 
 namespace PublicApi;
 
@@ -24,12 +24,6 @@ public static class ServiceCollectionExtensions
             o.AssumeDefaultVersionWhenUnspecified = true;
             o.ReportApiVersions = true;
         });
-
-        services
-            .AddAuthentication(configuration)
-            .AddAuthorization()
-            .AddCors(configuration)
-            .AddRateLimiting();
 
         return services;
     }
@@ -77,40 +71,6 @@ public static class ServiceCollectionExtensions
         });
 
         services.AddSingleton<IAuthorizationHandler, RbacHandler>();
-
-        return services;
-    }
-
-    private static IServiceCollection AddCors(
-        this IServiceCollection services,
-        IConfiguration configuration
-    )
-    {
-        string corsOriginsEnv =
-            configuration["Cors:AllowedOrigins"]
-            ?? throw new InvalidOperationException("Cors:AllowedOrigins not configured!");
-
-        string[] allowedOrigins = corsOriginsEnv.Split(
-            ',',
-            StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries
-        );
-
-        if (allowedOrigins.Length == 0)
-        {
-            throw new InvalidOperationException("Cors:AllowedOrigins cannot be empty!");
-        }
-
-        services.AddCors(options =>
-            options.AddPolicy(
-                "AllowFrontend",
-                policy =>
-                    policy
-                        .WithOrigins(allowedOrigins)
-                        .AllowAnyHeader()
-                        .AllowAnyMethod()
-                        .AllowCredentials()
-            )
-        );
 
         return services;
     }
