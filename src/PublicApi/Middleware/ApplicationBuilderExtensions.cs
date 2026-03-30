@@ -1,4 +1,4 @@
-﻿namespace PublicApi;
+﻿namespace PublicApi.Middleware;
 
 public static class ApplicationBuilderExtensions
 {

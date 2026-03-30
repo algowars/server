@@ -1,15 +1,27 @@
 using ApplicationCore;
+using ApplicationCore.Domain.Accounts;
 using Asp.Versioning;
 using Infrastructure;
+using PublicApi;
+using PublicApi.Extensions;
+using PublicApi.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.RegisterAppSettings(builder.Configuration);
 
 builder.Services.AddApplicationCore();
-builder.Services.AddInfrastructure();
+builder.Services.AddInfrastructure(builder.Configuration);
 
 builder.Services.AddControllers();
+
+builder.Services.RegisterAllUserAndGlobalRateLimitPolicies(typeof(Program).Assembly);
+
+builder.Services.AddAuthTokenValidation(builder.Configuration);
+builder.Services.AddRbacAuthorization();
+
+builder.Services.AddScoped<IAccountContext, AccountContext>();
+builder.Services.AddScoped<AccountContextMiddleware>();
 builder.Services.AddApiVersioning(o =>
 {
     o.DefaultApiVersion = new ApiVersion(1, 0);
@@ -26,8 +38,7 @@ builder.Services.AddMediatR(cfg =>
 builder.Services.AddOpenApi();
 
 string[] allowedOrigins =
-    builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
-    ?? Array.Empty<string>();
+    builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
 
 builder.Services.AddCors(options =>
 {
@@ -45,7 +56,10 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseCors();
+app.UseGlobalExceptionHandler();
+app.UseAuthentication();
 app.UseAuthorization();
+app.UseAccountContext();
 app.MapControllers();
 
 app.Run();
