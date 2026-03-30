@@ -1,10 +1,4 @@
-﻿using System.Threading.RateLimiting;
-using Asp.Versioning;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.RateLimiting;
-using Microsoft.IdentityModel.Tokens;
-using PublicApi.Authorization;
+﻿using Asp.Versioning;
 using PublicApi.Filters;
 
 namespace PublicApi;
