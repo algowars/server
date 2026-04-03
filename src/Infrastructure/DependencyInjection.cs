@@ -1,3 +1,4 @@
+using System.Text.Json;
 using ApplicationCore.Interfaces.Clients;
 using ApplicationCore.Interfaces.Repositories;
 using ApplicationCore.Interfaces.Services;
@@ -13,7 +14,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Quartz;
-using System.Text.Json;
 
 namespace Infrastructure;
 
@@ -130,6 +130,11 @@ public static class DependencyInjection
                 JobType.PollSubmissionExecution,
                 GetInterval("PollSubmissionExecution", 10),
                 GetEnabled("PollSubmissionExecution", false)
+            );
+            q.AddJobWithTrigger<SubmissionReportExecutionHandler>(
+                JobType.SubmissionReportExecution,
+                GetInterval("SubmissionReportExecution", 5),
+                GetEnabled("SubmissionReportExecution", false)
             );
         });
 

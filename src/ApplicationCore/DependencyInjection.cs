@@ -21,6 +21,7 @@ public static class DependencyInjection
         services.AddScoped<ISubmissionAppService, SubmissionAppService>();
         services.AddScoped<ICodeBuilderService, CodeBuilderService>();
         services.AddScoped<ICodeExecutionService, CodeExecutionService>();
+        services.AddSingleton<ISubmissionReportRunner, SubmissionReportRunner>();
 
         return services;
     }

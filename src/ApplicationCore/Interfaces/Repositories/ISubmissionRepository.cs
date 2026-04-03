@@ -20,6 +20,11 @@ public interface ISubmissionRepository
     Task ProcessPollingSubmissionExecutionsAsync(
         IEnumerable<SubmissionModel> submissionModels, CancellationToken cancellationToken);
 
+    Task ProcessSubmissionReportExecutionAsync(
+        IEnumerable<SubmissionModel> submissionModels,
+        CancellationToken cancellationToken
+    );
+
     Task ProcessSubmissionInitializationAsync(
         IEnumerable<SubmissionModel> submissions,
         CancellationToken cancellationToken

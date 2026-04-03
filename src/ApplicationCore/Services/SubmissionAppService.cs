@@ -2,6 +2,7 @@
 using ApplicationCore.Commands.Submissions.IncrementSubmissionOutboxes;
 using ApplicationCore.Commands.Submissions.ProcessPollingSubmissionExecutions;
 using ApplicationCore.Commands.Submissions.ProcessSubmissionExecutions;
+using ApplicationCore.Commands.Submissions.ProcessSubmissionReportExecution;
 using ApplicationCore.Domain.Submissions;
 using ApplicationCore.Domain.Submissions.Outboxes;
 using ApplicationCore.Interfaces.Services;
@@ -58,6 +59,16 @@ public sealed class SubmissionAppService(IMediator mediator) : ISubmissionAppSer
     public async Task<Result<Unit>> ProcessPollingSubmissionExecutionsAsync(IEnumerable<SubmissionModel> results, CancellationToken cancellationToken)
     {
         var command = new ProcessPollingSubmissionExecutionsCommand(results);
+
+        return await mediator.Send(command, cancellationToken);
+    }
+
+    public async Task<Result<Unit>> ProcessSubmissionReportExecutionAsync(
+        IEnumerable<SubmissionModel> results,
+        CancellationToken cancellationToken
+    )
+    {
+        var command = new ProcessSubmissionReportExecutionCommand(results);
 
         return await mediator.Send(command, cancellationToken);
     }

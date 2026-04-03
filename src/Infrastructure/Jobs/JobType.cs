@@ -3,5 +3,7 @@
 public enum JobType
 {
     SubmissionExecution = 1,
-    PollSubmissionExecution
+    PollSubmissionExecution,
+    SubmissionReportExecution,
+    PollSubmissionReportExecution,
 }
