@@ -42,6 +42,9 @@ public sealed class SubmissionResultEntity
     [Column("stderr")]
     public string? Stderr { get; set; }
 
+    [Column("expected_output")]
+    public string? ExpectedOutput { get; set; }
+
     [Column("runtime_ms")]
     public int? RuntimeMs { get; set; }
 

@@ -5,5 +5,6 @@ public enum SubmissionOutboxType
     Initialized = 1,
     Execute,
     PollExecution,
-    Evaluate
+    Evaluate,
+    PollEvaluation,
 }

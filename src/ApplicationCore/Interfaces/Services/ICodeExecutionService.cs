@@ -15,4 +15,9 @@ public interface ICodeExecutionService
         IEnumerable<SubmissionModel> submissions,
         CancellationToken cancellationToken
     );
+
+    Task<Result<IEnumerable<SubmissionModel>>> GetSubmissionReportResultsAsync(
+        IEnumerable<SubmissionModel> submissions,
+        CancellationToken cancellationToken
+    );
 }

@@ -334,7 +334,7 @@ public sealed class ProblemRepository(AppDbContext db) : IProblemRepository
                                         Name = param.TestCasesInputsValueType.Name,
                                     },
                                 }),
-                                ExpectedOutput = "",
+                                ExpectedOutput = tc.ExpectedOutput != null ? tc.ExpectedOutput.Value : "",
                             })
                             .ToList(),
                     })
@@ -410,7 +410,7 @@ public sealed class ProblemRepository(AppDbContext db) : IProblemRepository
                                         Name = param.TestCasesInputsValueType.Name,
                                     },
                                 }),
-                                ExpectedOutput = "",
+                                ExpectedOutput = tc.ExpectedOutput != null ? tc.ExpectedOutput.Value : "",
                             })
                             .ToList(),
                     })

@@ -55,7 +55,7 @@ public sealed class SubmissionExecutionHandler(IServiceScopeFactory serviceScope
                         FunctionName = setup.FunctionName ?? string.Empty,
                         LanguageVersionId = setup.LanguageVersionId,
                         Inputs = tc.Inputs,
-                        ExpectedOutput = "",
+                        ExpectedOutput = tc.ExpectedOutput,
                     });
 
                 var buildResults = codeBuilderService.Build(builderContexts);

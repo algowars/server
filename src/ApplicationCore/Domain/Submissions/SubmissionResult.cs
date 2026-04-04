@@ -20,6 +20,8 @@ public sealed class SubmissionResult
 
     public string? Stderr { get; set; }
 
+    public string? ExpectedOutput { get; set; }
+
     public int? RuntimeMs { get; set; }
 
     public int? MemoryKb { get; set; }

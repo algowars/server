@@ -40,7 +40,14 @@ public sealed class CodeExecutionService(IJudge0Client judge0Client) : ICodeExec
                     }
                 );
 
-                results.Add(new SubmissionResult { Id = Guid.NewGuid(), Status = SubmissionStatus.InQueue });
+                results.Add(
+                    new SubmissionResult
+                    {
+                        Id = Guid.NewGuid(),
+                        Status = SubmissionStatus.InQueue,
+                        ExpectedOutput = buildResult.ExpectedOutput,
+                    }
+                );
 
                 indexMap.Add((results, results.Count - 1));
             }
@@ -120,11 +127,52 @@ public sealed class CodeExecutionService(IJudge0Client judge0Client) : ICodeExec
 
             submissionResult.Status = MapJudge0SubmissionStatus(result.Status);
             submissionResult.Stdout = result.Stdout;
+            submissionResult.ExpectedOutput = result.ExpectedOutput;
             submissionResult.RuntimeMs = decimal.TryParse(result.Time, out decimal seconds)
                 ? (int)Math.Ceiling(seconds * 1000)
                 : null;
             submissionResult.MemoryKb = result.Memory;
             submissionResult.FinishedAt = DateTime.UtcNow;
+        }
+
+        return Result.Success<IEnumerable<SubmissionModel>>(submissionList);
+    }
+
+    public async Task<Result<IEnumerable<SubmissionModel>>> GetSubmissionReportResultsAsync(
+        IEnumerable<SubmissionModel> submissions,
+        CancellationToken cancellationToken
+    )
+    {
+        var submissionList = submissions.ToList();
+        if (!submissionList.Any())
+        {
+            return Result.Success(Enumerable.Empty<SubmissionModel>());
+        }
+
+        var tokenMap = submissionList
+            .SelectMany(s =>
+                s.Results
+                    .Where(r => r.ResultId.HasValue)
+                    .Select(r => (Submission: s, Token: r.ResultId!.Value))
+            )
+            .ToDictionary(x => x.Token, x => x.Submission);
+
+        var judge0Results = await judge0Client.GetAsync(tokenMap.Keys, cancellationToken);
+
+        if (!judge0Results.IsSuccess)
+        {
+            return Result.Error("Failed to retrieve submission report results.");
+        }
+
+        foreach (var result in judge0Results.Value)
+        {
+            if (!tokenMap.TryGetValue(result.Token, out var submission))
+            {
+                continue;
+            }
+
+            var submissionResult = submission.Results.First(r => r.ResultId == result.Token);
+            submissionResult.Status = MapJudge0SubmissionStatus(result.Status);
         }
 
         return Result.Success<IEnumerable<SubmissionModel>>(submissionList);
