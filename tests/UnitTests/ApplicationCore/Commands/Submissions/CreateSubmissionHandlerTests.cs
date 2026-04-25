@@ -1,5 +1,6 @@
 ﻿using ApplicationCore.Commands.Submissions.CreateSubmission;
 using ApplicationCore.Domain.Submissions;
+using ApplicationCore.Interfaces.Messaging;
 using ApplicationCore.Interfaces.Repositories;
 using FluentValidation;
 using Moq;
@@ -10,6 +11,7 @@ namespace UnitTests.ApplicationCore.Commands.Submissions;
 public sealed class CreateSubmissionHandlerTests
 {
     private Mock<ISubmissionRepository> _mockSubmissionRepository;
+    private Mock<IMessagePublisher> _mockMessagePublisher;
     private Mock<IValidator<CreateSubmissionCommand>> _mockValidator;
 
     private CreateSubmissionHandler _sut;
@@ -18,7 +20,7 @@ public sealed class CreateSubmissionHandlerTests
     public void SetUp()
     {
         _mockSubmissionRepository = new();
-        _mockValidator = new();
+        _mockMessagePublisher = new();
         _mockValidator = new();
 
         _mockValidator
@@ -27,7 +29,11 @@ public sealed class CreateSubmissionHandlerTests
             )
             .ReturnsAsync(new FluentValidation.Results.ValidationResult());
 
-        _sut = new CreateSubmissionHandler(_mockSubmissionRepository.Object, _mockValidator.Object);
+        _sut = new CreateSubmissionHandler(
+            _mockSubmissionRepository.Object,
+            _mockMessagePublisher.Object,
+            _mockValidator.Object
+        );
     }
 
     [Test]
@@ -35,7 +41,7 @@ public sealed class CreateSubmissionHandlerTests
     {
         _mockSubmissionRepository
             .Setup(a => a.SaveAsync(It.IsAny<SubmissionModel>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
+            .ReturnsAsync(Guid.NewGuid());
 
         var command = new CreateSubmissionCommand(1, "code", Guid.NewGuid());
 

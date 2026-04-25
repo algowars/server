@@ -9,7 +9,7 @@ public interface ISubmissionRepository
         CancellationToken cancellationToken
     );
 
-    Task SaveAsync(SubmissionModel submission, CancellationToken cancellationToken);
+    Task<Guid> SaveAsync(SubmissionModel submission, CancellationToken cancellationToken);
 
     Task IncrementOutboxesCountAsync(
         IEnumerable<Guid> outboxIds,

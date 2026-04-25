@@ -1,5 +1,7 @@
 ﻿using ApplicationCore.Domain.Submissions;
+using ApplicationCore.Interfaces.Messaging;
 using ApplicationCore.Interfaces.Repositories;
+using ApplicationCore.Messaging;
 using Ardalis.Result;
 using FluentValidation;
 
@@ -7,6 +9,7 @@ namespace ApplicationCore.Commands.Submissions.CreateSubmission;
 
 public sealed class CreateSubmissionHandler(
     ISubmissionRepository submissionRepository,
+    IMessagePublisher messagePublisher,
     IValidator<CreateSubmissionCommand> validator
 ) : AbstractCommandHandler<CreateSubmissionCommand, Guid>(validator)
 {
@@ -24,7 +27,12 @@ public sealed class CreateSubmissionHandler(
             CreatedById = request.CreatedById,
         };
 
-        await submissionRepository.SaveAsync(submission, cancellationToken);
+        var outboxId = await submissionRepository.SaveAsync(submission, cancellationToken);
+
+        await messagePublisher.PublishAsync(
+            new SubmissionCreatedMessage { SubmissionId = submission.Id, OutboxId = outboxId },
+            cancellationToken
+        );
 
         return Result.Success(submission.Id);
     }

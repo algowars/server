@@ -26,7 +26,7 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
             .ToListAsync(cancellationToken: cancellationToken);
     }
 
-    public async Task SaveAsync(SubmissionModel submission, CancellationToken cancellationToken)
+    public async Task<Guid> SaveAsync(SubmissionModel submission, CancellationToken cancellationToken)
     {
         DateTime createdOn = DateTime.UtcNow;
         db.Submissions.Add(
@@ -40,10 +40,11 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
             }
         );
 
+        var outboxId = Guid.NewGuid();
         db.SubmissionOutboxes.Add(
             new SubmissionOutboxEntity
             {
-                Id = Guid.NewGuid(),
+                Id = outboxId,
                 SubmissionId = submission.Id,
                 SubmissionOutboxTypeId = (int)SubmissionOutboxType.Initialized,
                 SubmissionOutboxStatusId = (int)SubmissionOutboxStatus.Pending,
@@ -52,6 +53,7 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
         );
 
         await db.SaveChangesAsync(cancellationToken);
+        return outboxId;
     }
 
     public Task IncrementOutboxesCountAsync(
