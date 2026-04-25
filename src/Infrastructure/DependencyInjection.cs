@@ -120,6 +120,8 @@ public static class DependencyInjection
         {
             bus.AddConsumer<SubmissionCreatedConsumer>();
             bus.AddConsumer<SubmissionExecutedConsumer>();
+            bus.AddConsumer<SubmissionReadyToEvaluateConsumer>();
+            bus.AddConsumer<SubmissionEvaluationPollConsumer>();
 
             string transport = configuration
                 .GetSection(MessageBusOptions.SectionName)

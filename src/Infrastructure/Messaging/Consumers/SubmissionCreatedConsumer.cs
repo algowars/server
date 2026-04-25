@@ -7,95 +7,102 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Infrastructure.Messaging.Consumers;
 
+/// <summary>
+/// Stage 1: Build submission code and send to Judge0.
+/// Stores the Judge0 execution tokens (ExecutionId) on each SubmissionResult,
+/// transitions the outbox Initialized to PollExecution, then publishes
+/// SubmissionExecutionPollMessage to kick off polling.
+/// </summary>
 public sealed class SubmissionCreatedConsumer(IServiceScopeFactory serviceScopeFactory)
     : IConsumer<SubmissionCreatedMessage>
 {
     public async Task Consume(ConsumeContext<SubmissionCreatedMessage> context)
     {
-        var cancellationToken = context.CancellationToken;
-        using var scope = serviceScopeFactory.CreateScope();
+        CancellationToken cancellationToken = context.CancellationToken;
+        using IServiceScope scope = serviceScopeFactory.CreateScope();
 
-        var submissionAppService = scope.ServiceProvider.GetRequiredService<ISubmissionAppService>();
-        var problemAppService = scope.ServiceProvider.GetRequiredService<IProblemAppService>();
-        var codeBuilderService = scope.ServiceProvider.GetRequiredService<ICodeBuilderService>();
-        var codeExecutionService = scope.ServiceProvider.GetRequiredService<ICodeExecutionService>();
+        ISubmissionAppService submissionAppService = scope.ServiceProvider.GetRequiredService<ISubmissionAppService>();
+        IProblemAppService problemAppService = scope.ServiceProvider.GetRequiredService<IProblemAppService>();
+        ICodeBuilderService codeBuilderService = scope.ServiceProvider.GetRequiredService<ICodeBuilderService>();
+        ICodeExecutionService codeExecutionService = scope.ServiceProvider.GetRequiredService<ICodeExecutionService>();
 
-        var outboxResults = await submissionAppService.GetSubmissionOutboxesAsync(cancellationToken);
+        Ardalis.Result.Result<System.Collections.Generic.IEnumerable<SubmissionOutboxModel>> outboxResults = await submissionAppService.GetSubmissionOutboxesAsync(cancellationToken);
 
         if (!outboxResults.IsSuccess || !outboxResults.Value.Any())
         {
             return;
         }
 
-        var outboxes = outboxResults.Value
-            .Where(outbox =>
-                outbox.Id == context.Message.OutboxId
-                && outbox.Type == SubmissionOutboxType.Initialized)
-            .ToList();
+        SubmissionOutboxModel? outbox = outboxResults.Value.FirstOrDefault(o =>
+            o.Id == context.Message.OutboxId
+            && o.Type == SubmissionOutboxType.Initialized);
 
-        if (outboxes.Count == 0)
+        if (outbox is null)
         {
             return;
         }
 
-        var setupsMap = (
-            await problemAppService.GetProblemSetupsForExecutionAsync(
-                outboxes.Select(outbox => outbox.Submission.ProblemSetupId),
-                cancellationToken
-            )
-        ).Value.ToDictionary(setup => setup.Id);
+        Ardalis.Result.Result<System.Collections.Generic.IEnumerable<ApplicationCore.Domain.Problems.ProblemSetups.ProblemSetupModel>> setupResult = await problemAppService.GetProblemSetupsForExecutionAsync(
+            [outbox.Submission.ProblemSetupId],
+            cancellationToken
+        );
 
-        var executionContexts = outboxes
-            .Select(outbox =>
+        if (!setupResult.IsSuccess)
+        {
+            return;
+        }
+
+        ApplicationCore.Domain.Problems.ProblemSetups.ProblemSetupModel? setup = setupResult.Value.FirstOrDefault(s => s.Id == outbox.Submission.ProblemSetupId);
+
+        if (setup is null)
+        {
+            return;
+        }
+
+        System.Collections.Generic.IEnumerable<CodeBuilderContext> builderContexts = setup.TestSuites
+            .SelectMany(ts => ts.TestCases)
+            .Select(tc => new CodeBuilderContext
             {
-                var setup = setupsMap[outbox.Submission.ProblemSetupId];
+                Code = outbox.Submission.Code ?? "",
+                Template = setup.HarnessTemplate?.Template ?? "",
+                FunctionName = setup.FunctionName ?? string.Empty,
+                LanguageVersionId = setup.LanguageVersionId,
+                Inputs = tc.Inputs,
+                ExpectedOutput = tc.ExpectedOutput,
+            });
 
-                var builderContexts = setup
-                    .TestSuites.SelectMany(ts => ts.TestCases)
-                    .Select(tc => new CodeBuilderContext
-                    {
-                        Code = outbox.Submission.Code ?? "",
-                        Template = setup.HarnessTemplate?.Template ?? "",
-                        FunctionName = setup.FunctionName ?? string.Empty,
-                        LanguageVersionId = setup.LanguageVersionId,
-                        Inputs = tc.Inputs,
-                        ExpectedOutput = "",
-                    });
+        Ardalis.Result.Result<System.Collections.Generic.IEnumerable<CodeBuildResult>> buildResult = codeBuilderService.Build(builderContexts);
 
-                var buildResults = codeBuilderService.Build(builderContexts);
-
-                return new CodeExecutionContext
-                {
-                    SubmissionId = outbox.SubmissionId,
-                    Setup = setup,
-                    Code = outbox.Submission.Code ?? "",
-                    CreatedById = outbox.Submission.CreatedById,
-                    BuiltResults = buildResults.Value,
-                };
-            })
-            .ToList();
-
-        if (executionContexts.Count == 0)
+        if (!buildResult.IsSuccess)
         {
             return;
         }
 
-        var outboxIds = outboxes.Select(outbox => outbox.Id).ToList();
-        var now = DateTime.UtcNow;
+        CodeExecutionContext executionContext = new()
+        {
+            SubmissionId = outbox.SubmissionId,
+            Setup = setup,
+            Code = outbox.Submission.Code ?? "",
+            CreatedById = outbox.Submission.CreatedById,
+            BuiltResults = buildResult.Value,
+        };
 
-        await submissionAppService.IncrementOutboxesCountAsync(outboxIds, now, cancellationToken);
+        DateTime now = DateTime.UtcNow;
+        await submissionAppService.IncrementOutboxesCountAsync([outbox.Id], now, cancellationToken);
 
-        var submissionResults = await codeExecutionService.ExecuteAsync(
-            executionContexts,
+        Ardalis.Result.Result<System.Collections.Generic.IEnumerable<ApplicationCore.Domain.Submissions.SubmissionModel>> executeResult = await codeExecutionService.ExecuteAsync(
+            [executionContext],
             cancellationToken
         );
 
-        await submissionAppService.ProcessSubmissionExecutionAsync(
-            submissionResults.Value,
-            cancellationToken
-        );
+        if (!executeResult.IsSuccess)
+        {
+            return;
+        }
 
-        await context.Publish(new SubmissionExecutedMessage
+        await submissionAppService.SaveExecutionTokensAsync(executeResult.Value, cancellationToken);
+
+        await context.Publish(new SubmissionExecutionPollMessage
         {
             SubmissionId = context.Message.SubmissionId,
             OutboxId = context.Message.OutboxId,

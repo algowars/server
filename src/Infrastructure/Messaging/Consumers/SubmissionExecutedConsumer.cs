@@ -1,3 +1,4 @@
+using ApplicationCore.Domain.Submissions;
 using ApplicationCore.Domain.Submissions.Outboxes;
 using ApplicationCore.Interfaces.Services;
 using ApplicationCore.Messaging;
@@ -6,10 +7,18 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Infrastructure.Messaging.Consumers;
 
+/// <summary>
+/// Stage 2: Poll Judge0 for results using the stored ExecutionId tokens.
+/// Increments the attempt count, persists stdout/status, transitions
+/// outbox PollExecution → Evaluate once all results are finished, then
+/// publishes <see cref="SubmissionReadyToEvaluateMessage"/>.
+/// If results are still processing, re-publishes <see cref="SubmissionExecutionPollMessage"/>
+/// to poll again on the next delivery.
+/// </summary>
 public sealed class SubmissionExecutedConsumer(IServiceScopeFactory serviceScopeFactory)
-    : IConsumer<SubmissionExecutedMessage>
+    : IConsumer<SubmissionExecutionPollMessage>
 {
-    public async Task Consume(ConsumeContext<SubmissionExecutedMessage> context)
+    public async Task Consume(ConsumeContext<SubmissionExecutionPollMessage> context)
     {
         var cancellationToken = context.CancellationToken;
         using var scope = serviceScopeFactory.CreateScope();
@@ -24,30 +33,59 @@ public sealed class SubmissionExecutedConsumer(IServiceScopeFactory serviceScope
             return;
         }
 
-        var outboxes = outboxResults.Value
-            .Where(outbox =>
-                outbox.SubmissionId == context.Message.SubmissionId
-                && outbox.Type == SubmissionOutboxType.PollExecution)
-            .ToList();
+        var outbox = outboxResults.Value.FirstOrDefault(o =>
+            o.SubmissionId == context.Message.SubmissionId
+            && o.Type == SubmissionOutboxType.PollExecution);
 
-        if (outboxes.Count == 0)
+        if (outbox is null)
         {
             return;
         }
 
-        var submissionResults = await codeExecutionService.GetSubmissionResultsAsync(
-            outboxes.Select(o => o.Submission),
+        var now = DateTime.UtcNow;
+        await submissionAppService.IncrementOutboxesCountAsync([outbox.Id], now, cancellationToken);
+
+        var pollResult = await codeExecutionService.GetSubmissionResultsAsync(
+            [outbox.Submission],
             cancellationToken
         );
 
-        var outboxIds = outboxes.Select(outbox => outbox.Id).ToList();
-        var now = DateTime.UtcNow;
+        if (!pollResult.IsSuccess)
+        {
+            return;
+        }
 
-        await submissionAppService.IncrementOutboxesCountAsync(outboxIds, now, cancellationToken);
+        var submission = pollResult.Value.FirstOrDefault();
+
+        if (submission is null)
+        {
+            return;
+        }
 
         await submissionAppService.ProcessPollingSubmissionExecutionsAsync(
-            submissionResults.Value,
+            pollResult.Value,
             cancellationToken
         );
+
+        bool allFinished = submission.Results.All(r =>
+            r.Status is not SubmissionStatus.InQueue
+            and not SubmissionStatus.Processing);
+
+        if (!allFinished)
+        {
+            await context.Publish(new SubmissionExecutionPollMessage
+            {
+                SubmissionId = context.Message.SubmissionId,
+                OutboxId = context.Message.OutboxId,
+            }, cancellationToken);
+
+            return;
+        }
+
+        await context.Publish(new SubmissionReadyToEvaluateMessage
+        {
+            SubmissionId = context.Message.SubmissionId,
+            OutboxId = context.Message.OutboxId,
+        }, cancellationToken);
     }
 }

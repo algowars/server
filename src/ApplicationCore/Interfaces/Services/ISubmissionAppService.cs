@@ -24,6 +24,11 @@ public interface ISubmissionAppService
         CancellationToken cancellationToken
     );
 
+    Task<Result<Unit>> SaveExecutionTokensAsync(
+        IEnumerable<SubmissionModel> results,
+        CancellationToken cancellationToken
+    );
+
     Task<Result<Unit>> ProcessSubmissionExecutionAsync(
         IEnumerable<SubmissionModel> results,
         CancellationToken cancellationToken
@@ -31,6 +36,17 @@ public interface ISubmissionAppService
 
     Task<Result<Unit>> ProcessPollingSubmissionExecutionsAsync(
         IEnumerable<SubmissionModel> results,
+        CancellationToken cancellationToken
+    );
+
+    Task<Result<Unit>> ProcessEvaluationAsync(
+        IEnumerable<SubmissionModel> results,
+        CancellationToken cancellationToken
+    );
+
+    Task<Result<Unit>> FinalizeEvaluationAsync(
+        IEnumerable<Guid> outboxIds,
+        DateTime now,
         CancellationToken cancellationToken
     );
 }

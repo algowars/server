@@ -1,7 +1,10 @@
 ﻿using ApplicationCore.Commands.Submissions.CreateSubmission;
+using ApplicationCore.Commands.Submissions.FinalizeEvaluation;
 using ApplicationCore.Commands.Submissions.IncrementSubmissionOutboxes;
+using ApplicationCore.Commands.Submissions.ProcessEvaluation;
 using ApplicationCore.Commands.Submissions.ProcessPollingSubmissionExecutions;
 using ApplicationCore.Commands.Submissions.ProcessSubmissionExecutions;
+using ApplicationCore.Commands.Submissions.SaveExecutionTokens;
 using ApplicationCore.Domain.Submissions;
 using ApplicationCore.Domain.Submissions.Outboxes;
 using ApplicationCore.Interfaces.Services;
@@ -45,6 +48,16 @@ public sealed class SubmissionAppService(IMediator mediator) : ISubmissionAppSer
         return await mediator.Send(command, cancellationToken);
     }
 
+    public async Task<Result<Unit>> SaveExecutionTokensAsync(
+        IEnumerable<SubmissionModel> results,
+        CancellationToken cancellationToken
+    )
+    {
+        var command = new SaveExecutionTokensCommand(results);
+
+        return await mediator.Send(command, cancellationToken);
+    }
+
     public async Task<Result<Unit>> ProcessSubmissionExecutionAsync(
         IEnumerable<SubmissionModel> results,
         CancellationToken cancellationToken
@@ -55,9 +68,33 @@ public sealed class SubmissionAppService(IMediator mediator) : ISubmissionAppSer
         return await mediator.Send(command, cancellationToken);
     }
 
-    public async Task<Result<Unit>> ProcessPollingSubmissionExecutionsAsync(IEnumerable<SubmissionModel> results, CancellationToken cancellationToken)
+    public async Task<Result<Unit>> ProcessPollingSubmissionExecutionsAsync(
+        IEnumerable<SubmissionModel> results,
+        CancellationToken cancellationToken
+    )
     {
         var command = new ProcessPollingSubmissionExecutionsCommand(results);
+
+        return await mediator.Send(command, cancellationToken);
+    }
+
+    public async Task<Result<Unit>> ProcessEvaluationAsync(
+        IEnumerable<SubmissionModel> results,
+        CancellationToken cancellationToken
+    )
+    {
+        var command = new ProcessEvaluationCommand(results);
+
+        return await mediator.Send(command, cancellationToken);
+    }
+
+    public async Task<Result<Unit>> FinalizeEvaluationAsync(
+        IEnumerable<Guid> outboxIds,
+        DateTime now,
+        CancellationToken cancellationToken
+    )
+    {
+        var command = new FinalizeEvaluationCommand(outboxIds, now);
 
         return await mediator.Send(command, cancellationToken);
     }
