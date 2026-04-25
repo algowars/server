@@ -40,7 +40,6 @@ public sealed class ProblemController(
     [EnableRateLimiting("Short")]
     public async Task<IActionResult> GetBySlugAsync(
         string slug,
-        [FromQuery] int preferredLanguageId,
         CancellationToken cancellationToken
     )
     {

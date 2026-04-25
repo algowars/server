@@ -1,18 +1,19 @@
 using ApplicationCore.Interfaces.Clients;
+using ApplicationCore.Interfaces.Messaging;
 using ApplicationCore.Interfaces.Repositories;
 using ApplicationCore.Interfaces.Services;
 using Infrastructure.CodeExecution.Judge0;
 using Infrastructure.Configuration;
-using Infrastructure.Jobs;
-using Infrastructure.Jobs.JobHandlers;
+using Infrastructure.Messaging;
+using Infrastructure.Messaging.Consumers;
 using Infrastructure.Persistence;
 using Infrastructure.Repositories;
 using Infrastructure.Services;
+using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using Quartz;
 using System.Text.Json;
 
 namespace Infrastructure;
@@ -29,7 +30,7 @@ public static class DependencyInjection
             .AddPersistence(configuration)
             .AddRepositories()
             .AddServices()
-            .AddConfiguredBackgroundJobs(configuration)
+            .AddMessageBus(configuration)
             .AddJudge0Client(configuration);
 
         return services;
@@ -103,62 +104,54 @@ public static class DependencyInjection
         return services;
     }
 
-    private static IServiceCollection AddConfiguredBackgroundJobs(
+    private static IServiceCollection AddMessageBus(
         this IServiceCollection services,
         IConfiguration configuration
     )
     {
-        var jobsSection = configuration.GetSection("BackgroundJobs");
+        services
+            .AddOptions<MessageBusOptions>()
+            .Bind(configuration.GetSection(MessageBusOptions.SectionName))
+            .ValidateOnStart();
 
-        bool GetEnabled(string jobKey, bool defaultEnabled) =>
-            jobsSection.GetValue<bool?>($"{jobKey}:Enabled") ?? defaultEnabled;
+        services.AddScoped<IMessagePublisher, MassTransitMessagePublisher>();
 
-        TimeSpan GetInterval(string jobKey, double defaultSeconds) =>
-            TimeSpan.FromSeconds(
-                jobsSection.GetValue<double?>($"{jobKey}:IntervalSeconds") ?? defaultSeconds
-            );
-
-        services.AddQuartz(q =>
+        services.AddMassTransit(bus =>
         {
-            q.AddJobWithTrigger<SubmissionExecutionHandler>(
-                JobType.SubmissionExecution,
-                GetInterval("SubmissionExecution", 5),
-                GetEnabled("SubmissionExecution", false)
-            );
+            bus.AddConsumer<SubmissionCreatedConsumer>();
+            bus.AddConsumer<SubmissionExecutedConsumer>();
+            bus.AddConsumer<SubmissionReadyToEvaluateConsumer>();
+            bus.AddConsumer<SubmissionEvaluationPollConsumer>();
 
-            q.AddJobWithTrigger<PollSubmissionExecutionHander>(
-                JobType.PollSubmissionExecution,
-                GetInterval("PollSubmissionExecution", 10),
-                GetEnabled("PollSubmissionExecution", false)
-            );
+            string transport = configuration
+                .GetSection(MessageBusOptions.SectionName)
+                .GetValue<string>("Transport") ?? "RabbitMQ";
+
+            if (transport.Equals("AzureServiceBus", StringComparison.OrdinalIgnoreCase))
+            {
+                bus.UsingAzureServiceBus((ctx, cfg) =>
+                {
+                    var opts = ctx.GetRequiredService<IOptions<MessageBusOptions>>().Value;
+                    cfg.Host(opts.AzureServiceBus.ConnectionString);
+                    cfg.ConfigureEndpoints(ctx);
+                });
+            }
+            else
+            {
+                bus.UsingRabbitMq((ctx, cfg) =>
+                {
+                    var opts = ctx.GetRequiredService<IOptions<MessageBusOptions>>().Value;
+                    cfg.Host(opts.RabbitMQ.Host, opts.RabbitMQ.VirtualHost, h =>
+                    {
+                        h.Username(opts.RabbitMQ.Username);
+                        h.Password(opts.RabbitMQ.Password);
+                    });
+                    cfg.ConfigureEndpoints(ctx);
+                });
+            }
         });
 
-        services.AddQuartzHostedService(q => q.WaitForJobsToComplete = true);
-
         return services;
-    }
-
-    private static void AddJobWithTrigger<TJob>(
-        this IServiceCollectionQuartzConfigurator q,
-        JobType jobType,
-        TimeSpan interval,
-        bool enabled
-    )
-        where TJob : IJob
-    {
-        if (!enabled)
-        {
-            return;
-        }
-
-        var jobKey = new JobKey(jobType.ToString());
-
-        q.AddJob<TJob>(opts => opts.WithIdentity(jobKey));
-        q.AddTrigger(opts =>
-            opts.ForJob(jobKey)
-                .WithIdentity($"{jobType}-trigger")
-                .WithSimpleSchedule(s => s.WithInterval(interval).RepeatForever())
-        );
     }
 
     private static IServiceCollection AddJudge0Client(

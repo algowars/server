@@ -26,7 +26,7 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
             .ToListAsync(cancellationToken: cancellationToken);
     }
 
-    public async Task SaveAsync(SubmissionModel submission, CancellationToken cancellationToken)
+    public async Task<Guid> SaveAsync(SubmissionModel submission, CancellationToken cancellationToken)
     {
         DateTime createdOn = DateTime.UtcNow;
         db.Submissions.Add(
@@ -40,10 +40,11 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
             }
         );
 
+        var outboxId = Guid.NewGuid();
         db.SubmissionOutboxes.Add(
             new SubmissionOutboxEntity
             {
-                Id = Guid.NewGuid(),
+                Id = outboxId,
                 SubmissionId = submission.Id,
                 SubmissionOutboxTypeId = (int)SubmissionOutboxType.Initialized,
                 SubmissionOutboxStatusId = (int)SubmissionOutboxStatus.Pending,
@@ -52,6 +53,7 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
         );
 
         await db.SaveChangesAsync(cancellationToken);
+        return outboxId;
     }
 
     public Task IncrementOutboxesCountAsync(
@@ -257,4 +259,131 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
     };
 
     private const int MaxRetryCount = 5;
+
+    public async Task SaveExecutionTokensAsync(
+        IEnumerable<SubmissionModel> submissions,
+        CancellationToken cancellationToken
+    )
+    {
+        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+
+        try
+        {
+            var resultEntities = submissions
+                .SelectMany(
+                    s => s.Results,
+                    (s, sr) =>
+                        new SubmissionResultEntity
+                        {
+                            Id = sr.Id,
+                            SubmissionId = s.Id,
+                            ExecutionId = sr.ExecutionId,
+                            StatusId = (int)sr.Status,
+                            StartedAt = sr.StartedAt,
+                            FinishedAt = sr.FinishedAt,
+                            ProgramOutput = sr.Stdout,
+                            RuntimeMs = sr.RuntimeMs,
+                            MemoryKb = sr.MemoryKb,
+                        }
+                )
+                .ToList();
+
+            if (resultEntities.Count != 0)
+            {
+                await db.BulkInsertOrUpdateAsync(resultEntities, cancellationToken: cancellationToken);
+
+                var submissionIds = resultEntities.Select(r => r.SubmissionId).Distinct().ToList();
+
+                await db.SubmissionOutboxes
+                    .Where(o =>
+                        submissionIds.Contains(o.SubmissionId)
+                        && o.SubmissionOutboxTypeId == (int)SubmissionOutboxType.Initialized)
+                    .ExecuteUpdateAsync(
+                        setters => setters
+                            .SetProperty(o => o.SubmissionOutboxTypeId, (int)SubmissionOutboxType.PollExecution)
+                            .SetProperty(o => o.AttemptCount, _ => 0),
+                        cancellationToken: cancellationToken
+                    );
+            }
+
+            await transaction.CommitAsync(cancellationToken);
+        }
+        catch
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            throw;
+        }
+    }
+
+    public async Task ProcessEvaluationAsync(
+        IEnumerable<SubmissionModel> submissions,
+        CancellationToken cancellationToken
+    )
+    {
+        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+
+        try
+        {
+            var resultEntities = submissions
+                .SelectMany(
+                    s => s.Results,
+                    (s, sr) =>
+                        new SubmissionResultEntity
+                        {
+                            Id = sr.Id,
+                            SubmissionId = s.Id,
+                            ExecutionId = sr.ExecutionId,
+                            StatusId = (int)sr.Status,
+                            StartedAt = sr.StartedAt,
+                            FinishedAt = sr.FinishedAt,
+                            ProgramOutput = sr.Stdout,
+                            RuntimeMs = sr.RuntimeMs,
+                            MemoryKb = sr.MemoryKb,
+                        }
+                )
+                .ToList();
+
+            if (resultEntities.Count != 0)
+            {
+                await db.BulkInsertOrUpdateAsync(resultEntities, cancellationToken: cancellationToken);
+
+                var submissionIds = resultEntities.Select(r => r.SubmissionId).Distinct().ToList();
+
+                await db.SubmissionOutboxes
+                    .Where(o =>
+                        submissionIds.Contains(o.SubmissionId)
+                        && o.SubmissionOutboxTypeId == (int)SubmissionOutboxType.Evaluate)
+                    .ExecuteUpdateAsync(
+                        setters => setters
+                            .SetProperty(o => o.SubmissionOutboxTypeId, (int)SubmissionOutboxType.EvaluationPoll)
+                            .SetProperty(o => o.AttemptCount, _ => 0),
+                        cancellationToken: cancellationToken
+                    );
+            }
+
+            await transaction.CommitAsync(cancellationToken);
+        }
+        catch
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            throw;
+        }
+    }
+
+    public Task FinalizeEvaluationAsync(
+        IEnumerable<Guid> outboxIds,
+        DateTime now,
+        CancellationToken cancellationToken
+    )
+    {
+        var ids = outboxIds.ToList();
+        return db.SubmissionOutboxes
+            .Where(o => ids.Contains(o.Id))
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(o => o.FinalizedOn, now)
+                    .SetProperty(o => o.ProcessOn, now),
+                cancellationToken: cancellationToken
+            );
+    }
 }
