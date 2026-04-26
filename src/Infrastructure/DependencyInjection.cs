@@ -4,6 +4,8 @@ using ApplicationCore.Interfaces.Repositories;
 using ApplicationCore.Interfaces.Services;
 using Infrastructure.CodeExecution.Judge0;
 using Infrastructure.Configuration;
+using Infrastructure.Jobs;
+using Infrastructure.Jobs.JobHandlers;
 using Infrastructure.Messaging;
 using Infrastructure.Messaging.Consumers;
 using Infrastructure.Persistence;
@@ -14,6 +16,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using Quartz;
 using System.Text.Json;
 
 namespace Infrastructure;
@@ -31,7 +34,8 @@ public static class DependencyInjection
             .AddRepositories()
             .AddServices()
             .AddMessageBus(configuration)
-            .AddJudge0Client(configuration);
+            .AddJudge0Client(configuration)
+            .AddJobs();
 
         return services;
     }
@@ -152,6 +156,36 @@ public static class DependencyInjection
         });
 
         return services;
+    }
+
+    private static IServiceCollection AddJobs(this IServiceCollection services)
+    {
+        services.AddQuartz(q =>
+        {
+            q.AddJobAndTrigger<SubmissionExecutionHandler>(JobType.SubmissionExecution, IntervalInSeconds: 10);
+            q.AddJobAndTrigger<PollSubmissionExecutionHander>(JobType.PollSubmissionExecution, IntervalInSeconds: 5);
+        });
+
+        services.AddQuartzHostedService(q => q.WaitForJobsToComplete = true);
+
+        return services;
+    }
+
+    private static void AddJobAndTrigger<T>(this IServiceCollectionQuartzConfigurator q, JobType jobType, int IntervalInSeconds)
+        where T : IJob
+    {
+        string jobName = jobType.ToString();
+        var jobKey = new JobKey(jobName);
+
+        q.AddJob<T>(opts => opts.WithIdentity(jobKey));
+        q.AddTrigger(opts => opts
+            .ForJob(jobKey)
+            .WithIdentity($"{jobName}-trigger")
+            .WithSimpleSchedule(s => s
+                .WithIntervalInSeconds(IntervalInSeconds)
+                .RepeatForever()
+            )
+        );
     }
 
     private static IServiceCollection AddJudge0Client(
