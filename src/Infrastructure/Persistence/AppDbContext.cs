@@ -44,6 +44,12 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
 
     public DbSet<TestCaseEntity> TestCases { get; set; }
 
+    public DbSet<TestCaseExpectedOutputEntity> TestCaseExpectedOutputs { get; set; }
+
+    public DbSet<TestCasesInputsValueTypeEntity> TestCasesInputsValueTypes { get; set; }
+
+    public DbSet<TestCasesOutputTypeEntity> TestCasesOutputTypes { get; set; }
+
     public DbSet<TestSuiteEntity> TestSuites { get; set; }
 
     public DbSet<TestSuiteTypeEntity> TestSuiteTypes { get; set; }
@@ -84,12 +90,12 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
                     j.HasOne<TestSuiteEntity>()
                         .WithMany()
                         .HasForeignKey("test_suite_id")
-                        .HasConstraintName("fk_problem_setup_test_suites_test_suite_id"),
+                        .HasConstraintName("fk_problem_setup_test_suites_test_suite"),
                 j =>
                     j.HasOne<ProblemSetupEntity>()
                         .WithMany()
                         .HasForeignKey("problem_setup_id")
-                        .HasConstraintName("fk_problem_setup_test_suites_problem_setup_id"),
+                        .HasConstraintName("fk_problem_setup_test_suites_problem_setup"),
                 j =>
                 {
                     j.ToTable("problem_setup_test_suites");
@@ -126,5 +132,12 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
             .WithOne(o => o.TestCase)
             .HasForeignKey<TestCaseExpectedOutputEntity>(o => o.TestCaseId)
             .HasConstraintName("fk_test_cases_expected_outputs_test_case_id");
+
+        modelBuilder
+            .Entity<TestCaseExpectedOutputEntity>()
+            .HasOne(o => o.OutputType)
+            .WithMany()
+            .HasForeignKey(o => o.OutputValueTypeId)
+            .HasConstraintName("fk_test_cases_expected_outputs_output_type");
     }
 }
