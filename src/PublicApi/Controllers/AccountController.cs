@@ -1,9 +1,13 @@
+using ApplicationCore.Commands.Accounts.UpdateUsername;
+using ApplicationCore.Domain.Accounts;
 using ApplicationCore.Dtos.Accounts;
 using ApplicationCore.Interfaces.Services;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using PublicApi.Attributes;
 using PublicApi.Contracts.Account;
 
 namespace PublicApi.Controllers;
@@ -11,36 +15,32 @@ namespace PublicApi.Controllers;
 [ApiController]
 [Route("api/v{version:apiVersion}/[controller]")]
 [ApiVersion("1.0")]
-public sealed partial class AccountController(IAccountAppService accountAppService)
-    : BaseApiController
+public sealed partial class AccountController(
+    IAccountAppService accountAppService,
+    IAccountContext accountContext
+) : BaseApiController
 {
-    [HttpPost]
+    [HttpPut]
     [Authorize]
+    [RequiresAccount]
     [EnableRateLimiting("ExtraShort")]
-    public async Task<IActionResult> CreateAccountAsync(
-        [FromBody] CreateAccountDto createAccountDto,
-        CancellationToken cancellationToken
-    )
+    [ProducesResponseType(typeof(AccountDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public IActionResult UpsertAccountAsync(CancellationToken cancellationToken)
     {
-        string? sub = GetSub();
-
-        if (sub is null)
+        if (accountContext.Account is null)
         {
             return Unauthorized();
         }
 
-        var accountResult = await accountAppService.CreateAsync(
-            createAccountDto.Username,
-            sub,
-            createAccountDto.ImageUrl ?? "",
-            cancellationToken
-        );
-
-        return ToActionResult(accountResult);
+        return Ok(accountContext.Account);
     }
 
     [HttpGet("find/profile/{username}")]
     [EnableRateLimiting("Short")]
+    [ProducesResponseType(typeof(ProfileAggregateDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetProfileAsync(
         string username,
         CancellationToken cancellationToken
@@ -68,12 +68,14 @@ public sealed partial class AccountController(IAccountAppService accountAppServi
 
     [HttpGet("find/profile")]
     [Authorize]
+    [RequiresAccount]
     [EnableRateLimiting("Medium")]
-    public async Task<IActionResult> GetProfileAsync(CancellationToken cancellationToken)
+    [ProducesResponseType(typeof(AccountDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public IActionResult GetProfileAsync(CancellationToken cancellationToken)
     {
-        string? sub = GetSub();
-
-        if (sub is null)
+        if (accountContext.Account is null)
         {
             return Unauthorized();
         }
@@ -83,23 +85,44 @@ public sealed partial class AccountController(IAccountAppService accountAppServi
             .. User.Claims.Where(c => c.Type == "permissions").Select(c => c.Value),
         ];
 
-        var accountResult = await accountAppService.GetAccountBySubAsync(sub, cancellationToken);
+        return Ok(
+            new AccountDto
+            {
+                Id = accountContext.Account.Id,
+                Username = accountContext.Account.Username,
+                ImageUrl = accountContext.Account.ImageUrl,
+                Permissions = permissions,
+                CreatedOn = accountContext.Account.CreatedOn,
+                UsernameLastChangedAt = accountContext.Account.UsernameLastChangedAt,
+            }
+        );
+    }
 
-        if (accountResult.IsSuccess)
+    [HttpPut("username")]
+    [Authorize]
+    [RequiresAccount]
+    [EnableRateLimiting("ExtraShort")]
+    [ProducesResponseType(typeof(UpdateUsernameResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> UpdateUsernameAsync(
+        [FromBody] UpdateUsernameDto request,
+        CancellationToken cancellationToken
+    )
+    {
+        if (accountContext.Account is null)
         {
-            return Ok(
-                new AccountDto
-                {
-                    Id = accountResult.Value.Id,
-                    Username = accountResult.Value.Username,
-                    ImageUrl = accountResult.Value.ImageUrl,
-                    Permissions = permissions,
-                    CreatedOn = accountResult.Value.CreatedOn,
-                }
-            );
+            return Unauthorized();
         }
 
-        string errors = string.Join(", ", accountResult.Errors);
-        return NotFound(errors);
+        var result = await accountAppService.UpdateUsernameAsync(
+            accountContext.Account.Id,
+            request.Username,
+            accountContext.Account.UsernameLastChangedAt,
+            cancellationToken
+        );
+
+        return ToActionResult(result);
     }
 }

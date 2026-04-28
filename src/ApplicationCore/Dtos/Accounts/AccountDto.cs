@@ -11,4 +11,6 @@ public sealed record AccountDto
     public IEnumerable<string> Permissions { get; init; } = [];
 
     public required DateTime CreatedOn { get; init; }
+
+    public DateTime? UsernameLastChangedAt { get; init; }
 }

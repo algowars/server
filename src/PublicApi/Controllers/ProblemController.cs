@@ -1,9 +1,14 @@
+using ApplicationCore.Common.Pagination;
+using ApplicationCore.Domain.Accounts;
+using ApplicationCore.Dtos.Languages;
 using ApplicationCore.Dtos.Problems;
 using ApplicationCore.Interfaces.Services;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using PublicApi.Attributes;
 
 namespace PublicApi.Controllers;
 
@@ -12,25 +17,30 @@ namespace PublicApi.Controllers;
 [ApiVersion("1.0")]
 public sealed class ProblemController(
     IProblemAppService problemAppService,
-    IAccountAppService accountAppService
+    IAccountContext accountContext
 ) : BaseApiController
 {
     [HttpPost]
+    [Authorize]
+    [RequiresAccount]
     [EnableRateLimiting("Short")]
+    [ProducesResponseType(typeof(Guid), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> CreateProblemAsync(
         [FromBody] CreateProblemDto createProblemDto,
         CancellationToken cancellationToken
     )
     {
-        var account = await accountAppService.GetAccountBySubAsync(
-            GetSub() ?? "",
-            cancellationToken
-        );
+        if (accountContext.Account is null)
+        {
+            return Unauthorized();
+        }
 
         return ToActionResult(
             await problemAppService.CreateProblemAsync(
                 createProblemDto,
-                account.Value.Id,
+                accountContext.Account.Id,
                 cancellationToken
             )
         );
@@ -38,6 +48,9 @@ public sealed class ProblemController(
 
     [HttpGet("slug/{slug}")]
     [EnableRateLimiting("Short")]
+    [ProducesResponseType(typeof(ProblemDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetBySlugAsync(
         string slug,
         CancellationToken cancellationToken
@@ -63,6 +76,9 @@ public sealed class ProblemController(
     [HttpGet("languages")]
     [EnableRateLimiting("Short")]
     [Authorize(Policy = "read:languages")]
+    [ProducesResponseType(typeof(IEnumerable<ProgrammingLanguageDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> GetAvailableLanguagesAsync(CancellationToken cancellationToken)
     {
         return ToActionResult(
@@ -72,6 +88,8 @@ public sealed class ProblemController(
 
     [HttpGet]
     [EnableRateLimiting("Medium")]
+    [ProducesResponseType(typeof(PaginatedResult<ProblemDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> GetPageableAsync(
         [FromQuery] DateTime timestamp,
         [FromQuery] int page = 1,
@@ -96,6 +114,9 @@ public sealed class ProblemController(
 
     [HttpGet("{problemId:guid}/setup")]
     [EnableRateLimiting("ExtraShort")]
+    [ProducesResponseType(typeof(ProblemSetupDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetProblemSetupAsync(
         Guid problemId,
         [FromQuery] int languageVersionId,

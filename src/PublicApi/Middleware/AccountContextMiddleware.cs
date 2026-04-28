@@ -1,5 +1,4 @@
-﻿using ApplicationCore.Services;
-using PublicApi.Attributes;
+﻿using PublicApi.Attributes;
 
 namespace PublicApi.Middleware;
 
@@ -23,11 +22,22 @@ public class AccountContextMiddleware(
             return;
         }
 
-        string? sub = context.User?.FindFirstValue("sub");
+        string? sub = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value; ;
         if (!string.IsNullOrEmpty(sub))
         {
-            var account = await accountAppService.GetAccountBySubAsync(sub, context.RequestAborted);
-            accountContext.Account = account;
+            string? imageUrl = context.User.FindFirst("picture")?.Value;
+
+            var result = await accountAppService.UpsertAccountAsync(sub, imageUrl, context.RequestAborted);
+            if (result.IsSuccess)
+            {
+                accountContext.Account = new ApplicationCore.Dtos.Accounts.AccountDto
+                {
+                    Id = result.Value.Id,
+                    Username = result.Value.Username,
+                    ImageUrl = result.Value.ImageUrl,
+                    CreatedOn = result.Value.CreatedOn,
+                };
+            }
         }
 
         await next(context);

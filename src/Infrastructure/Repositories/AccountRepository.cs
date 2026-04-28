@@ -48,8 +48,10 @@ public sealed class AccountRepository(AppDbContext db) : IAccountRepository
     public async Task<AccountModel?> GetBySubAsync(string sub, CancellationToken cancellationToken)
     {
         return await db
-            .Accounts.ProjectToType<AccountModel>()
-            .SingleOrDefaultAsync(a => a.Sub == sub, cancellationToken);
+            .Accounts
+            .Where(a => a.Sub == sub)
+            .ProjectToType<AccountModel>()
+            .SingleOrDefaultAsync(cancellationToken);
     }
 
     public async Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken)
@@ -58,5 +60,40 @@ public sealed class AccountRepository(AppDbContext db) : IAccountRepository
             .Accounts.AsNoTracking()
             .SingleOrDefaultAsync(a => a.Id == id, cancellationToken)
             is not null;
+    }
+
+    public async Task UpdateImageUrlAsync(Guid id, string? imageUrl, CancellationToken cancellationToken)
+    {
+        await db.Accounts
+            .Where(a => a.Id == id)
+            .ExecuteUpdateAsync(
+                s => s.SetProperty(a => a.ImageUrl, imageUrl),
+                cancellationToken
+            );
+    }
+
+    public async Task<int> CountByUsernameBaseAsync(string usernameBase, CancellationToken cancellationToken)
+    {
+        return await db.Accounts
+            .Where(a => a.Username == usernameBase || a.Username.StartsWith(usernameBase + "_"))
+            .CountAsync(cancellationToken);
+    }
+
+    public async Task UpdateUsernameAsync(Guid id, string username, DateTime usernameLastChangedAt, CancellationToken cancellationToken)
+    {
+        await db.Accounts
+            .Where(a => a.Id == id)
+            .ExecuteUpdateAsync(
+                s => s
+                    .SetProperty(a => a.Username, username)
+                    .SetProperty(a => a.UsernameLastChangedAt, usernameLastChangedAt),
+                cancellationToken
+            );
+    }
+
+    public async Task<bool> ExistsByUsernameAsync(string username, CancellationToken cancellationToken)
+    {
+        return await db.Accounts
+            .AnyAsync(a => a.Username == username, cancellationToken);
     }
 }
