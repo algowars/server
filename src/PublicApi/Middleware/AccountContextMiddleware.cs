@@ -2,11 +2,11 @@
 
 namespace PublicApi.Middleware;
 
-using System.Security.Claims;
-using System.Threading.Tasks;
 using ApplicationCore.Domain.Accounts;
 using ApplicationCore.Interfaces.Services;
 using Microsoft.AspNetCore.Http;
+using System.Security.Claims;
+using System.Threading.Tasks;
 
 public class AccountContextMiddleware(
     IAccountAppService accountAppService,

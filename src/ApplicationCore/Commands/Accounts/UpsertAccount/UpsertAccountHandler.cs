@@ -18,7 +18,7 @@ public sealed class UpsertAccountHandler(
         CancellationToken cancellationToken
     )
     {
-          AccountModel? existing = await accounts.GetBySubAsync(request.Sub, cancellationToken);
+        AccountModel? existing = await accounts.GetBySubAsync(request.Sub, cancellationToken);
 
         if (existing is not null)
         {

@@ -1,5 +1,5 @@
-using ApplicationCore.Commands.Accounts.UpsertAccount;
 using ApplicationCore.Commands.Accounts.UpdateUsername;
+using ApplicationCore.Commands.Accounts.UpsertAccount;
 using ApplicationCore.Dtos.Accounts;
 using Ardalis.Result;
 
