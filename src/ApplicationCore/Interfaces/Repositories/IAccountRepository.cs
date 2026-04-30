@@ -19,4 +19,12 @@ public interface IAccountRepository
         string sub,
         CancellationToken cancellationToken
     );
+
+    Task UpdateImageUrlAsync(Guid id, string? imageUrl, CancellationToken cancellationToken);
+
+    Task UpdateUsernameAsync(Guid id, string username, DateTime usernameLastChangedAt, CancellationToken cancellationToken);
+
+    Task<bool> ExistsByUsernameAsync(string username, CancellationToken cancellationToken);
+
+    Task<int> CountByUsernameBaseAsync(string usernameBase, CancellationToken cancellationToken);
 }

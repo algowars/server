@@ -5,6 +5,7 @@ using Infrastructure;
 using PublicApi;
 using PublicApi.Extensions;
 using PublicApi.Middleware;
+using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -52,6 +53,10 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+    app.MapScalarApiReference(options =>
+    {
+        options.WithOpenApiRoutePattern("/openapi/{documentName}.json");
+    });
 }
 
 app.UseHttpsRedirection();

@@ -18,7 +18,15 @@ public abstract class AbstractCommandHandler<TCommand, TResult>(
             if (!validationResult.IsValid)
             {
                 var errors = validationResult
-                    .Errors.Select(e => new ValidationError(e.PropertyName, e.ErrorMessage))
+                    .Errors.Select(e =>
+                    {
+                        string identifier = e.FormattedMessagePlaceholderValues
+                            .TryGetValue("PropertyName", out object? displayName)
+                                ? displayName?.ToString() ?? e.PropertyName
+                                : e.PropertyName;
+
+                        return new ValidationError(identifier, e.ErrorMessage);
+                    })
                     .ToList();
 
                 return Result<TResult>.Invalid(errors);

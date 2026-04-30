@@ -36,4 +36,11 @@ public sealed class AccountEntity
 
     [Column("deleted_on")]
     public DateTime? DeletedOn { get; set; }
+
+    [MaxLength(36)]
+    [Column("previous_username")]
+    public string? PreviousUsername { get; set; }
+
+    [Column("username_last_changed_at")]
+    public DateTime? UsernameLastChangedAt { get; set; }
 }

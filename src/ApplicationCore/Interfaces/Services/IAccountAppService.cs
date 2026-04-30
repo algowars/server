@@ -1,3 +1,5 @@
+using ApplicationCore.Commands.Accounts.UpdateUsername;
+using ApplicationCore.Commands.Accounts.UpsertAccount;
 using ApplicationCore.Dtos.Accounts;
 using Ardalis.Result;
 
@@ -21,6 +23,19 @@ public interface IAccountAppService
 
     Task<ProfileSettingsDto?> GetProfileSettingsAsync(
         string sub,
+        CancellationToken cancellationToken
+    );
+
+    Task<Result<AccountUpsertResult>> UpsertAccountAsync(
+        string sub,
+        string? imageUrl,
+        CancellationToken cancellationToken
+    );
+
+    Task<Result<UpdateUsernameResult>> UpdateUsernameAsync(
+        Guid accountId,
+        string newUsername,
+        DateTime? usernameLastChangedAt,
         CancellationToken cancellationToken
     );
 }

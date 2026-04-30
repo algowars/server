@@ -1,13 +1,12 @@
-﻿using ApplicationCore.Services;
-using PublicApi.Attributes;
+﻿using PublicApi.Attributes;
 
 namespace PublicApi.Middleware;
 
-using System.Security.Claims;
-using System.Threading.Tasks;
 using ApplicationCore.Domain.Accounts;
 using ApplicationCore.Interfaces.Services;
 using Microsoft.AspNetCore.Http;
+using System.Security.Claims;
+using System.Threading.Tasks;
 
 public class AccountContextMiddleware(
     IAccountAppService accountAppService,
@@ -23,11 +22,14 @@ public class AccountContextMiddleware(
             return;
         }
 
-        string? sub = context.User?.FindFirstValue("sub");
+        string? sub = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (!string.IsNullOrEmpty(sub))
         {
-            var account = await accountAppService.GetAccountBySubAsync(sub, context.RequestAborted);
-            accountContext.Account = account;
+            var result = await accountAppService.GetAccountBySubAsync(sub, context.RequestAborted);
+            if (result.IsSuccess)
+            {
+                accountContext.Account = result.Value;
+            }
         }
 
         await next(context);

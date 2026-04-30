@@ -8,8 +8,13 @@ public sealed class AccountMappings : IRegister
 {
     public void Register(TypeAdapterConfig config)
     {
-        config.NewConfig<AccountModel, AccountEntity>().Map(dest => dest.Id, src => src.Id);
+        config.NewConfig<AccountModel, AccountEntity>()
+            .Map(dest => dest.Id, src => src.Id)
+            .Map(dest => dest.PreviousUsername, src => src.PreviousUsername)
+            .Map(dest => dest.UsernameLastChangedAt, src => src.UsernameLastChangedAt);
 
-        config.NewConfig<AccountEntity, AccountModel>();
+        config.NewConfig<AccountEntity, AccountModel>()
+            .Map(dest => dest.PreviousUsername, src => src.PreviousUsername)
+            .Map(dest => dest.UsernameLastChangedAt, src => src.UsernameLastChangedAt);
     }
 }

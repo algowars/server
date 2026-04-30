@@ -1,8 +1,11 @@
-﻿using ApplicationCore.Interfaces.Services;
+﻿using ApplicationCore.Domain.Accounts;
+using ApplicationCore.Interfaces.Services;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using PublicApi.Attributes;
 using PublicApi.Contracts.Submission;
 
 namespace PublicApi.Controllers;
@@ -11,36 +14,31 @@ namespace PublicApi.Controllers;
 [Route("api/v{version:apiVersion}/[controller]")]
 [ApiVersion("1.0")]
 public sealed class SubmissionController(
-    IAccountAppService accountAppService,
+    IAccountContext accountContext,
     ISubmissionAppService submissionAppService
 ) : BaseApiController
 {
     [HttpPost("execute")]
     [Authorize]
+    [RequiresAccount]
+    [ProducesResponseType(typeof(Guid), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> CreateSubmissionAsync(
         [FromBody] CreateSubmissionDto createSubmissionDto,
         CancellationToken cancellationToken
     )
     {
-        string? sub = GetSub();
-
-        if (sub is null)
+        if (accountContext.Account is null)
         {
             return Unauthorized();
-        }
-
-        var accountResult = await accountAppService.GetAccountBySubAsync(sub, cancellationToken);
-
-        if (!accountResult.IsSuccess)
-        {
-            return ToActionResult(accountResult);
         }
 
         return ToActionResult(
             await submissionAppService.CreateAsync(
                 createSubmissionDto.ProblemSetupId,
                 createSubmissionDto.Code,
-                accountResult.Value.Id,
+                accountContext.Account.Id,
                 cancellationToken
             )
         );
