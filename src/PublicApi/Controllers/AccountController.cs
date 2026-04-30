@@ -1,4 +1,5 @@
 using ApplicationCore.Commands.Accounts.UpdateUsername;
+using ApplicationCore.Commands.Accounts.UpsertAccount;
 using ApplicationCore.Domain.Accounts;
 using ApplicationCore.Dtos.Accounts;
 using ApplicationCore.Interfaces.Services;
@@ -22,18 +23,24 @@ public sealed partial class AccountController(
 {
     [HttpPut]
     [Authorize]
-    [RequiresAccount]
     [EnableRateLimiting("ExtraShort")]
-    [ProducesResponseType(typeof(AccountDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(AccountUpsertResult), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public IActionResult UpsertAccountAsync(CancellationToken cancellationToken)
+    public async Task<IActionResult> UpsertAccountAsync(
+        [FromBody] UpsertAccountDto request,
+        CancellationToken cancellationToken
+    )
     {
-        if (accountContext.Account is null)
+        string? sub = GetSub();
+
+        if (string.IsNullOrEmpty(sub))
         {
             return Unauthorized();
         }
 
-        return Ok(accountContext.Account);
+        var result = await accountAppService.UpsertAccountAsync(sub, request.ImageUrl, cancellationToken);
+
+        return ToActionResult(result);
     }
 
     [HttpGet("find/profile/{username}")]
@@ -68,16 +75,24 @@ public sealed partial class AccountController(
 
     [HttpGet("find/profile")]
     [Authorize]
-    [RequiresAccount]
     [EnableRateLimiting("Medium")]
     [ProducesResponseType(typeof(AccountDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public IActionResult GetProfileAsync(CancellationToken cancellationToken)
+    public async Task<IActionResult> GetProfileAsync(CancellationToken cancellationToken)
     {
-        if (accountContext.Account is null)
+        string? sub = GetSub();
+
+        if (string.IsNullOrEmpty(sub))
         {
             return Unauthorized();
+        }
+
+        var result = await accountAppService.GetAccountBySubAsync(sub, cancellationToken);
+
+        if (!result.IsSuccess)
+        {
+            return ToActionResult(result);
         }
 
         IEnumerable<string> permissions =
@@ -85,17 +100,7 @@ public sealed partial class AccountController(
             .. User.Claims.Where(c => c.Type == "permissions").Select(c => c.Value),
         ];
 
-        return Ok(
-            new AccountDto
-            {
-                Id = accountContext.Account.Id,
-                Username = accountContext.Account.Username,
-                ImageUrl = accountContext.Account.ImageUrl,
-                Permissions = permissions,
-                CreatedOn = accountContext.Account.CreatedOn,
-                UsernameLastChangedAt = accountContext.Account.UsernameLastChangedAt,
-            }
-        );
+        return Ok(result.Value with { Permissions = permissions });
     }
 
     [HttpPut("username")]

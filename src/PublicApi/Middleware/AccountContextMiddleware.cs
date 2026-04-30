@@ -22,21 +22,13 @@ public class AccountContextMiddleware(
             return;
         }
 
-        string? sub = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value; ;
+        string? sub = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (!string.IsNullOrEmpty(sub))
         {
-            string? imageUrl = context.User.FindFirst("picture")?.Value;
-
-            var result = await accountAppService.UpsertAccountAsync(sub, imageUrl, context.RequestAborted);
+            var result = await accountAppService.GetAccountBySubAsync(sub, context.RequestAborted);
             if (result.IsSuccess)
             {
-                accountContext.Account = new ApplicationCore.Dtos.Accounts.AccountDto
-                {
-                    Id = result.Value.Id,
-                    Username = result.Value.Username,
-                    ImageUrl = result.Value.ImageUrl,
-                    CreatedOn = result.Value.CreatedOn,
-                };
+                accountContext.Account = result.Value;
             }
         }
 

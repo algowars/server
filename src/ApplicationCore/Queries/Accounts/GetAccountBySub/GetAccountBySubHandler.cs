@@ -29,6 +29,7 @@ public sealed class GetAccountBySubHandler(IAccountRepository repository)
                 Username = account.Username,
                 ImageUrl = account.ImageUrl,
                 CreatedOn = account.CreatedOn,
+                UsernameLastChangedAt = account.UsernameLastChangedAt,
             };
             return Result.Success(dto);
         }
