@@ -162,8 +162,8 @@ public static class DependencyInjection
     {
         services.AddQuartz(q =>
         {
-            q.AddJobAndTrigger<SubmissionExecutionHandler>(JobType.SubmissionExecution, IntervalInSeconds: 10);
-            q.AddJobAndTrigger<PollSubmissionExecutionHander>(JobType.PollSubmissionExecution, IntervalInSeconds: 5);
+            q.AddJobAndTrigger<SubmissionExecutionHandler>(JobType.SubmissionExecution, intervalInMinutes: 60);
+            q.AddJobAndTrigger<PollSubmissionExecutionHander>(JobType.PollSubmissionExecution, intervalInMinutes: 60);
         });
 
         services.AddQuartzHostedService(q => q.WaitForJobsToComplete = true);
@@ -171,7 +171,7 @@ public static class DependencyInjection
         return services;
     }
 
-    private static void AddJobAndTrigger<T>(this IServiceCollectionQuartzConfigurator q, JobType jobType, int IntervalInSeconds)
+    private static void AddJobAndTrigger<T>(this IServiceCollectionQuartzConfigurator q, JobType jobType, int intervalInMinutes)
         where T : IJob
     {
         string jobName = jobType.ToString();
@@ -182,7 +182,7 @@ public static class DependencyInjection
             .ForJob(jobKey)
             .WithIdentity($"{jobName}-trigger")
             .WithSimpleSchedule(s => s
-                .WithIntervalInSeconds(IntervalInSeconds)
+                .WithIntervalInMinutes(intervalInMinutes)
                 .RepeatForever()
             )
         );

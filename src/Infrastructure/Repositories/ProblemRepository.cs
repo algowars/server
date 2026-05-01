@@ -334,7 +334,18 @@ public sealed class ProblemRepository(AppDbContext db) : IProblemRepository
                                         Name = param.TestCasesInputsValueType.Name,
                                     },
                                 }),
-                                ExpectedOutput = "",
+                                ExpectedOutput = new TestCaseExpectedOutputModel
+                                {
+                                    Id = tc.ExpectedOutput.Id,
+                                    TestCaseId = tc.ExpectedOutput.TestCaseId,
+                                    Value = tc.ExpectedOutput.Value,
+                                    OutputValueTypeId = tc.ExpectedOutput.OutputValueTypeId,
+                                    OutputType = new TestCaseOutputTypeModel
+                                    {
+                                        Id = tc.ExpectedOutput.OutputType.Id,
+                                        Name = tc.ExpectedOutput.OutputType.Name
+                                    }
+                                }
                             })
                             .ToList(),
                     })
@@ -410,7 +421,18 @@ public sealed class ProblemRepository(AppDbContext db) : IProblemRepository
                                         Name = param.TestCasesInputsValueType.Name,
                                     },
                                 }),
-                                ExpectedOutput = "",
+                                ExpectedOutput = new TestCaseExpectedOutputModel
+                                {
+                                    Id = tc.ExpectedOutput.Id,
+                                    TestCaseId = tc.ExpectedOutput.TestCaseId,
+                                    Value = tc.ExpectedOutput.Value,
+                                    OutputValueTypeId = tc.ExpectedOutput.OutputValueTypeId,
+                                    OutputType = new TestCaseOutputTypeModel
+                                    {
+                                        Id = tc.ExpectedOutput.OutputType.Id,
+                                        Name = tc.ExpectedOutput.OutputType.Name,
+                                    },
+                                },
                             })
                             .ToList(),
                     })

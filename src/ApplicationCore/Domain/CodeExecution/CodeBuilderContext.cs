@@ -14,7 +14,7 @@ public sealed class CodeBuilderContext
 
     public required IEnumerable<TestCaseInputParamModel> Inputs { get; init; }
 
-    public required string ExpectedOutput { get; init; }
+    public required TestCaseExpectedOutputModel ExpectedOutput { get; init; }
 
     public string? InputTypeName { get; init; }
 }

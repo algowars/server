@@ -44,7 +44,7 @@ public sealed class GetProblemSetupHandler(IProblemRepository problemRepository)
                     TestCases = ts.TestCases.Select(tc => new TestCaseDto()
                     {
                         Input = string.Join(",", tc.Inputs.Select(input => input.Value.Trim())),
-                        ExpectedOutput = tc.ExpectedOutput,
+                        ExpectedOutput = tc.ExpectedOutput.Value,
                     }),
                 }),
         };
