@@ -5,19 +5,21 @@ namespace ApplicationCore.Services;
 
 public sealed class ExecutionComparisonService : IExecutionComparisonService
 {
-    public SubmissionStatus Compare(string? actualOutput, string expectedOutput)
+    public SubmissionStatus Compare(string? programOutput, string expectedOutput)
     {
-        if (actualOutput is null)
+        if (programOutput is null)
         {
             return SubmissionStatus.WrongAnswer;
         }
 
-        string actual = Normalize(actualOutput);
+        string[] lines = programOutput.ReplaceLineEndings("\n").TrimEnd('\n').Split('\n');
+        string lastLine = lines[^1];
+
+        string actual = Normalize(lastLine);
         string expected = Normalize(expectedOutput);
 
         return actual == expected ? SubmissionStatus.Accepted : SubmissionStatus.WrongAnswer;
     }
 
-    private static string Normalize(string value) =>
-        value.Trim().ReplaceLineEndings("\n");
+    private static string Normalize(string value) => value.Trim().ReplaceLineEndings("\n");
 }

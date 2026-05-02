@@ -40,7 +40,9 @@ public sealed class CodeExecutionService(IJudge0Client judge0Client) : ICodeExec
                     }
                 );
 
-                results.Add(new SubmissionResult { Id = Guid.NewGuid(), Status = SubmissionStatus.InQueue });
+                results.Add(
+                    new SubmissionResult { Id = Guid.NewGuid(), Status = SubmissionStatus.InQueue }
+                );
 
                 indexMap.Add((results, results.Count - 1));
             }
@@ -81,7 +83,7 @@ public sealed class CodeExecutionService(IJudge0Client judge0Client) : ICodeExec
 
             var result = results[resultIndex];
             result.ExecutionId = response.Token;
-            result.Status = MapJudge0SubmissionStatus(response.Status);
+            result.Status = SubmissionStatus.InQueue;
         }
 
         return Result.Success<IEnumerable<SubmissionModel>>(submissions);
@@ -119,12 +121,21 @@ public sealed class CodeExecutionService(IJudge0Client judge0Client) : ICodeExec
             var submissionResult = submission.Results.First(r => r.ExecutionId == result.Token);
 
             submissionResult.Status = MapJudge0SubmissionStatus(result.Status);
-            submissionResult.Stdout = result.Stdout;
+            submissionResult.Stderr = result.Stderr;
             submissionResult.RuntimeMs = decimal.TryParse(result.Time, out decimal seconds)
                 ? (int)Math.Ceiling(seconds * 1000)
                 : null;
             submissionResult.MemoryKb = result.Memory;
             submissionResult.FinishedAt = DateTime.UtcNow;
+
+            string rawStdout = result.Stdout ?? "";
+            submissionResult.ProgramOutput = rawStdout;
+
+            if (!string.IsNullOrEmpty(rawStdout))
+            {
+                string[] lines = rawStdout.ReplaceLineEndings("\n").TrimEnd('\n').Split('\n');
+                submissionResult.Stdout = lines.Length > 1 ? string.Join("\n", lines[..^1]) : null;
+            }
         }
 
         return Result.Success<IEnumerable<SubmissionModel>>(submissionList);
