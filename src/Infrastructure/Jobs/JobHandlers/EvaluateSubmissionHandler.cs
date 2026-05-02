@@ -63,7 +63,7 @@ public sealed class EvaluateSubmissionHandler(IServiceScopeFactory serviceScopeF
             for (int i = 0; i < results.Count; i++)
             {
                 string expected = i < expectedOutputs.Count ? expectedOutputs[i] : string.Empty;
-            results[i].Status = comparisonService.Compare(results[i].ProgramOutput, expected);
+                results[i].Status = comparisonService.Compare(results[i].ProgramOutput, expected);
             }
 
             evaluated.Add(new SubmissionModel
