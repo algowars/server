@@ -21,7 +21,8 @@ public sealed class Judge0Client(
 
     public async Task<Result<List<Judge0SubmissionResponse>>> GetAsync(
         IEnumerable<Guid> tokens,
-        CancellationToken cancellationToken
+        CancellationToken cancellationToken,
+        IEnumerable<string>? fields = null
     )
     {
         try
@@ -34,6 +35,7 @@ public sealed class Judge0Client(
                 var query = new Dictionary<string, string?>()
                 {
                     ["tokens"] = string.Join(",", batch),
+                    ["fields"] = fields is not null ? string.Join(",", fields) : "*",
                 };
 
                 string uri = QueryHelpers.AddQueryString("submissions/batch", query);
@@ -76,7 +78,8 @@ public sealed class Judge0Client(
 
     public async Task<Result<List<Judge0SubmissionResponse>>> SubmitAsync(
         IEnumerable<Judge0SubmissionRequest> reqs,
-        CancellationToken cancellationToken
+        CancellationToken cancellationToken,
+        IEnumerable<string>? fields = null
     )
     {
         try
@@ -89,7 +92,7 @@ public sealed class Judge0Client(
                 var query = new Dictionary<string, string?>()
                 {
                     ["base64_encoded"] = _judge0Options.IsEncoded.ToString().ToLowerInvariant(),
-                    ["fields"] = "*",
+                    ["fields"] = fields is not null ? string.Join(",", fields) : "*",
                 };
 
                 string uri = QueryHelpers.AddQueryString("submissions/batch", query);

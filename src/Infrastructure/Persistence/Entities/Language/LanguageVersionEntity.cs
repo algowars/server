@@ -26,4 +26,6 @@ public sealed class LanguageVersionEntity : BaseAuditableEntity
     public ProgrammingLanguageEntity? ProgrammingLanguage { get; set; }
 
     public IEnumerable<ProblemSetupEntity> ProblemSetups { get; set; } = [];
+
+    public IEnumerable<LanguageVersionEngineMappingEntity> EngineMappings { get; set; } = [];
 }

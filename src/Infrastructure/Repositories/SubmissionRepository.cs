@@ -92,6 +92,7 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
                             Id = sr.Id,
                             SubmissionId = s.Id,
                             ExecutionId = sr.ExecutionId,
+                            ResultId = sr.ResultId,
                             StatusId = sr.Status
                                 is SubmissionStatus.Accepted
                                     or SubmissionStatus.WrongAnswer
@@ -99,7 +100,9 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
                                 : (int)sr.Status,
                             StartedAt = sr.StartedAt,
                             FinishedAt = sr.FinishedAt,
-                            ProgramOutput = sr.Stdout,
+                            Stdout = sr.Stdout,
+                            ProgramOutput = sr.ProgramOutput,
+                            Stderr = sr.Stderr,
                             RuntimeMs = sr.RuntimeMs,
                             MemoryKb = sr.MemoryKb,
                         }
@@ -110,6 +113,7 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
             {
                 await db.BulkInsertOrUpdateAsync(
                     resultEntities,
+                    ResultBulkConfig,
                     cancellationToken: cancellationToken
                 );
 
@@ -171,12 +175,15 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
                     (s, sr) =>
                         new SubmissionResultEntity
                         {
+                            Id = sr.Id,
                             SubmissionId = s.Id,
-                            StatusId = (int)sr.Status,
                             ExecutionId = sr.ExecutionId,
+                            ResultId = sr.Id,
+                            StatusId = (int)SubmissionStatus.InQueue,
+                            CreatedOn = DateTime.UtcNow,
                             StartedAt = sr.StartedAt,
                             FinishedAt = sr.FinishedAt,
-                            ProgramOutput = sr.Stdout,
+                            Stdout = sr.Stdout,
                             RuntimeMs = sr.RuntimeMs,
                             MemoryKb = sr.MemoryKb,
                         }
@@ -187,6 +194,7 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
             {
                 await db.BulkInsertOrUpdateAsync(
                     resultEntities,
+                    ResultBulkConfig,
                     cancellationToken: cancellationToken
                 );
 
@@ -234,6 +242,8 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
         RuntimeMs = result.RuntimeMs,
         StartedAt = result.StartedAt,
         Stdout = result.Stdout,
+        ProgramOutput = result.ProgramOutput,
+        Stderr = result.Stderr,
     };
 
     private static readonly Expression<
@@ -260,6 +270,11 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
 
     private const int MaxRetryCount = 5;
 
+    private static readonly BulkConfig ResultBulkConfig = new()
+    {
+        PropertiesToExcludeOnUpdate = [nameof(SubmissionResultEntity.CreatedOn)],
+    };
+
     public async Task SaveExecutionTokensAsync(
         IEnumerable<SubmissionModel> submissions,
         CancellationToken cancellationToken
@@ -278,10 +293,12 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
                             Id = sr.Id,
                             SubmissionId = s.Id,
                             ExecutionId = sr.ExecutionId,
-                            StatusId = (int)sr.Status,
+                            ResultId = sr.Id,
+                            StatusId = (int)SubmissionStatus.InQueue,
+                            CreatedOn = DateTime.UtcNow,
                             StartedAt = sr.StartedAt,
                             FinishedAt = sr.FinishedAt,
-                            ProgramOutput = sr.Stdout,
+                            Stdout = sr.Stdout,
                             RuntimeMs = sr.RuntimeMs,
                             MemoryKb = sr.MemoryKb,
                         }
@@ -290,7 +307,7 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
 
             if (resultEntities.Count != 0)
             {
-                await db.BulkInsertOrUpdateAsync(resultEntities, cancellationToken: cancellationToken);
+                await db.BulkInsertOrUpdateAsync(resultEntities, ResultBulkConfig, cancellationToken: cancellationToken);
 
                 var submissionIds = resultEntities.Select(r => r.SubmissionId).Distinct().ToList();
 
@@ -333,10 +350,13 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
                             Id = sr.Id,
                             SubmissionId = s.Id,
                             ExecutionId = sr.ExecutionId,
+                            ResultId = sr.ResultId,
                             StatusId = (int)sr.Status,
                             StartedAt = sr.StartedAt,
                             FinishedAt = sr.FinishedAt,
-                            ProgramOutput = sr.Stdout,
+                            Stdout = sr.Stdout,
+                            ProgramOutput = sr.ProgramOutput,
+                            Stderr = sr.Stderr,
                             RuntimeMs = sr.RuntimeMs,
                             MemoryKb = sr.MemoryKb,
                         }
@@ -345,7 +365,7 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
 
             if (resultEntities.Count != 0)
             {
-                await db.BulkInsertOrUpdateAsync(resultEntities, cancellationToken: cancellationToken);
+                await db.BulkInsertOrUpdateAsync(resultEntities, ResultBulkConfig, cancellationToken: cancellationToken);
 
                 var submissionIds = resultEntities.Select(r => r.SubmissionId).Distinct().ToList();
 
@@ -370,14 +390,28 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
         }
     }
 
-    public Task FinalizeEvaluationAsync(
+    public async Task FinalizeEvaluationAsync(
         IEnumerable<Guid> outboxIds,
         DateTime now,
         CancellationToken cancellationToken
     )
     {
         var ids = outboxIds.ToList();
-        return db.SubmissionOutboxes
+
+        var submissionIds = await db
+            .SubmissionOutboxes.Where(o => ids.Contains(o.Id))
+            .Select(o => o.SubmissionId)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+
+        await db.Submissions
+            .Where(s => submissionIds.Contains(s.Id))
+            .ExecuteUpdateAsync(
+                setters => setters.SetProperty(s => s.CompletedAt, now),
+                cancellationToken: cancellationToken
+            );
+
+        await db.SubmissionOutboxes
             .Where(o => ids.Contains(o.Id))
             .ExecuteUpdateAsync(
                 setters => setters

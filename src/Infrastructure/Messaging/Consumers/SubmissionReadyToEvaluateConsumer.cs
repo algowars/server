@@ -59,10 +59,9 @@ public sealed class SubmissionReadyToEvaluateConsumer(IServiceScopeFactory servi
             return;
         }
 
-        // Build an ordered list of expected outputs matching the order results were created
         var expectedOutputs = setup.TestSuites
             .SelectMany(ts => ts.TestCases)
-            .Select(tc => tc.ExpectedOutput)
+            .Select(tc => tc.ExpectedOutput.Value)
             .ToList();
 
         var results = outbox.Submission.Results.ToList();
@@ -70,7 +69,7 @@ public sealed class SubmissionReadyToEvaluateConsumer(IServiceScopeFactory servi
         for (int i = 0; i < results.Count; i++)
         {
             string expected = i < expectedOutputs.Count ? expectedOutputs[i] : string.Empty;
-            results[i].Status = comparisonService.Compare(results[i].Stdout, expected);
+            results[i].Status = comparisonService.Compare(results[i].ProgramOutput, expected);
         }
 
         var evaluated = new SubmissionModel

@@ -6,7 +6,7 @@ using System.Text;
 
 namespace Infrastructure.Persistence.Entities.TestSuite;
 
-[Table("test_cases_output_types")]
+[Table("test_cases_output_value_types")]
 public sealed class TestCasesOutputTypeEntity
 {
     [Key, Column("id")]

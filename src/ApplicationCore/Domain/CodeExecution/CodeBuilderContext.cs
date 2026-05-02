@@ -12,9 +12,11 @@ public sealed class CodeBuilderContext
 
     public int? LanguageVersionId { get; init; }
 
+    public int? Judge0LanguageId { get; init; }
+
     public required IEnumerable<TestCaseInputParamModel> Inputs { get; init; }
 
-    public required string ExpectedOutput { get; init; }
+    public required TestCaseExpectedOutputModel ExpectedOutput { get; init; }
 
     public string? InputTypeName { get; init; }
 }

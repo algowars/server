@@ -6,5 +6,5 @@ public sealed class TestCaseModel
 
     public IEnumerable<TestCaseInputParamModel> Inputs { get; init; }
 
-    public required string ExpectedOutput { get; init; }
+    public required TestCaseExpectedOutputModel ExpectedOutput { get; init; }
 }

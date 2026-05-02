@@ -8,4 +8,6 @@ public sealed class LanguageVersion : BaseModel<int>
 
     public int ProgrammingLanguageId { get; init; }
     public ProgrammingLanguage? ProgrammingLanguage { get; init; }
+
+    public int? Judge0LanguageId { get; init; }
 }
