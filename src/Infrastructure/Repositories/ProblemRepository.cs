@@ -16,6 +16,8 @@ public sealed class ProblemRepository(AppDbContext db) : IProblemRepository
 {
     private readonly AppDbContext _db = db;
 
+    private const int Judge0EngineId = 1;
+
     public async Task<ProblemModel?> GetProblemByIdAsync(
         Guid problemId,
         CancellationToken cancellationToken
@@ -291,6 +293,10 @@ public sealed class ProblemRepository(AppDbContext db) : IProblemRepository
                             Id = ps.LanguageVersion.Id,
                             Version = ps.LanguageVersion.Version,
                             ProgrammingLanguageId = ps.LanguageVersion.ProgrammingLanguageId,
+                            Judge0LanguageId = ps.LanguageVersion.EngineMappings
+                                .Where(m => m.EngineId == Judge0EngineId)
+                                .Select(m => (int?)m.EngineLanguageId)
+                                .FirstOrDefault(),
                             ProgrammingLanguage =
                                 ps.LanguageVersion.ProgrammingLanguage != null
                                     ? new ProgrammingLanguage
@@ -378,6 +384,10 @@ public sealed class ProblemRepository(AppDbContext db) : IProblemRepository
                             Id = ps.LanguageVersion.Id,
                             Version = ps.LanguageVersion.Version,
                             ProgrammingLanguageId = ps.LanguageVersion.ProgrammingLanguageId,
+                            Judge0LanguageId = ps.LanguageVersion.EngineMappings
+                                .Where(m => m.EngineId == Judge0EngineId)
+                                .Select(m => (int?)m.EngineLanguageId)
+                                .FirstOrDefault(),
                             ProgrammingLanguage =
                                 ps.LanguageVersion.ProgrammingLanguage != null
                                     ? new ProgrammingLanguage

@@ -54,6 +54,7 @@ public sealed class SubmissionExecutionHandler(IServiceScopeFactory serviceScope
                         Template = setup.HarnessTemplate?.Template ?? "",
                         FunctionName = setup.FunctionName ?? string.Empty,
                         LanguageVersionId = setup.LanguageVersionId,
+                        Judge0LanguageId = setup.LanguageVersion?.Judge0LanguageId,
                         Inputs = tc.Inputs,
                         ExpectedOutput = tc.ExpectedOutput,
                     });

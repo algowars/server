@@ -4,6 +4,7 @@ using ApplicationCore.Interfaces.Services;
 using ApplicationCore.Messaging;
 using MassTransit;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Infrastructure.Messaging.Consumers;
 
@@ -13,8 +14,10 @@ namespace Infrastructure.Messaging.Consumers;
 /// transitions the outbox Initialized to PollExecution, then publishes
 /// SubmissionExecutionPollMessage to kick off polling.
 /// </summary>
-public sealed class SubmissionCreatedConsumer(IServiceScopeFactory serviceScopeFactory)
-    : IConsumer<SubmissionCreatedMessage>
+public sealed class SubmissionCreatedConsumer(
+    IServiceScopeFactory serviceScopeFactory,
+    ILogger<SubmissionCreatedConsumer> logger
+) : IConsumer<SubmissionCreatedMessage>
 {
     public async Task Consume(ConsumeContext<SubmissionCreatedMessage> context)
     {
@@ -30,6 +33,7 @@ public sealed class SubmissionCreatedConsumer(IServiceScopeFactory serviceScopeF
 
         if (!outboxResults.IsSuccess || !outboxResults.Value.Any())
         {
+            logger.LogWarning("SubmissionCreatedConsumer: No outboxes found for submission {SubmissionId}", context.Message.SubmissionId);
             return;
         }
 
@@ -39,6 +43,7 @@ public sealed class SubmissionCreatedConsumer(IServiceScopeFactory serviceScopeF
 
         if (outbox is null)
         {
+            logger.LogWarning("SubmissionCreatedConsumer: Outbox {OutboxId} not found or not in Initialized state", context.Message.OutboxId);
             return;
         }
 
@@ -49,6 +54,7 @@ public sealed class SubmissionCreatedConsumer(IServiceScopeFactory serviceScopeF
 
         if (!setupResult.IsSuccess)
         {
+            logger.LogError("SubmissionCreatedConsumer: Failed to get problem setup {SetupId}: {Errors}", outbox.Submission.ProblemSetupId, string.Join(", ", setupResult.Errors));
             return;
         }
 
@@ -56,6 +62,7 @@ public sealed class SubmissionCreatedConsumer(IServiceScopeFactory serviceScopeF
 
         if (setup is null)
         {
+            logger.LogError("SubmissionCreatedConsumer: Problem setup {SetupId} not found", outbox.Submission.ProblemSetupId);
             return;
         }
 
@@ -67,14 +74,23 @@ public sealed class SubmissionCreatedConsumer(IServiceScopeFactory serviceScopeF
                 Template = setup.HarnessTemplate?.Template ?? "",
                 FunctionName = setup.FunctionName ?? string.Empty,
                 LanguageVersionId = setup.LanguageVersionId,
+                Judge0LanguageId = setup.LanguageVersion?.Judge0LanguageId,
                 Inputs = tc.Inputs,
                 ExpectedOutput = tc.ExpectedOutput,
-            });
+            })
+            .ToList();
+
+        if (!builderContexts.Any())
+        {
+            logger.LogError("SubmissionCreatedConsumer: No test cases found for setup {SetupId} (submission {SubmissionId}). Ensure test suites are linked to this problem setup.", setup.Id, context.Message.SubmissionId);
+            return;
+        }
 
         Ardalis.Result.Result<System.Collections.Generic.IEnumerable<CodeBuildResult>> buildResult = codeBuilderService.Build(builderContexts);
 
         if (!buildResult.IsSuccess)
         {
+            logger.LogError("SubmissionCreatedConsumer: Code build failed for submission {SubmissionId}: {Errors}", context.Message.SubmissionId, string.Join(", ", buildResult.Errors));
             return;
         }
 
@@ -97,6 +113,7 @@ public sealed class SubmissionCreatedConsumer(IServiceScopeFactory serviceScopeF
 
         if (!executeResult.IsSuccess)
         {
+            logger.LogError("SubmissionCreatedConsumer: Execution failed for submission {SubmissionId}: {Errors}", context.Message.SubmissionId, string.Join(", ", executeResult.Errors));
             return;
         }
 

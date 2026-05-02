@@ -5,7 +5,6 @@ using Infrastructure.Persistence.Entities.Submission;
 using Infrastructure.Persistence.Entities.Submission.Outbox;
 using Infrastructure.Persistence.Entities.TestSuite;
 using Microsoft.EntityFrameworkCore;
-
 namespace Infrastructure.Persistence;
 
 public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
@@ -15,6 +14,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<HarnessTemplateEntity> HarnessTemplates { get; set; }
 
     public DbSet<LanguageVersionEntity> LanguageVersions { get; set; }
+
+    public DbSet<LanguageVersionEngineMappingEntity> LanguageVersionEngineMappings { get; set; }
 
     public DbSet<ProblemEntity> Problems { get; set; }
 
@@ -63,6 +64,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
         ModelTestSuiteTestCases(modelBuilder);
         ModelTestCaseInputs(modelBuilder);
         ModelTestCaseExpectedOutput(modelBuilder);
+        ModelLanguageVersionEngineMappings(modelBuilder);
     }
 
     private static void ModelProblems(ModelBuilder modelBuilder)
@@ -139,5 +141,15 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
             .WithMany()
             .HasForeignKey(o => o.OutputValueTypeId)
             .HasConstraintName("fk_test_cases_expected_outputs_output_type");
+    }
+
+    private static void ModelLanguageVersionEngineMappings(ModelBuilder modelBuilder)
+    {
+        modelBuilder
+            .Entity<LanguageVersionEntity>()
+            .HasMany(lv => lv.EngineMappings)
+            .WithOne(m => m.LanguageVersion)
+            .HasForeignKey(m => m.ProgrammingLanguageVersionId)
+            .HasConstraintName("fk_lang_version_engine_mappings_language_version");
     }
 }

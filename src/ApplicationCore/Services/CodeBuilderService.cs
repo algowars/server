@@ -39,6 +39,7 @@ public sealed class CodeBuilderService : ICodeBuilderService
                     Inputs = joinedInputs,
                     ExpectedOutput = context.ExpectedOutput.Value,
                     InputTypeName = context.InputTypeName,
+                    LanguageId = context.Judge0LanguageId ?? 0,
                 }
             );
         }

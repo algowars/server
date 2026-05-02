@@ -30,10 +30,17 @@ public sealed class CodeExecutionService(IJudge0Client judge0Client) : ICodeExec
 
             foreach (var buildResult in context.BuiltResults)
             {
+                if (buildResult.LanguageId == 0)
+                {
+                    return Result.Error(
+                        $"No Judge0 language mapping found for this problem setup. Ensure the language version has an engine mapping configured."
+                    );
+                }
+
                 judge0Requests.Add(
                     new Judge0SubmissionRequest
                     {
-                        LanguageId = 102,
+                        LanguageId = buildResult.LanguageId,
                         SourceCode = buildResult.FinalCode,
                         StdIn = buildResult.Inputs,
                         ExpectedOutput = buildResult.ExpectedOutput,
