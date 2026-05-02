@@ -131,4 +131,21 @@ public sealed class ProblemController(
             )
         );
     }
+
+    [HttpGet("{problem:guid}/submissions")]
+    [EnableRateLimiting("Short")]
+    [ProducesResponseType()]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> GetSubmissionsAsync(
+        Guid problemId,
+        [FromQuery] int page,
+        [FromQuery] int size,
+        [FromQuery] DateTime timestamp,
+        CancellationToken cancellationToken)
+    {
+        var result = await problemAppService.GetSubmissionsAsync()
+        return ToActionResult()
+    }
 }
