@@ -164,6 +164,8 @@ public static class DependencyInjection
         {
             q.AddJobAndTrigger<SubmissionExecutionHandler>(JobType.SubmissionExecution, intervalInMinutes: 60);
             q.AddJobAndTrigger<PollSubmissionExecutionHander>(JobType.PollSubmissionExecution, intervalInMinutes: 60);
+            q.AddJobAndTrigger<EvaluateSubmissionHandler>(JobType.EvaluateSubmission, intervalInMinutes: 60);
+            q.AddJobAndTrigger<PollEvaluationHandler>(JobType.PollEvaluation, intervalInMinutes: 60);
         });
 
         services.AddQuartzHostedService(q => q.WaitForJobsToComplete = true);

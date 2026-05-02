@@ -7,11 +7,13 @@ public interface IJudge0Client
 {
     Task<Result<List<Judge0SubmissionResponse>>> GetAsync(
         IEnumerable<Guid> tokens,
-        CancellationToken cancellationToken
+        CancellationToken cancellationToken,
+        IEnumerable<string>? fields = null
     );
 
     Task<Result<List<Judge0SubmissionResponse>>> SubmitAsync(
         IEnumerable<Judge0SubmissionRequest> reqs,
-        CancellationToken cancellationToken
+        CancellationToken cancellationToken,
+        IEnumerable<string>? fields = null
     );
 }

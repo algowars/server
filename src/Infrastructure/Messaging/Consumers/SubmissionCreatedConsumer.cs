@@ -42,7 +42,7 @@ public sealed class SubmissionCreatedConsumer(IServiceScopeFactory serviceScopeF
             return;
         }
 
-        Ardalis.Result.Result<System.Collections.Generic.IEnumerable<ApplicationCore.Domain.Problems.ProblemSetups.ProblemSetupModel>> setupResult = await problemAppService.GetProblemSetupsForExecutionAsync(
+        Ardalis.Result.Result<IEnumerable<ApplicationCore.Domain.Problems.ProblemSetups.ProblemSetupModel>> setupResult = await problemAppService.GetProblemSetupsForExecutionAsync(
             [outbox.Submission.ProblemSetupId],
             cancellationToken
         );
