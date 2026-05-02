@@ -2,6 +2,7 @@ using ApplicationCore.Common.Pagination;
 using ApplicationCore.Domain.Accounts;
 using ApplicationCore.Dtos.Languages;
 using ApplicationCore.Dtos.Problems;
+using ApplicationCore.Dtos.Submissions;
 using ApplicationCore.Interfaces.Services;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
@@ -17,6 +18,7 @@ namespace PublicApi.Controllers;
 [ApiVersion("1.0")]
 public sealed class ProblemController(
     IProblemAppService problemAppService,
+    ISubmissionAppService submissionAppService,
     IAccountContext accountContext
 ) : BaseApiController
 {
@@ -132,20 +134,41 @@ public sealed class ProblemController(
         );
     }
 
-    [HttpGet("{problem:guid}/submissions")]
+    [HttpGet("{problemId:guid}/submissions")]
     [EnableRateLimiting("Short")]
-    [ProducesResponseType()]
-    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(PaginatedResult<SubmissionDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> GetSubmissionsAsync(
         Guid problemId,
-        [FromQuery] int page,
-        [FromQuery] int size,
-        [FromQuery] DateTime timestamp,
-        CancellationToken cancellationToken)
+        [FromQuery] int page = 1,
+        [FromQuery] int size = 25,
+        [FromQuery] DateTime? timestamp = null,
+        [FromQuery] bool acceptedOnly = true,
+        [FromQuery] string? userId = null,
+        CancellationToken cancellationToken = default)
     {
-        var result = await problemAppService.GetSubmissionsAsync()
-        return ToActionResult()
+        if (page < 1 || size < 1)
+        {
+            return BadRequest("Page and size must be greater than 0.");
+        }
+
+        Guid? filterByUserId = null;
+        if (!string.IsNullOrWhiteSpace(userId) && Guid.TryParse(userId, out var parsedUserId))
+        {
+            filterByUserId = parsedUserId;
+            acceptedOnly = false;
+        }
+
+        return ToActionResult(
+            await submissionAppService.GetSubmissionsPaginatedAsync(
+                problemId,
+                page,
+                size,
+                timestamp ?? DateTime.UtcNow,
+                filterByUserId,
+                acceptedOnly,
+                cancellationToken
+            )
+        );
     }
 }

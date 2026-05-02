@@ -5,10 +5,13 @@ using ApplicationCore.Commands.Submissions.ProcessEvaluation;
 using ApplicationCore.Commands.Submissions.ProcessPollingSubmissionExecutions;
 using ApplicationCore.Commands.Submissions.ProcessSubmissionExecutions;
 using ApplicationCore.Commands.Submissions.SaveExecutionTokens;
+using ApplicationCore.Common.Pagination;
 using ApplicationCore.Domain.Submissions;
 using ApplicationCore.Domain.Submissions.Outboxes;
+using ApplicationCore.Dtos.Submissions;
 using ApplicationCore.Interfaces.Services;
 using ApplicationCore.Queries.Submissions.GetSubmissionOutboxes;
+using ApplicationCore.Queries.Submissions.GetSubmissionsPaginated;
 using Ardalis.Result;
 using MediatR;
 
@@ -97,5 +100,21 @@ public sealed class SubmissionAppService(IMediator mediator) : ISubmissionAppSer
         var command = new FinalizeEvaluationCommand(outboxIds, now);
 
         return await mediator.Send(command, cancellationToken);
+    }
+
+    public async Task<Result<PaginatedResult<SubmissionDto>>> GetSubmissionsPaginatedAsync(
+        Guid problemId,
+        int page,
+        int size,
+        DateTime timestamp,
+        Guid? filterByUserId = null,
+        bool acceptedOnly = true,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var pagination = new PaginationRequest { Page = page, Size = size, Timestamp = timestamp };
+        var query = new GetSubmissionsPaginatedQuery(problemId, pagination, filterByUserId, acceptedOnly);
+
+        return await mediator.Send(query, cancellationToken);
     }
 }

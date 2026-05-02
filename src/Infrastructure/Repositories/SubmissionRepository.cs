@@ -1,4 +1,5 @@
-﻿using ApplicationCore.Domain.Submissions;
+﻿using ApplicationCore.Common.Pagination;
+using ApplicationCore.Domain.Submissions;
 using ApplicationCore.Domain.Submissions.Outboxes;
 using ApplicationCore.Interfaces.Repositories;
 using EFCore.BulkExtensions;
@@ -112,10 +113,10 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
             if (resultEntities.Count != 0)
             {
                 await db.BulkInsertOrUpdateAsync(
-                    resultEntities,
-                    ResultBulkConfig,
-                    cancellationToken: cancellationToken
-                );
+                     resultEntities,
+                     ResultBulkConfig,
+                     cancellationToken: cancellationToken
+                 );
 
                 var completedSubmissionIds = submissionModels
                     .Where(s =>
@@ -388,6 +389,52 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
             await transaction.RollbackAsync(cancellationToken);
             throw;
         }
+    }
+
+    public async Task<PaginatedResult<SubmissionModel>> GetByProblemIdPaginatedAsync(
+        Guid problemId,
+        PaginationRequest pagination,
+        CancellationToken cancellationToken
+    )
+    {
+        var query = db.Submissions
+            .Where(s =>
+                s.ProblemSetup!.ProblemId == problemId
+                && s.CreatedOn <= pagination.Timestamp
+            );
+
+        int total = await query.CountAsync(cancellationToken);
+
+        var submissions = await query
+            .OrderByDescending(s => s.CreatedOn)
+            .Skip((pagination.Page - 1) * pagination.Size)
+            .Take(pagination.Size)
+            .Include(s => s.CreatedBy)
+            .Select(s => new SubmissionModel
+            {
+                Id = s.Id,
+                ProblemSetupId = s.ProblemSetupId,
+                Code = s.Code,
+                CreatedOn = s.CreatedOn,
+                CompletedAt = s.CompletedAt,
+                CreatedById = s.CreatedById,
+                CreatedBy = s.CreatedBy == null ? null : new ApplicationCore.Domain.Accounts.AccountModel
+                {
+                    Id = s.CreatedBy.Id,
+                    Username = s.CreatedBy.Username,
+                    ImageUrl = s.CreatedBy.ImageUrl,
+                    CreatedOn = s.CreatedBy.CreatedOn,
+                },
+            })
+            .ToListAsync(cancellationToken);
+
+        return new PaginatedResult<SubmissionModel>
+        {
+            Results = submissions,
+            Total = total,
+            Page = pagination.Page,
+            Size = pagination.Size,
+        };
     }
 
     public async Task FinalizeEvaluationAsync(

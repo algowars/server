@@ -1,5 +1,7 @@
-﻿using ApplicationCore.Domain.Submissions;
+﻿using ApplicationCore.Common.Pagination;
+using ApplicationCore.Domain.Submissions;
 using ApplicationCore.Domain.Submissions.Outboxes;
+using ApplicationCore.Dtos.Submissions;
 using Ardalis.Result;
 using MediatR;
 
@@ -48,5 +50,15 @@ public interface ISubmissionAppService
         IEnumerable<Guid> outboxIds,
         DateTime now,
         CancellationToken cancellationToken
+    );
+
+    Task<Result<PaginatedResult<SubmissionDto>>> GetSubmissionsPaginatedAsync(
+        Guid problemId,
+        int page,
+        int size,
+        DateTime timestamp,
+        Guid? filterByUserId = null,
+        bool acceptedOnly = true,
+        CancellationToken cancellationToken = default
     );
 }
