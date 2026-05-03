@@ -409,7 +409,6 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
             .OrderByDescending(s => s.CreatedOn)
             .Skip((pagination.Page - 1) * pagination.Size)
             .Take(pagination.Size)
-            .Include(s => s.CreatedBy)
             .Select(s => new SubmissionModel
             {
                 Id = s.Id,
@@ -425,6 +424,20 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
                     ImageUrl = s.CreatedBy.ImageUrl,
                     CreatedOn = s.CreatedBy.CreatedOn,
                 },
+                Results = s.Results.Select(r => new SubmissionResult
+                {
+                    Id = r.Id,
+                    Status = (SubmissionStatus)r.StatusId,
+                    ExecutionId = r.ExecutionId,
+                    ResultId = r.ResultId,
+                    FinishedAt = r.FinishedAt,
+                    MemoryKb = r.MemoryKb,
+                    RuntimeMs = r.RuntimeMs,
+                    StartedAt = r.StartedAt,
+                    Stdout = r.Stdout,
+                    ProgramOutput = r.ProgramOutput,
+                    Stderr = r.Stderr,
+                }),
             })
             .ToListAsync(cancellationToken);
 
