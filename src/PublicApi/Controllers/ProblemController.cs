@@ -22,32 +22,6 @@ public sealed class ProblemController(
     IAccountContext accountContext
 ) : BaseApiController
 {
-    [HttpPost]
-    [Authorize]
-    [RequiresAccount]
-    [EnableRateLimiting("Short")]
-    [ProducesResponseType(typeof(Guid), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> CreateProblemAsync(
-        [FromBody] CreateProblemDto createProblemDto,
-        CancellationToken cancellationToken
-    )
-    {
-        if (accountContext.Account is null)
-        {
-            return Unauthorized();
-        }
-
-        return ToActionResult(
-            await problemAppService.CreateProblemAsync(
-                createProblemDto,
-                accountContext.Account.Id,
-                cancellationToken
-            )
-        );
-    }
-
     [HttpGet("slug/{slug}")]
     [EnableRateLimiting("Short")]
     [ProducesResponseType(typeof(ProblemDto), StatusCodes.Status200OK)]
@@ -143,8 +117,7 @@ public sealed class ProblemController(
         [FromQuery] int page = 1,
         [FromQuery] int size = 25,
         [FromQuery] DateTime? timestamp = null,
-        [FromQuery] bool acceptedOnly = true,
-        [FromQuery] string? userId = null,
+        [FromQuery] bool mySolution = false,
         CancellationToken cancellationToken = default)
     {
         if (page < 1 || size < 1)
@@ -152,23 +125,18 @@ public sealed class ProblemController(
             return BadRequest("Page and size must be greater than 0.");
         }
 
-        Guid? filterByUserId = null;
-        if (!string.IsNullOrWhiteSpace(userId) && Guid.TryParse(userId, out var parsedUserId))
+        var request = new GetSubmissionsPaginatedRequest
         {
-            filterByUserId = parsedUserId;
-            acceptedOnly = false;
-        }
+            ProblemId = problemId,
+            Page = page,
+            Size = size,
+            Timestamp = timestamp ?? DateTime.UtcNow,
+            FilterByUserId = mySolution ? accountContext.Account.Id : null,
+            AcceptedOnly = !mySolution,
+        };
 
         return ToActionResult(
-            await submissionAppService.GetSubmissionsPaginatedAsync(
-                problemId,
-                page,
-                size,
-                timestamp ?? DateTime.UtcNow,
-                filterByUserId,
-                acceptedOnly,
-                cancellationToken
-            )
+            await submissionAppService.GetSubmissionsPaginatedAsync(request, cancellationToken)
         );
     }
 }

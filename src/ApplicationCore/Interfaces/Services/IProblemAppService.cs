@@ -8,12 +8,6 @@ namespace ApplicationCore.Interfaces.Services;
 
 public interface IProblemAppService
 {
-    Task<Result<Guid>> CreateProblemAsync(
-        CreateProblemDto createProblemDto,
-        Guid createdById,
-        CancellationToken cancellationToken
-    );
-
     Task<Result<IEnumerable<ProgrammingLanguageDto>>> GetAvailableLanguagesAsync(
         CancellationToken cancellationToken
     );

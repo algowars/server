@@ -1,4 +1,5 @@
 using ApplicationCore.Domain.Accounts;
+using ApplicationCore.Domain.Problems.Languages;
 
 namespace ApplicationCore.Domain.Submissions;
 
@@ -9,6 +10,8 @@ public sealed class SubmissionModel
     public string? Code { get; init; }
 
     public int ProblemSetupId { get; init; }
+
+    public LanguageVersion LanguageVersion { get; init; }
 
     public DateTime CreatedOn { get; init; }
 
@@ -38,5 +41,23 @@ public sealed class SubmissionModel
         return Results.All(r => r.Status == SubmissionStatus.Accepted)
             ? SubmissionStatus.Accepted
             : SubmissionStatus.WrongAnswer;
+    }
+
+    public int GetAverageRuntimeMs()
+    {
+        if (!Results.Any())
+        {
+            return 0;
+        }
+        return (int)Results.Average(r => r.RuntimeMs);
+    }
+    
+    public int GetAverageMemoryKb()
+    {
+        if (!Results.Any())
+        {
+            return 0;
+        }
+        return (int)Results.Average(r => r.MemoryKb);
     }
 }

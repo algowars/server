@@ -12,7 +12,7 @@ public record ProblemDto
 
     public string? Question { get; init; }
 
-    public required IEnumerable<string> Tags { get; init; }
+    public required List<string> Tags { get; init; }
 
     public required int Difficulty { get; init; }
 

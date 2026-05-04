@@ -1,11 +1,14 @@
 ﻿using ApplicationCore.Common.Pagination;
 using ApplicationCore.Domain.Submissions;
 using ApplicationCore.Domain.Submissions.Outboxes;
+using ApplicationCore.Dtos.Accounts;
+using ApplicationCore.Dtos.Problems;
 using ApplicationCore.Interfaces.Repositories;
 using EFCore.BulkExtensions;
 using Infrastructure.Persistence;
 using Infrastructure.Persistence.Entities.Submission;
 using Infrastructure.Persistence.Entities.Submission.Outbox;
+using Mapster;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 
@@ -391,65 +394,6 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
         }
     }
 
-    public async Task<PaginatedResult<SubmissionModel>> GetByProblemIdPaginatedAsync(
-        Guid problemId,
-        PaginationRequest pagination,
-        CancellationToken cancellationToken
-    )
-    {
-        var query = db.Submissions
-            .Where(s =>
-                s.ProblemSetup!.ProblemId == problemId
-                && s.CreatedOn <= pagination.Timestamp
-            );
-
-        int total = await query.CountAsync(cancellationToken);
-
-        var submissions = await query
-            .OrderByDescending(s => s.CreatedOn)
-            .Skip((pagination.Page - 1) * pagination.Size)
-            .Take(pagination.Size)
-            .Select(s => new SubmissionModel
-            {
-                Id = s.Id,
-                ProblemSetupId = s.ProblemSetupId,
-                Code = s.Code,
-                CreatedOn = s.CreatedOn,
-                CompletedAt = s.CompletedAt,
-                CreatedById = s.CreatedById,
-                CreatedBy = s.CreatedBy == null ? null : new ApplicationCore.Domain.Accounts.AccountModel
-                {
-                    Id = s.CreatedBy.Id,
-                    Username = s.CreatedBy.Username,
-                    ImageUrl = s.CreatedBy.ImageUrl,
-                    CreatedOn = s.CreatedBy.CreatedOn,
-                },
-                Results = s.Results.Select(r => new SubmissionResult
-                {
-                    Id = r.Id,
-                    Status = (SubmissionStatus)r.StatusId,
-                    ExecutionId = r.ExecutionId,
-                    ResultId = r.ResultId,
-                    FinishedAt = r.FinishedAt,
-                    MemoryKb = r.MemoryKb,
-                    RuntimeMs = r.RuntimeMs,
-                    StartedAt = r.StartedAt,
-                    Stdout = r.Stdout,
-                    ProgramOutput = r.ProgramOutput,
-                    Stderr = r.Stderr,
-                }),
-            })
-            .ToListAsync(cancellationToken);
-
-        return new PaginatedResult<SubmissionModel>
-        {
-            Results = submissions,
-            Total = total,
-            Page = pagination.Page,
-            Size = pagination.Size,
-        };
-    }
-
     public async Task FinalizeEvaluationAsync(
         IEnumerable<Guid> outboxIds,
         DateTime now,
@@ -479,5 +423,82 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
                     .SetProperty(o => o.ProcessOn, now),
                 cancellationToken: cancellationToken
             );
+    }
+
+    public async Task<PaginatedResult<SubmissionModel>> GetSolutionsByProblemId(Guid problemId, PaginationRequest pagination, CancellationToken cancellationToken)
+    {
+        var query = db.Submissions
+            .Where(s =>
+                s.ProblemSetup!.ProblemId == problemId
+                && s.CreatedOn <= pagination.Timestamp
+            );
+
+        int total = await query.CountAsync(cancellationToken);
+
+        var submissions = await query
+            .OrderByDescending(s => s.CreatedOn)
+            .Skip((pagination.Page - 1) * pagination.Size)
+            .Take(pagination.Size)
+            .ProjectToType<SubmissionModel>()
+            .ToListAsync(cancellationToken);
+
+        return new PaginatedResult<SubmissionModel>
+        {
+            Results = submissions,
+            Total = total,
+            Page = pagination.Page,
+            Size = pagination.Size,
+        };
+    }
+
+    public async Task<PaginatedResult<ProblemSubmissionDto>> GetUserSolutionsByProblemId(Guid problemId, Guid accountId, PaginationRequest pagination, SubmissionStatus? statusFilter, CancellationToken cancellationToken)
+    {
+        var query = db.Submissions
+            .Where(s =>
+                s.ProblemSetup!.ProblemId == problemId
+                && s.CreatedById == accountId
+                && s.CreatedOn <= pagination.Timestamp
+            );
+
+        if (statusFilter.HasValue)
+        {
+            query = query.Where(s => s.Results.All(r => r.StatusId == (int)statusFilter.Value));
+        }
+
+        int total = await query.CountAsync(cancellationToken);
+
+        var submissions = await query
+            .OrderByDescending(s => s.CreatedOn)
+            .Skip((pagination.Page - 1) * pagination.Size)
+            .Take(pagination.Size)
+            .Select(s => new ProblemSubmissionDto(
+                new AccountDto
+                {
+                    Id = s.CreatedBy!.Id,
+                    Username = s.CreatedBy.Username,
+                    ImageUrl = s.CreatedBy.ImageUrl,
+                    CreatedOn = s.CreatedBy.CreatedOn,
+                },
+                s.Code,
+                s.Results.All(r => r.StatusId == (int)SubmissionStatus.Accepted)
+                    ? nameof(SubmissionStatus.Accepted)
+                    : s.Results.Any(r => r.StatusId == (int)SubmissionStatus.InQueue || r.StatusId == (int)SubmissionStatus.Processing)
+                        ? nameof(SubmissionStatus.Processing)
+                        : nameof(SubmissionStatus.WrongAnswer),
+                s.ProblemSetup!.LanguageVersion!.ProgrammingLanguage!.Name,
+                s.ProblemSetup.LanguageVersion.Version,
+                s.CreatedOn,
+                (int)(s.Results.Any() ? s.Results.Average(r => r.RuntimeMs ?? 0) : 0),
+                (int)(s.Results.Any() ? s.Results.Average(r => r.MemoryKb ?? 0) : 0)
+            ))
+            .ToListAsync(cancellationToken);
+
+        return new PaginatedResult<ProblemSubmissionDto>
+        {
+            Results = submissions,
+            Total = total,
+            Page = pagination.Page,
+            Size = pagination.Size,
+        };
     }
 }

@@ -1,5 +1,4 @@
-﻿using ApplicationCore.Commands.Problem.CreateProblem;
-using ApplicationCore.Common.Pagination;
+﻿using ApplicationCore.Common.Pagination;
 using ApplicationCore.Domain.Problems.ProblemSetups;
 using ApplicationCore.Dtos.Languages;
 using ApplicationCore.Dtos.Problems;
@@ -16,23 +15,6 @@ namespace ApplicationCore.Services;
 
 public sealed class ProblemAppService(IMediator mediator) : IProblemAppService
 {
-    public Task<Result<Guid>> CreateProblemAsync(
-        CreateProblemDto createProblemDto,
-        Guid createdById,
-        CancellationToken cancellationToken
-    )
-    {
-        var command = new CreateProblemCommand(
-            Title: createProblemDto.Title,
-            Question: createProblemDto.Question,
-            EstimatedDifficulty: createProblemDto.EstimatedDifficulty,
-            Tags: createProblemDto.Tags,
-            CreatedById: createdById
-        );
-
-        return mediator.Send(command, cancellationToken);
-    }
-
     public Task<Result<IEnumerable<ProgrammingLanguageDto>>> GetAvailableLanguagesAsync(
         CancellationToken cancellationToken
     )

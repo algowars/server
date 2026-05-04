@@ -103,17 +103,12 @@ public sealed class SubmissionAppService(IMediator mediator) : ISubmissionAppSer
     }
 
     public async Task<Result<PaginatedResult<SubmissionDto>>> GetSubmissionsPaginatedAsync(
-        Guid problemId,
-        int page,
-        int size,
-        DateTime timestamp,
-        Guid? filterByUserId = null,
-        bool acceptedOnly = true,
+        GetSubmissionsPaginatedRequest request,
         CancellationToken cancellationToken = default
     )
     {
-        var pagination = new PaginationRequest { Page = page, Size = size, Timestamp = timestamp };
-        var query = new GetSubmissionsPaginatedQuery(problemId, pagination, filterByUserId, acceptedOnly);
+        var pagination = new PaginationRequest { Page = request.Page, Size = request.Size, Timestamp = request.Timestamp };
+        var query = new GetSubmissionsPaginatedQuery(request.ProblemId, pagination, request.FilterByUserId, request.AcceptedOnly);
 
         return await mediator.Send(query, cancellationToken);
     }

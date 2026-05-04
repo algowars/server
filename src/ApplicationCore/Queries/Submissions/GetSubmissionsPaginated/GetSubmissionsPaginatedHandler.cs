@@ -15,7 +15,7 @@ public sealed class GetSubmissionsPaginatedHandler(ISubmissionRepository reposit
         CancellationToken cancellationToken
     )
     {
-        var page = await repository.GetByProblemIdPaginatedAsync(
+        var page = await repository.GetSolutionsByProblemId(
             request.ProblemId,
             request.Pagination,
             cancellationToken
@@ -24,13 +24,11 @@ public sealed class GetSubmissionsPaginatedHandler(ISubmissionRepository reposit
         var filteredResults = page.Results
             .Where(s =>
             {
-                // If filtering by accepted only, check overall status
                 if (request.AcceptedOnly && s.GetOverallStatus() != SubmissionStatus.Accepted)
                 {
                     return false;
                 }
 
-                // If filtering by user, check if submission is by that user
                 if (request.FilterByUserId.HasValue && s.CreatedById != request.FilterByUserId.Value)
                 {
                     return false;

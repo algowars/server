@@ -53,12 +53,7 @@ public interface ISubmissionAppService
     );
 
     Task<Result<PaginatedResult<SubmissionDto>>> GetSubmissionsPaginatedAsync(
-        Guid problemId,
-        int page,
-        int size,
-        DateTime timestamp,
-        Guid? filterByUserId = null,
-        bool acceptedOnly = true,
+        GetSubmissionsPaginatedRequest request,
         CancellationToken cancellationToken = default
     );
 }
