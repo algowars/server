@@ -8,12 +8,16 @@ using ApplicationCore.Commands.Submissions.SaveExecutionTokens;
 using ApplicationCore.Common.Pagination;
 using ApplicationCore.Domain.Submissions;
 using ApplicationCore.Domain.Submissions.Outboxes;
+using ApplicationCore.Dtos.Problems;
 using ApplicationCore.Dtos.Submissions;
 using ApplicationCore.Interfaces.Services;
+using ApplicationCore.Queries.Submissions.GetSolutionsByProblemIdQuery;
 using ApplicationCore.Queries.Submissions.GetSubmissionOutboxes;
 using ApplicationCore.Queries.Submissions.GetSubmissionsPaginated;
+using ApplicationCore.Queries.Submissions.GetUserSubmissionsByProblemIdQuery;
 using Ardalis.Result;
 using MediatR;
+using static ApplicationCore.Logging.LoggingEventIds;
 
 namespace ApplicationCore.Services;
 
@@ -102,14 +106,15 @@ public sealed class SubmissionAppService(IMediator mediator) : ISubmissionAppSer
         return await mediator.Send(command, cancellationToken);
     }
 
-    public async Task<Result<PaginatedResult<SubmissionDto>>> GetSubmissionsPaginatedAsync(
-        GetSubmissionsPaginatedRequest request,
-        CancellationToken cancellationToken = default
-    )
+    public Task<Result<PaginatedResult<ProblemSubmissionDto>>> GetSolutionsAsync(Guid problemId, PaginationRequest paginationRequest, CancellationToken cancellationToken)
     {
-        var pagination = new PaginationRequest { Page = request.Page, Size = request.Size, Timestamp = request.Timestamp };
-        var query = new GetSubmissionsPaginatedQuery(request.ProblemId, pagination, request.FilterByUserId, request.AcceptedOnly);
+        var query = new GetSolutionsByProblemIdQuery(problemId, paginationRequest);
+        return mediator.Send(query, cancellationToken);
+    }
 
-        return await mediator.Send(query, cancellationToken);
+    public Task<Result<PaginatedResult<ProblemSubmissionDto>>> GetSubmissionsPaginatedAsync(Guid problemId, Guid accountId, PaginationRequest paginationRequest, CancellationToken cancellationToken = default)
+    {
+        var query = new GetUserSubmissionsByProblemIdQuery(problemId, accountId, paginationRequest);
+        return mediator.Send(query, cancellationToken);
     }
 }

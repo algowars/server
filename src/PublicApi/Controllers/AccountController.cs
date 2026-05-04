@@ -122,7 +122,7 @@ public sealed partial class AccountController(
         }
 
         var result = await accountAppService.UpdateUsernameAsync(
-            accountContext.Account.Id,
+            (Guid)accountContext.Account.Id,
             request.Username,
             accountContext.Account.UsernameLastChangedAt,
             cancellationToken

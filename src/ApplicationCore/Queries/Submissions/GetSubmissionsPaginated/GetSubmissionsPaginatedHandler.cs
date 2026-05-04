@@ -15,30 +15,17 @@ public sealed class GetSubmissionsPaginatedHandler(ISubmissionRepository reposit
         CancellationToken cancellationToken
     )
     {
-        var page = await repository.GetSolutionsByProblemId(
+        SubmissionStatus? statusFilter = request.AcceptedOnly ? SubmissionStatus.Accepted : null;
+        
+        var page = await repository.GetSubmissionsByProblemId(
             request.ProblemId,
+            request.FilterByUserId,
             request.Pagination,
+            statusFilter,
             cancellationToken
         );
 
-        var filteredResults = page.Results
-            .Where(s =>
-            {
-                if (request.AcceptedOnly && s.GetOverallStatus() != SubmissionStatus.Accepted)
-                {
-                    return false;
-                }
-
-                if (request.FilterByUserId.HasValue && s.CreatedById != request.FilterByUserId.Value)
-                {
-                    return false;
-                }
-
-                return true;
-            })
-            .ToList();
-
-        var dtoItems = filteredResults
+        var dtoItems = page.Results
             .Select(s => new SubmissionDto
             {
                 Id = s.Id,
@@ -60,7 +47,7 @@ public sealed class GetSubmissionsPaginatedHandler(ISubmissionRepository reposit
         return Result.Success(new PaginatedResult<SubmissionDto>
         {
             Results = dtoItems,
-            Total = filteredResults.Count,
+            Total = page.Total,
             Page = page.Page,
             Size = page.Size,
         });

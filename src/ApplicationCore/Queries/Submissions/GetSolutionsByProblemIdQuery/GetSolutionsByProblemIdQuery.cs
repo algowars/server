@@ -1,9 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using ApplicationCore.Common.Pagination;
+using ApplicationCore.Domain.Submissions;
+using ApplicationCore.Dtos.Problems;
 
 namespace ApplicationCore.Queries.Submissions.GetSolutionsByProblemIdQuery;
 
-internal class GetSolutionsByProblemIdQuery
-{
-}
+public sealed record GetSolutionsByProblemIdQuery(
+    Guid ProblemId,
+    PaginationRequest Pagination
+) : IQuery<PaginatedResult<ProblemSubmissionDto>>;

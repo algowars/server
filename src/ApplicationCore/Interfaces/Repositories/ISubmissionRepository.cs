@@ -44,7 +44,5 @@ public interface ISubmissionRepository
         CancellationToken cancellationToken
     );
 
-    Task<PaginatedResult<SubmissionModel>> GetSolutionsByProblemId(Guid problemId, PaginationRequest pagination, CancellationToken cancellationToken);
-
-    Task<PaginatedResult<SubmissionModel>> GetUserSolutionsByProblemId(Guid problemId, Guid accountId, PaginationRequest pagination, SubmissionStatus? statusFilter, CancellationToken cancellationToken);
+    Task<PaginatedResult<SubmissionModel>> GetSubmissionsByProblemId(Guid problemId, Guid? accountId, PaginationRequest pagination, SubmissionStatus? statusFilter, CancellationToken cancellationToken);
 }

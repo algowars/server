@@ -3,9 +3,6 @@ using ApplicationCore.Dtos.Accounts;
 using ApplicationCore.Dtos.Problems;
 using ApplicationCore.Interfaces.Repositories;
 using Ardalis.Result;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace ApplicationCore.Queries.Submissions.GetUserSubmissionsByProblemIdQuery;
 
@@ -13,7 +10,7 @@ public sealed class GetUserSubmissionsByProblemIdHandler(ISubmissionRepository s
 {
     public async Task<Result<PaginatedResult<ProblemSubmissionDto>>> Handle(GetUserSubmissionsByProblemIdQuery request, CancellationToken cancellationToken)
     {
-        var pageResult = await submissionRepository.GetUserSolutionsByProblemId(request.ProblemId, request.AccountId, request.Pagination, request.StatusFilter, cancellationToken);
+        var pageResult = await submissionRepository.GetSubmissionsByProblemId(request.ProblemId, request.AccountId, request.Pagination, request.StatusFilter, cancellationToken);
 
         var dtos = pageResult.Results.Select(submission => new ProblemSubmissionDto(
             CreatedBy: submission?.CreatedBy != null ? new AccountDto

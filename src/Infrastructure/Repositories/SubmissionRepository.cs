@@ -1,8 +1,8 @@
 ﻿using ApplicationCore.Common.Pagination;
+using ApplicationCore.Domain.Accounts;
+using ApplicationCore.Domain.Problems.Languages;
 using ApplicationCore.Domain.Submissions;
 using ApplicationCore.Domain.Submissions.Outboxes;
-using ApplicationCore.Dtos.Accounts;
-using ApplicationCore.Dtos.Problems;
 using ApplicationCore.Interfaces.Repositories;
 using EFCore.BulkExtensions;
 using Infrastructure.Persistence;
@@ -96,7 +96,7 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
                             Id = sr.Id,
                             SubmissionId = s.Id,
                             ExecutionId = sr.ExecutionId,
-                            ResultId = sr.ResultId,
+                            ResultId = sr.Status == SubmissionStatus.Accepted ? sr.Id : default,
                             StatusId = sr.Status
                                 is SubmissionStatus.Accepted
                                     or SubmissionStatus.WrongAnswer
@@ -272,6 +272,56 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
                 },
     };
 
+    private static readonly Expression<Func<SubmissionEntity, SubmissionModel>> MapSubmissionExpr =
+        submission => new SubmissionModel
+        {
+            Id = submission.Id,
+            Code = submission.Code,
+            ProblemSetupId = submission.ProblemSetupId,
+            CreatedOn = submission.CreatedOn,
+            CompletedAt = submission.CompletedAt,
+            CreatedById = submission.CreatedById,
+            LanguageVersion = new LanguageVersion
+            {
+                Id = submission.ProblemSetup!.LanguageVersion!.Id,
+                Version = submission.ProblemSetup.LanguageVersion.Version,
+                InitialCode = submission.ProblemSetup.LanguageVersion.InitialCode,
+                ProgrammingLanguageId = submission.ProblemSetup.LanguageVersion.ProgrammingLanguageId,
+                Judge0LanguageId = null,
+                ProgrammingLanguage = submission.ProblemSetup.LanguageVersion.ProgrammingLanguage == null
+                    ? null
+                    : new ProgrammingLanguage
+                    {
+                        Id = submission.ProblemSetup.LanguageVersion.ProgrammingLanguage.Id,
+                        Name = submission.ProblemSetup.LanguageVersion.ProgrammingLanguage.Name,
+                        IsArchived = submission.ProblemSetup.LanguageVersion.ProgrammingLanguage.IsArchived,
+                    }
+            },
+            CreatedBy = submission.CreatedBy == null
+                ? null
+                : new AccountModel
+                {
+                    Username = submission.CreatedBy.Username,
+                    ImageUrl = submission.CreatedBy.ImageUrl,
+                    CreatedOn = submission.CreatedBy.CreatedOn,
+                    Id = submission.CreatedBy.Id,
+                },
+            Results = submission.Results.Select(result => new SubmissionResult
+            {
+                Id = result.Id,
+                Status = (SubmissionStatus)result.StatusId,
+                ExecutionId = result.ExecutionId,
+                ResultId = result.ResultId,
+                FinishedAt = result.FinishedAt,
+                MemoryKb = result.MemoryKb,
+                RuntimeMs = result.RuntimeMs,
+                StartedAt = result.StartedAt,
+                Stdout = result.Stdout,
+                ProgramOutput = result.ProgramOutput,
+                Stderr = result.Stderr,
+            }).ToList(),
+        };
+
     private const int MaxRetryCount = 5;
 
     private static readonly BulkConfig ResultBulkConfig = new()
@@ -425,40 +475,19 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
             );
     }
 
-    public async Task<PaginatedResult<SubmissionModel>> GetSolutionsByProblemId(Guid problemId, PaginationRequest pagination, CancellationToken cancellationToken)
+    public async Task<PaginatedResult<SubmissionModel>> GetSubmissionsByProblemId(Guid problemId, Guid? accountId, PaginationRequest pagination, SubmissionStatus? statusFilter, CancellationToken cancellationToken)
     {
-        var query = db.Submissions
+        IQueryable<SubmissionEntity> query = db.Submissions
             .Where(s =>
                 s.ProblemSetup!.ProblemId == problemId
+                && (accountId == null || s.CreatedById == accountId)
                 && s.CreatedOn <= pagination.Timestamp
-            );
-
-        int total = await query.CountAsync(cancellationToken);
-
-        var submissions = await query
-            .OrderByDescending(s => s.CreatedOn)
-            .Skip((pagination.Page - 1) * pagination.Size)
-            .Take(pagination.Size)
-            .ProjectToType<SubmissionModel>()
-            .ToListAsync(cancellationToken);
-
-        return new PaginatedResult<SubmissionModel>
-        {
-            Results = submissions,
-            Total = total,
-            Page = pagination.Page,
-            Size = pagination.Size,
-        };
-    }
-
-    public async Task<PaginatedResult<ProblemSubmissionDto>> GetUserSolutionsByProblemId(Guid problemId, Guid accountId, PaginationRequest pagination, SubmissionStatus? statusFilter, CancellationToken cancellationToken)
-    {
-        var query = db.Submissions
-            .Where(s =>
-                s.ProblemSetup!.ProblemId == problemId
-                && s.CreatedById == accountId
-                && s.CreatedOn <= pagination.Timestamp
-            );
+            )
+            .Include(s => s.CreatedBy)
+            .Include(s => s.Results)
+            .Include(s => s.ProblemSetup)
+            .ThenInclude(ps => ps!.LanguageVersion)
+            .ThenInclude(lv => lv!.ProgrammingLanguage);
 
         if (statusFilter.HasValue)
         {
@@ -471,29 +500,10 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
             .OrderByDescending(s => s.CreatedOn)
             .Skip((pagination.Page - 1) * pagination.Size)
             .Take(pagination.Size)
-            .Select(s => new ProblemSubmissionDto(
-                new AccountDto
-                {
-                    Id = s.CreatedBy!.Id,
-                    Username = s.CreatedBy.Username,
-                    ImageUrl = s.CreatedBy.ImageUrl,
-                    CreatedOn = s.CreatedBy.CreatedOn,
-                },
-                s.Code,
-                s.Results.All(r => r.StatusId == (int)SubmissionStatus.Accepted)
-                    ? nameof(SubmissionStatus.Accepted)
-                    : s.Results.Any(r => r.StatusId == (int)SubmissionStatus.InQueue || r.StatusId == (int)SubmissionStatus.Processing)
-                        ? nameof(SubmissionStatus.Processing)
-                        : nameof(SubmissionStatus.WrongAnswer),
-                s.ProblemSetup!.LanguageVersion!.ProgrammingLanguage!.Name,
-                s.ProblemSetup.LanguageVersion.Version,
-                s.CreatedOn,
-                (int)(s.Results.Any() ? s.Results.Average(r => r.RuntimeMs ?? 0) : 0),
-                (int)(s.Results.Any() ? s.Results.Average(r => r.MemoryKb ?? 0) : 0)
-            ))
+            .Select(MapSubmissionExpr)
             .ToListAsync(cancellationToken);
 
-        return new PaginatedResult<ProblemSubmissionDto>
+        return new PaginatedResult<SubmissionModel>
         {
             Results = submissions,
             Total = total,

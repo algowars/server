@@ -108,16 +108,15 @@ public sealed class ProblemController(
         );
     }
 
-    [HttpGet("{problemId:guid}/submissions")]
+    [HttpGet("{problemId:guid}/solutions")]
     [EnableRateLimiting("Short")]
     [ProducesResponseType(typeof(PaginatedResult<SubmissionDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> GetSubmissionsAsync(
+    public async Task<IActionResult> GetSolutionsAsync(
         Guid problemId,
         [FromQuery] int page = 1,
         [FromQuery] int size = 25,
         [FromQuery] DateTime? timestamp = null,
-        [FromQuery] bool mySolution = false,
         CancellationToken cancellationToken = default)
     {
         if (page < 1 || size < 1)
@@ -125,18 +124,49 @@ public sealed class ProblemController(
             return BadRequest("Page and size must be greater than 0.");
         }
 
-        var request = new GetSubmissionsPaginatedRequest
+        return ToActionResult(
+            await submissionAppService.GetSolutionsAsync(problemId,  new PaginationRequest
+            {
+                Page = page,
+                Size = size,
+                Timestamp = timestamp ?? DateTime.UtcNow,
+            }, cancellationToken)
+        );
+    }
+
+    [HttpGet("{problemId:guid}/submissions")]
+    [EnableRateLimiting("Short")]
+    [Authorize]
+    [RequiresAccount]
+    [ProducesResponseType(typeof(PaginatedResult<SubmissionDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> GetMySubmissionsAsync(
+        Guid problemId,
+        [FromQuery] int page = 1,
+        [FromQuery] int size = 25,
+        [FromQuery] DateTime? timestamp = null,
+        CancellationToken cancellationToken = default)
+    {
+        if (page < 1 || size < 1)
         {
-            ProblemId = problemId,
-            Page = page,
-            Size = size,
-            Timestamp = timestamp ?? DateTime.UtcNow,
-            FilterByUserId = mySolution ? accountContext.Account.Id : null,
-            AcceptedOnly = !mySolution,
-        };
+            return BadRequest("Page and size must be greater than 0.");
+        }
+
+        Guid? accountId = accountContext.Account?.Id;
+
+        if (!accountId.HasValue)
+        {
+            return Unauthorized("User must be authenticated to view their submissions.");
+        }
 
         return ToActionResult(
-            await submissionAppService.GetSubmissionsPaginatedAsync(request, cancellationToken)
+            await submissionAppService.GetSubmissionsPaginatedAsync(problemId, accountId.Value, new PaginationRequest
+            {
+                Page = page,
+                Size = size,
+                Timestamp = timestamp ?? DateTime.UtcNow,
+            }, cancellationToken)
         );
     }
 }

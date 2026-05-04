@@ -1,6 +1,7 @@
 ﻿using ApplicationCore.Common.Pagination;
 using ApplicationCore.Domain.Submissions;
 using ApplicationCore.Domain.Submissions.Outboxes;
+using ApplicationCore.Dtos.Problems;
 using ApplicationCore.Dtos.Submissions;
 using Ardalis.Result;
 using MediatR;
@@ -52,8 +53,16 @@ public interface ISubmissionAppService
         CancellationToken cancellationToken
     );
 
-    Task<Result<PaginatedResult<SubmissionDto>>> GetSubmissionsPaginatedAsync(
-        GetSubmissionsPaginatedRequest request,
+    Task<Result<PaginatedResult<ProblemSubmissionDto>>> GetSolutionsAsync(
+        Guid problemId,
+        PaginationRequest paginationRequest,
+        CancellationToken cancellationToken
+        );
+
+    Task<Result<PaginatedResult<ProblemSubmissionDto>>> GetSubmissionsPaginatedAsync(
+        Guid problemId,
+        Guid accountId,
+        PaginationRequest paginationRequest,
         CancellationToken cancellationToken = default
     );
 }

@@ -2,7 +2,7 @@
 
 namespace ApplicationCore.Dtos.Problems;
 
-public sealed class ProblemSubmissionDto(
+public sealed record ProblemSubmissionDto(
     AccountDto CreatedBy,
     string Code,
     string Status,
