@@ -49,7 +49,7 @@ public sealed class SubmissionModel
         {
             return 0;
         }
-        return (int)Results.Average(r => r.RuntimeMs);
+        return (int)(Results.Average(r => r.RuntimeMs) ?? 0);
     }
 
     public int GetAverageMemoryKb()
@@ -58,6 +58,6 @@ public sealed class SubmissionModel
         {
             return 0;
         }
-        return (int)Results.Average(r => r.MemoryKb);
+        return (int)(Results.Average(r => r.MemoryKb) ?? 0);
     }
 }

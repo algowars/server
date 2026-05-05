@@ -24,4 +24,20 @@ public static class LoggingEventIds
         public const int UnhandledException = 1000;
         public const int UnhandledExceptionWithPath = 1001;
     }
+
+    public static class Jobs
+    {
+        public const int Started = 3000;
+        public const int Completed = 3001;
+        public const int Failed = 3002;
+
+        public const int SubmissionExecutionProcessing = 3100;
+
+        public const int PollSubmissionExecutionPolling = 3200;
+
+        public const int EvaluateSubmissionEvaluating = 3300;
+        public const int EvaluateSubmissionEvaluated = 3301;
+
+        public const int PollEvaluationFinalizing = 3400;
+    }
 }

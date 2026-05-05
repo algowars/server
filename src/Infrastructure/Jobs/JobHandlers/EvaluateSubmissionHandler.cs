@@ -1,7 +1,9 @@
 using ApplicationCore.Domain.Submissions;
 using ApplicationCore.Domain.Submissions.Outboxes;
 using ApplicationCore.Interfaces.Services;
+using ApplicationCore.Logging;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Quartz;
 
 namespace Infrastructure.Jobs.JobHandlers;
@@ -12,9 +14,14 @@ namespace Infrastructure.Jobs.JobHandlers;
 /// Mirrors <see cref="Infrastructure.Messaging.Consumers.SubmissionReadyToEvaluateConsumer"/>.
 /// </summary>
 [DisallowConcurrentExecution]
-public sealed class EvaluateSubmissionHandler(IServiceScopeFactory serviceScopeFactory) : JobBase
+public sealed partial class EvaluateSubmissionHandler(
+    IServiceScopeFactory serviceScopeFactory,
+    ILogger<EvaluateSubmissionHandler> logger
+) : JobBase
 {
     public override JobType JobType => JobType.EvaluateSubmission;
+
+    protected override ILogger Logger => logger;
 
     protected override async Task ExecuteJobAsync(CancellationToken cancellationToken)
     {
@@ -38,6 +45,8 @@ public sealed class EvaluateSubmissionHandler(IServiceScopeFactory serviceScopeF
         {
             return;
         }
+
+        LogEvaluating(logger, outboxes.Count);
 
         var setupIds = outboxes.Select(o => o.Submission.ProblemSetupId).Distinct();
         var setupsMap = (
@@ -79,10 +88,26 @@ public sealed class EvaluateSubmissionHandler(IServiceScopeFactory serviceScopeF
             return;
         }
 
+        LogEvaluated(logger, evaluated.Count);
+
         var outboxIds = outboxes.Select(o => o.Id).ToList();
         var now = DateTime.UtcNow;
 
         await submissionAppService.IncrementOutboxesCountAsync(outboxIds, now, cancellationToken);
         await submissionAppService.ProcessEvaluationAsync(evaluated, cancellationToken);
     }
+
+    [LoggerMessage(
+        EventId = LoggingEventIds.Jobs.EvaluateSubmissionEvaluating,
+        Level = LogLevel.Information,
+        Message = "Evaluating {count} submission outboxes"
+    )]
+    private static partial void LogEvaluating(ILogger logger, int count);
+
+    [LoggerMessage(
+        EventId = LoggingEventIds.Jobs.EvaluateSubmissionEvaluated,
+        Level = LogLevel.Information,
+        Message = "Evaluated {count} submissions"
+    )]
+    private static partial void LogEvaluated(ILogger logger, int count);
 }

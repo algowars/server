@@ -1,15 +1,22 @@
-﻿using ApplicationCore.Domain.CodeExecution;
+using ApplicationCore.Domain.CodeExecution;
 using ApplicationCore.Domain.Submissions.Outboxes;
 using ApplicationCore.Interfaces.Services;
+using ApplicationCore.Logging;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Quartz;
 
 namespace Infrastructure.Jobs.JobHandlers;
 
 [DisallowConcurrentExecution]
-public sealed class SubmissionExecutionHandler(IServiceScopeFactory serviceScopeFactory) : JobBase
+public sealed partial class SubmissionExecutionHandler(
+    IServiceScopeFactory serviceScopeFactory,
+    ILogger<SubmissionExecutionHandler> logger
+) : JobBase
 {
     public override JobType JobType => JobType.SubmissionExecution;
+
+    protected override ILogger Logger => logger;
 
     protected override async Task ExecuteJobAsync(CancellationToken cancellationToken)
     {
@@ -77,6 +84,8 @@ public sealed class SubmissionExecutionHandler(IServiceScopeFactory serviceScope
             return;
         }
 
+        LogProcessing(logger, executionContexts.Count);
+
         var outboxIds = outboxes.Select(outbox => outbox.Id).ToList();
         var now = DateTime.UtcNow;
 
@@ -92,4 +101,11 @@ public sealed class SubmissionExecutionHandler(IServiceScopeFactory serviceScope
             cancellationToken
         );
     }
+
+    [LoggerMessage(
+        EventId = LoggingEventIds.Jobs.SubmissionExecutionProcessing,
+        Level = LogLevel.Information,
+        Message = "Processing {count} submission execution outboxes"
+    )]
+    private static partial void LogProcessing(ILogger logger, int count);
 }

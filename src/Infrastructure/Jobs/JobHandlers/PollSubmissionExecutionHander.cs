@@ -1,15 +1,21 @@
 using ApplicationCore.Domain.Submissions.Outboxes;
 using ApplicationCore.Interfaces.Services;
+using ApplicationCore.Logging;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Quartz;
 
 namespace Infrastructure.Jobs.JobHandlers;
 
 [DisallowConcurrentExecution]
-internal sealed class PollSubmissionExecutionHander(IServiceScopeFactory serviceScopeFactory)
-    : JobBase
+internal sealed partial class PollSubmissionExecutionHander(
+    IServiceScopeFactory serviceScopeFactory,
+    ILogger<PollSubmissionExecutionHander> logger
+) : JobBase
 {
     public override JobType JobType => JobType.PollSubmissionExecution;
+
+    protected override ILogger Logger => logger;
 
     protected override async Task ExecuteJobAsync(CancellationToken cancellationToken)
     {
@@ -32,6 +38,13 @@ internal sealed class PollSubmissionExecutionHander(IServiceScopeFactory service
             .Value.Where(outbox => outbox.Type == SubmissionOutboxType.PollExecution)
             .ToList();
 
+        if (outboxes.Count == 0)
+        {
+            return;
+        }
+
+        LogPolling(logger, outboxes.Count);
+
         var submissionResults = await codeExecutionService.GetSubmissionResultsAsync(
             outboxes.Select(o => o.Submission),
             cancellationToken
@@ -46,4 +59,11 @@ internal sealed class PollSubmissionExecutionHander(IServiceScopeFactory service
             cancellationToken
         );
     }
+
+    [LoggerMessage(
+        EventId = LoggingEventIds.Jobs.PollSubmissionExecutionPolling,
+        Level = LogLevel.Information,
+        Message = "Polling {count} submission execution outboxes"
+    )]
+    private static partial void LogPolling(ILogger logger, int count);
 }
