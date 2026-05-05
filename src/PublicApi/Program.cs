@@ -59,6 +59,11 @@ if (app.Environment.IsDevelopment())
     });
 }
 
+if (app.Environment.IsProduction())
+{
+    builder.Services.AddApplicationInsightsTelemetry();
+}
+
 app.UseHttpsRedirection();
 app.UseCors();
 app.UseGlobalExceptionHandler();

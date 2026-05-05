@@ -38,7 +38,7 @@ public sealed class SubmissionController(
             await submissionAppService.CreateAsync(
                 createSubmissionDto.ProblemSetupId,
                 createSubmissionDto.Code,
-                accountContext.Account.Id,
+                (Guid)accountContext.Account.Id,
                 cancellationToken
             )
         );

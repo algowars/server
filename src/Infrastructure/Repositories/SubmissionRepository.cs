@@ -1,10 +1,14 @@
-﻿using ApplicationCore.Domain.Submissions;
+﻿using ApplicationCore.Common.Pagination;
+using ApplicationCore.Domain.Accounts;
+using ApplicationCore.Domain.Problems.Languages;
+using ApplicationCore.Domain.Submissions;
 using ApplicationCore.Domain.Submissions.Outboxes;
 using ApplicationCore.Interfaces.Repositories;
 using EFCore.BulkExtensions;
 using Infrastructure.Persistence;
 using Infrastructure.Persistence.Entities.Submission;
 using Infrastructure.Persistence.Entities.Submission.Outbox;
+using Mapster;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 
@@ -92,7 +96,7 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
                             Id = sr.Id,
                             SubmissionId = s.Id,
                             ExecutionId = sr.ExecutionId,
-                            ResultId = sr.ResultId,
+                            ResultId = sr.Status == SubmissionStatus.Accepted ? sr.Id : default,
                             StatusId = sr.Status
                                 is SubmissionStatus.Accepted
                                     or SubmissionStatus.WrongAnswer
@@ -112,10 +116,10 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
             if (resultEntities.Count != 0)
             {
                 await db.BulkInsertOrUpdateAsync(
-                    resultEntities,
-                    ResultBulkConfig,
-                    cancellationToken: cancellationToken
-                );
+                     resultEntities,
+                     ResultBulkConfig,
+                     cancellationToken: cancellationToken
+                 );
 
                 var completedSubmissionIds = submissionModels
                     .Where(s =>
@@ -268,6 +272,56 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
                 },
     };
 
+    private static readonly Expression<Func<SubmissionEntity, SubmissionModel>> MapSubmissionExpr =
+        submission => new SubmissionModel
+        {
+            Id = submission.Id,
+            Code = submission.Code,
+            ProblemSetupId = submission.ProblemSetupId,
+            CreatedOn = submission.CreatedOn,
+            CompletedAt = submission.CompletedAt,
+            CreatedById = submission.CreatedById,
+            LanguageVersion = new LanguageVersion
+            {
+                Id = submission.ProblemSetup!.LanguageVersion!.Id,
+                Version = submission.ProblemSetup.LanguageVersion.Version,
+                InitialCode = submission.ProblemSetup.LanguageVersion.InitialCode,
+                ProgrammingLanguageId = submission.ProblemSetup.LanguageVersion.ProgrammingLanguageId,
+                Judge0LanguageId = null,
+                ProgrammingLanguage = submission.ProblemSetup.LanguageVersion.ProgrammingLanguage == null
+                    ? null
+                    : new ProgrammingLanguage
+                    {
+                        Id = submission.ProblemSetup.LanguageVersion.ProgrammingLanguage.Id,
+                        Name = submission.ProblemSetup.LanguageVersion.ProgrammingLanguage.Name,
+                        IsArchived = submission.ProblemSetup.LanguageVersion.ProgrammingLanguage.IsArchived,
+                    }
+            },
+            CreatedBy = submission.CreatedBy == null
+                ? null
+                : new AccountModel
+                {
+                    Username = submission.CreatedBy.Username,
+                    ImageUrl = submission.CreatedBy.ImageUrl,
+                    CreatedOn = submission.CreatedBy.CreatedOn,
+                    Id = submission.CreatedBy.Id,
+                },
+            Results = submission.Results.Select(result => new SubmissionResult
+            {
+                Id = result.Id,
+                Status = (SubmissionStatus)result.StatusId,
+                ExecutionId = result.ExecutionId,
+                ResultId = result.ResultId,
+                FinishedAt = result.FinishedAt,
+                MemoryKb = result.MemoryKb,
+                RuntimeMs = result.RuntimeMs,
+                StartedAt = result.StartedAt,
+                Stdout = result.Stdout,
+                ProgramOutput = result.ProgramOutput,
+                Stderr = result.Stderr,
+            }).ToList(),
+        };
+
     private const int MaxRetryCount = 5;
 
     private static readonly BulkConfig ResultBulkConfig = new()
@@ -419,5 +473,42 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
                     .SetProperty(o => o.ProcessOn, now),
                 cancellationToken: cancellationToken
             );
+    }
+
+    public async Task<PaginatedResult<SubmissionModel>> GetSubmissionsByProblemId(Guid problemId, Guid? accountId, PaginationRequest pagination, SubmissionStatus? statusFilter, CancellationToken cancellationToken)
+    {
+        IQueryable<SubmissionEntity> query = db.Submissions
+            .Where(s =>
+                s.ProblemSetup!.ProblemId == problemId
+                && (accountId == null || s.CreatedById == accountId)
+                && s.CreatedOn <= pagination.Timestamp
+            )
+            .Include(s => s.CreatedBy)
+            .Include(s => s.Results)
+            .Include(s => s.ProblemSetup)
+            .ThenInclude(ps => ps!.LanguageVersion)
+            .ThenInclude(lv => lv!.ProgrammingLanguage);
+
+        if (statusFilter.HasValue)
+        {
+            query = query.Where(s => s.Results.All(r => r.StatusId == (int)statusFilter.Value));
+        }
+
+        int total = await query.CountAsync(cancellationToken);
+
+        var submissions = await query
+            .OrderByDescending(s => s.CreatedOn)
+            .Skip((pagination.Page - 1) * pagination.Size)
+            .Take(pagination.Size)
+            .Select(MapSubmissionExpr)
+            .ToListAsync(cancellationToken);
+
+        return new PaginatedResult<SubmissionModel>
+        {
+            Results = submissions,
+            Total = total,
+            Page = pagination.Page,
+            Size = pagination.Size,
+        };
     }
 }

@@ -5,12 +5,19 @@ using ApplicationCore.Commands.Submissions.ProcessEvaluation;
 using ApplicationCore.Commands.Submissions.ProcessPollingSubmissionExecutions;
 using ApplicationCore.Commands.Submissions.ProcessSubmissionExecutions;
 using ApplicationCore.Commands.Submissions.SaveExecutionTokens;
+using ApplicationCore.Common.Pagination;
 using ApplicationCore.Domain.Submissions;
 using ApplicationCore.Domain.Submissions.Outboxes;
+using ApplicationCore.Dtos.Problems;
+using ApplicationCore.Dtos.Submissions;
 using ApplicationCore.Interfaces.Services;
+using ApplicationCore.Queries.Submissions.GetSolutionsByProblemIdQuery;
 using ApplicationCore.Queries.Submissions.GetSubmissionOutboxes;
+using ApplicationCore.Queries.Submissions.GetSubmissionsPaginated;
+using ApplicationCore.Queries.Submissions.GetUserSubmissionsByProblemIdQuery;
 using Ardalis.Result;
 using MediatR;
+using static ApplicationCore.Logging.LoggingEventIds;
 
 namespace ApplicationCore.Services;
 
@@ -97,5 +104,17 @@ public sealed class SubmissionAppService(IMediator mediator) : ISubmissionAppSer
         var command = new FinalizeEvaluationCommand(outboxIds, now);
 
         return await mediator.Send(command, cancellationToken);
+    }
+
+    public Task<Result<PaginatedResult<ProblemSubmissionDto>>> GetSolutionsAsync(Guid problemId, PaginationRequest paginationRequest, CancellationToken cancellationToken)
+    {
+        var query = new GetSolutionsByProblemIdQuery(problemId, paginationRequest);
+        return mediator.Send(query, cancellationToken);
+    }
+
+    public Task<Result<PaginatedResult<ProblemSubmissionDto>>> GetSubmissionsPaginatedAsync(Guid problemId, Guid accountId, PaginationRequest paginationRequest, CancellationToken cancellationToken = default)
+    {
+        var query = new GetUserSubmissionsByProblemIdQuery(problemId, accountId, paginationRequest);
+        return mediator.Send(query, cancellationToken);
     }
 }

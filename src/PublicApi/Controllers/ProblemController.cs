@@ -2,6 +2,7 @@ using ApplicationCore.Common.Pagination;
 using ApplicationCore.Domain.Accounts;
 using ApplicationCore.Dtos.Languages;
 using ApplicationCore.Dtos.Problems;
+using ApplicationCore.Dtos.Submissions;
 using ApplicationCore.Interfaces.Services;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
@@ -17,35 +18,10 @@ namespace PublicApi.Controllers;
 [ApiVersion("1.0")]
 public sealed class ProblemController(
     IProblemAppService problemAppService,
+    ISubmissionAppService submissionAppService,
     IAccountContext accountContext
 ) : BaseApiController
 {
-    [HttpPost]
-    [Authorize]
-    [RequiresAccount]
-    [EnableRateLimiting("Short")]
-    [ProducesResponseType(typeof(Guid), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> CreateProblemAsync(
-        [FromBody] CreateProblemDto createProblemDto,
-        CancellationToken cancellationToken
-    )
-    {
-        if (accountContext.Account is null)
-        {
-            return Unauthorized();
-        }
-
-        return ToActionResult(
-            await problemAppService.CreateProblemAsync(
-                createProblemDto,
-                accountContext.Account.Id,
-                cancellationToken
-            )
-        );
-    }
-
     [HttpGet("slug/{slug}")]
     [EnableRateLimiting("Short")]
     [ProducesResponseType(typeof(ProblemDto), StatusCodes.Status200OK)]
@@ -129,6 +105,68 @@ public sealed class ProblemController(
                 languageVersionId,
                 cancellationToken
             )
+        );
+    }
+
+    [HttpGet("{problemId:guid}/solutions")]
+    [EnableRateLimiting("Short")]
+    [ProducesResponseType(typeof(PaginatedResult<SubmissionDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> GetSolutionsAsync(
+        Guid problemId,
+        [FromQuery] int page = 1,
+        [FromQuery] int size = 25,
+        [FromQuery] DateTime? timestamp = null,
+        CancellationToken cancellationToken = default)
+    {
+        if (page < 1 || size < 1)
+        {
+            return BadRequest("Page and size must be greater than 0.");
+        }
+
+        return ToActionResult(
+            await submissionAppService.GetSolutionsAsync(problemId, new PaginationRequest
+            {
+                Page = page,
+                Size = size,
+                Timestamp = timestamp ?? DateTime.UtcNow,
+            }, cancellationToken)
+        );
+    }
+
+    [HttpGet("{problemId:guid}/submissions")]
+    [EnableRateLimiting("Short")]
+    [Authorize]
+    [RequiresAccount]
+    [ProducesResponseType(typeof(PaginatedResult<SubmissionDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> GetMySubmissionsAsync(
+        Guid problemId,
+        [FromQuery] int page = 1,
+        [FromQuery] int size = 25,
+        [FromQuery] DateTime? timestamp = null,
+        CancellationToken cancellationToken = default)
+    {
+        if (page < 1 || size < 1)
+        {
+            return BadRequest("Page and size must be greater than 0.");
+        }
+
+        Guid? accountId = accountContext.Account?.Id;
+
+        if (!accountId.HasValue)
+        {
+            return Unauthorized("User must be authenticated to view their submissions.");
+        }
+
+        return ToActionResult(
+            await submissionAppService.GetSubmissionsPaginatedAsync(problemId, accountId.Value, new PaginationRequest
+            {
+                Page = page,
+                Size = size,
+                Timestamp = timestamp ?? DateTime.UtcNow,
+            }, cancellationToken)
         );
     }
 }
