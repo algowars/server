@@ -38,6 +38,11 @@ builder.Services.AddMediatR(cfg =>
 
 builder.Services.AddOpenApi();
 
+if (!builder.Environment.IsDevelopment())
+{
+    builder.Services.AddApplicationInsightsTelemetry(builder.Configuration);
+}
+
 string[] allowedOrigins =
     builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
 
