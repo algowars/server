@@ -1,4 +1,5 @@
-﻿using ApplicationCore.Common.Pagination;
+﻿using System.Linq.Expressions;
+using ApplicationCore.Common.Pagination;
 using ApplicationCore.Domain.Accounts;
 using ApplicationCore.Domain.Problems.Languages;
 using ApplicationCore.Domain.Submissions;
@@ -10,7 +11,6 @@ using Infrastructure.Persistence.Entities.Submission;
 using Infrastructure.Persistence.Entities.Submission.Outbox;
 using Mapster;
 using Microsoft.EntityFrameworkCore;
-using System.Linq.Expressions;
 
 namespace Infrastructure.Repositories;
 
@@ -30,7 +30,10 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
             .ToListAsync(cancellationToken: cancellationToken);
     }
 
-    public async Task<Guid> SaveAsync(SubmissionModel submission, CancellationToken cancellationToken)
+    public async Task<Guid> SaveAsync(
+        SubmissionModel submission,
+        CancellationToken cancellationToken
+    )
     {
         DateTime createdOn = DateTime.UtcNow;
         db.Submissions.Add(
@@ -96,7 +99,7 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
                             Id = sr.Id,
                             SubmissionId = s.Id,
                             ExecutionId = sr.ExecutionId,
-                            ResultId = sr.Status == SubmissionStatus.Accepted ? sr.Id : default,
+                            ResultId = sr.ResultId ?? sr.Id,
                             StatusId = sr.Status
                                 is SubmissionStatus.Accepted
                                     or SubmissionStatus.WrongAnswer
@@ -116,10 +119,10 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
             if (resultEntities.Count != 0)
             {
                 await db.BulkInsertOrUpdateAsync(
-                     resultEntities,
-                     ResultBulkConfig,
-                     cancellationToken: cancellationToken
-                 );
+                    resultEntities,
+                    ResultBulkConfig,
+                    cancellationToken: cancellationToken
+                );
 
                 var completedSubmissionIds = submissionModels
                     .Where(s =>
@@ -286,40 +289,51 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
                 Id = submission.ProblemSetup!.LanguageVersion!.Id,
                 Version = submission.ProblemSetup.LanguageVersion.Version,
                 InitialCode = submission.ProblemSetup.LanguageVersion.InitialCode,
-                ProgrammingLanguageId = submission.ProblemSetup.LanguageVersion.ProgrammingLanguageId,
+                ProgrammingLanguageId = submission
+                    .ProblemSetup
+                    .LanguageVersion
+                    .ProgrammingLanguageId,
                 Judge0LanguageId = null,
-                ProgrammingLanguage = submission.ProblemSetup.LanguageVersion.ProgrammingLanguage == null
-                    ? null
-                    : new ProgrammingLanguage
-                    {
-                        Id = submission.ProblemSetup.LanguageVersion.ProgrammingLanguage.Id,
-                        Name = submission.ProblemSetup.LanguageVersion.ProgrammingLanguage.Name,
-                        IsArchived = submission.ProblemSetup.LanguageVersion.ProgrammingLanguage.IsArchived,
-                    }
+                ProgrammingLanguage =
+                    submission.ProblemSetup.LanguageVersion.ProgrammingLanguage == null
+                        ? null
+                        : new ProgrammingLanguage
+                        {
+                            Id = submission.ProblemSetup.LanguageVersion.ProgrammingLanguage.Id,
+                            Name = submission.ProblemSetup.LanguageVersion.ProgrammingLanguage.Name,
+                            IsArchived = submission
+                                .ProblemSetup
+                                .LanguageVersion
+                                .ProgrammingLanguage
+                                .IsArchived,
+                        },
             },
-            CreatedBy = submission.CreatedBy == null
-                ? null
-                : new AccountModel
+            CreatedBy =
+                submission.CreatedBy == null
+                    ? null
+                    : new AccountModel
+                    {
+                        Username = submission.CreatedBy.Username,
+                        ImageUrl = submission.CreatedBy.ImageUrl,
+                        CreatedOn = submission.CreatedBy.CreatedOn,
+                        Id = submission.CreatedBy.Id,
+                    },
+            Results = submission
+                .Results.Select(result => new SubmissionResult
                 {
-                    Username = submission.CreatedBy.Username,
-                    ImageUrl = submission.CreatedBy.ImageUrl,
-                    CreatedOn = submission.CreatedBy.CreatedOn,
-                    Id = submission.CreatedBy.Id,
-                },
-            Results = submission.Results.Select(result => new SubmissionResult
-            {
-                Id = result.Id,
-                Status = (SubmissionStatus)result.StatusId,
-                ExecutionId = result.ExecutionId,
-                ResultId = result.ResultId,
-                FinishedAt = result.FinishedAt,
-                MemoryKb = result.MemoryKb,
-                RuntimeMs = result.RuntimeMs,
-                StartedAt = result.StartedAt,
-                Stdout = result.Stdout,
-                ProgramOutput = result.ProgramOutput,
-                Stderr = result.Stderr,
-            }).ToList(),
+                    Id = result.Id,
+                    Status = (SubmissionStatus)result.StatusId,
+                    ExecutionId = result.ExecutionId,
+                    ResultId = result.ResultId,
+                    FinishedAt = result.FinishedAt,
+                    MemoryKb = result.MemoryKb,
+                    RuntimeMs = result.RuntimeMs,
+                    StartedAt = result.StartedAt,
+                    Stdout = result.Stdout,
+                    ProgramOutput = result.ProgramOutput,
+                    Stderr = result.Stderr,
+                })
+                .ToList(),
         };
 
     private const int MaxRetryCount = 5;
@@ -347,7 +361,7 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
                             Id = sr.Id,
                             SubmissionId = s.Id,
                             ExecutionId = sr.ExecutionId,
-                            ResultId = sr.Id,
+                            ResultId = sr.ResultId,
                             StatusId = (int)SubmissionStatus.InQueue,
                             CreatedOn = DateTime.UtcNow,
                             StartedAt = sr.StartedAt,
@@ -361,18 +375,27 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
 
             if (resultEntities.Count != 0)
             {
-                await db.BulkInsertOrUpdateAsync(resultEntities, ResultBulkConfig, cancellationToken: cancellationToken);
+                await db.BulkInsertOrUpdateAsync(
+                    resultEntities,
+                    ResultBulkConfig,
+                    cancellationToken: cancellationToken
+                );
 
                 var submissionIds = resultEntities.Select(r => r.SubmissionId).Distinct().ToList();
 
-                await db.SubmissionOutboxes
-                    .Where(o =>
+                await db
+                    .SubmissionOutboxes.Where(o =>
                         submissionIds.Contains(o.SubmissionId)
-                        && o.SubmissionOutboxTypeId == (int)SubmissionOutboxType.Initialized)
+                        && o.SubmissionOutboxTypeId == (int)SubmissionOutboxType.Initialized
+                    )
                     .ExecuteUpdateAsync(
-                        setters => setters
-                            .SetProperty(o => o.SubmissionOutboxTypeId, (int)SubmissionOutboxType.PollExecution)
-                            .SetProperty(o => o.AttemptCount, _ => 0),
+                        setters =>
+                            setters
+                                .SetProperty(
+                                    o => o.SubmissionOutboxTypeId,
+                                    (int)SubmissionOutboxType.PollExecution
+                                )
+                                .SetProperty(o => o.AttemptCount, _ => 0),
                         cancellationToken: cancellationToken
                     );
             }
@@ -419,18 +442,27 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
 
             if (resultEntities.Count != 0)
             {
-                await db.BulkInsertOrUpdateAsync(resultEntities, ResultBulkConfig, cancellationToken: cancellationToken);
+                await db.BulkInsertOrUpdateAsync(
+                    resultEntities,
+                    ResultBulkConfig,
+                    cancellationToken: cancellationToken
+                );
 
                 var submissionIds = resultEntities.Select(r => r.SubmissionId).Distinct().ToList();
 
-                await db.SubmissionOutboxes
-                    .Where(o =>
+                await db
+                    .SubmissionOutboxes.Where(o =>
                         submissionIds.Contains(o.SubmissionId)
-                        && o.SubmissionOutboxTypeId == (int)SubmissionOutboxType.Evaluate)
+                        && o.SubmissionOutboxTypeId == (int)SubmissionOutboxType.Evaluate
+                    )
                     .ExecuteUpdateAsync(
-                        setters => setters
-                            .SetProperty(o => o.SubmissionOutboxTypeId, (int)SubmissionOutboxType.EvaluationPoll)
-                            .SetProperty(o => o.AttemptCount, _ => 0),
+                        setters =>
+                            setters
+                                .SetProperty(
+                                    o => o.SubmissionOutboxTypeId,
+                                    (int)SubmissionOutboxType.EvaluationPoll
+                                )
+                                .SetProperty(o => o.AttemptCount, _ => 0),
                         cancellationToken: cancellationToken
                     );
             }
@@ -458,27 +490,32 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
             .Distinct()
             .ToListAsync(cancellationToken);
 
-        await db.Submissions
-            .Where(s => submissionIds.Contains(s.Id))
+        await db
+            .Submissions.Where(s => submissionIds.Contains(s.Id))
             .ExecuteUpdateAsync(
                 setters => setters.SetProperty(s => s.CompletedAt, now),
                 cancellationToken: cancellationToken
             );
 
-        await db.SubmissionOutboxes
-            .Where(o => ids.Contains(o.Id))
+        await db
+            .SubmissionOutboxes.Where(o => ids.Contains(o.Id))
             .ExecuteUpdateAsync(
-                setters => setters
-                    .SetProperty(o => o.FinalizedOn, now)
-                    .SetProperty(o => o.ProcessOn, now),
+                setters =>
+                    setters.SetProperty(o => o.FinalizedOn, now).SetProperty(o => o.ProcessOn, now),
                 cancellationToken: cancellationToken
             );
     }
 
-    public async Task<PaginatedResult<SubmissionModel>> GetSubmissionsByProblemId(Guid problemId, Guid? accountId, PaginationRequest pagination, SubmissionStatus? statusFilter, CancellationToken cancellationToken)
+    public async Task<PaginatedResult<SubmissionModel>> GetSubmissionsByProblemId(
+        Guid problemId,
+        Guid? accountId,
+        PaginationRequest pagination,
+        SubmissionStatus? statusFilter,
+        CancellationToken cancellationToken
+    )
     {
-        IQueryable<SubmissionEntity> query = db.Submissions
-            .Where(s =>
+        IQueryable<SubmissionEntity> query = db
+            .Submissions.Where(s =>
                 s.ProblemSetup!.ProblemId == problemId
                 && (accountId == null || s.CreatedById == accountId)
                 && s.CreatedOn <= pagination.Timestamp
@@ -486,8 +523,8 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
             .Include(s => s.CreatedBy)
             .Include(s => s.Results)
             .Include(s => s.ProblemSetup)
-            .ThenInclude(ps => ps!.LanguageVersion)
-            .ThenInclude(lv => lv!.ProgrammingLanguage);
+                .ThenInclude(ps => ps!.LanguageVersion)
+                    .ThenInclude(lv => lv!.ProgrammingLanguage);
 
         if (statusFilter.HasValue)
         {
