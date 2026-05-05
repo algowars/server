@@ -16,7 +16,7 @@ public sealed class GetSubmissionsPaginatedHandler(ISubmissionRepository reposit
     )
     {
         SubmissionStatus? statusFilter = request.AcceptedOnly ? SubmissionStatus.Accepted : null;
-        
+
         var page = await repository.GetSubmissionsByProblemId(
             request.ProblemId,
             request.FilterByUserId,

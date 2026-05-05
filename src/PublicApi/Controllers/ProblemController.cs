@@ -125,7 +125,7 @@ public sealed class ProblemController(
         }
 
         return ToActionResult(
-            await submissionAppService.GetSolutionsAsync(problemId,  new PaginationRequest
+            await submissionAppService.GetSolutionsAsync(problemId, new PaginationRequest
             {
                 Page = page,
                 Size = size,

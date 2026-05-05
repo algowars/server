@@ -51,7 +51,7 @@ public sealed class SubmissionModel
         }
         return (int)Results.Average(r => r.RuntimeMs);
     }
-    
+
     public int GetAverageMemoryKb()
     {
         if (!Results.Any())
