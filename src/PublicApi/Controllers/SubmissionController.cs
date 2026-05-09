@@ -1,4 +1,5 @@
 ﻿using ApplicationCore.Domain.Accounts;
+using ApplicationCore.Dtos.Submissions;
 using ApplicationCore.Interfaces.Services;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
@@ -41,6 +42,22 @@ public sealed class SubmissionController(
                 (Guid)accountContext.Account.Id,
                 cancellationToken
             )
+        );
+    }
+
+    [HttpGet("{submissionId:guid}")]
+    [Authorize]
+    [RequiresAccount]
+    [ProducesResponseType(typeof(SubmissionStatusDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetSubmissionStatusAsync(
+        Guid submissionId,
+        CancellationToken cancellationToken
+    )
+    {
+        return ToActionResult(
+            await submissionAppService.GetSubmissionStatusAsync(submissionId, cancellationToken)
         );
     }
 }
