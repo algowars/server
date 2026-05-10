@@ -14,6 +14,7 @@ using ApplicationCore.Interfaces.Services;
 using ApplicationCore.Queries.Submissions.GetSolutionsByProblemIdQuery;
 using ApplicationCore.Queries.Submissions.GetSubmissionOutboxes;
 using ApplicationCore.Queries.Submissions.GetSubmissionsPaginated;
+using ApplicationCore.Queries.Submissions.GetSubmissionStatus;
 using ApplicationCore.Queries.Submissions.GetUserSubmissionsByProblemIdQuery;
 using Ardalis.Result;
 using MediatR;
@@ -115,6 +116,12 @@ public sealed class SubmissionAppService(IMediator mediator) : ISubmissionAppSer
     public Task<Result<PaginatedResult<ProblemSubmissionDto>>> GetSubmissionsPaginatedAsync(Guid problemId, Guid accountId, PaginationRequest paginationRequest, CancellationToken cancellationToken = default)
     {
         var query = new GetUserSubmissionsByProblemIdQuery(problemId, accountId, paginationRequest);
+        return mediator.Send(query, cancellationToken);
+    }
+
+    public Task<Result<SubmissionStatusDto>> GetSubmissionStatusAsync(Guid submissionId, CancellationToken cancellationToken)
+    {
+        var query = new GetSubmissionStatusQuery(submissionId);
         return mediator.Send(query, cancellationToken);
     }
 }

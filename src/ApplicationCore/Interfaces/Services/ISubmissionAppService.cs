@@ -65,4 +65,6 @@ public interface ISubmissionAppService
         PaginationRequest paginationRequest,
         CancellationToken cancellationToken = default
     );
+
+    Task<Result<SubmissionStatusDto>> GetSubmissionStatusAsync(Guid submissionId, CancellationToken cancellationToken);
 }

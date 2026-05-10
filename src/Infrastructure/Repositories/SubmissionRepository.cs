@@ -1,5 +1,4 @@
-﻿using System.Linq.Expressions;
-using ApplicationCore.Common.Pagination;
+﻿using ApplicationCore.Common.Pagination;
 using ApplicationCore.Domain.Accounts;
 using ApplicationCore.Domain.Problems.Languages;
 using ApplicationCore.Domain.Submissions;
@@ -11,6 +10,7 @@ using Infrastructure.Persistence.Entities.Submission;
 using Infrastructure.Persistence.Entities.Submission.Outbox;
 using Mapster;
 using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
 
 namespace Infrastructure.Repositories;
 
@@ -546,6 +546,42 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
             Total = total,
             Page = pagination.Page,
             Size = pagination.Size,
+        };
+    }
+
+    public async Task<SubmissionModel?> GetSubmissionByIdAsync(Guid submissionId, CancellationToken cancellationToken)
+    {
+        var entity = await db.Submissions
+            .Include(s => s.Results)
+            .FirstOrDefaultAsync(s => s.Id == submissionId, cancellationToken);
+
+        if (entity == null)
+        {
+            return null;
+        }
+
+        return new SubmissionModel
+        {
+            Id = entity.Id,
+            Code = entity.Code,
+            ProblemSetupId = entity.ProblemSetupId,
+            CreatedOn = entity.CreatedOn,
+            CompletedAt = entity.CompletedAt,
+            CreatedById = entity.CreatedById,
+            Results = entity.Results.Select(r => new SubmissionResult
+            {
+                Id = r.Id,
+                Status = (SubmissionStatus)r.StatusId,
+                ExecutionId = r.ExecutionId,
+                ResultId = r.ResultId,
+                FinishedAt = r.FinishedAt,
+                MemoryKb = r.MemoryKb,
+                RuntimeMs = r.RuntimeMs,
+                StartedAt = r.StartedAt,
+                Stdout = r.Stdout,
+                ProgramOutput = r.ProgramOutput,
+                Stderr = r.Stderr,
+            }).ToList(),
         };
     }
 }
