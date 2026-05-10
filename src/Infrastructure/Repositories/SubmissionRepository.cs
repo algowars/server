@@ -1,5 +1,4 @@
-﻿using System.Linq.Expressions;
-using ApplicationCore.Common.Pagination;
+﻿using ApplicationCore.Common.Pagination;
 using ApplicationCore.Domain.Accounts;
 using ApplicationCore.Domain.Problems.Languages;
 using ApplicationCore.Domain.Submissions;
@@ -11,6 +10,7 @@ using Infrastructure.Persistence.Entities.Submission;
 using Infrastructure.Persistence.Entities.Submission.Outbox;
 using Mapster;
 using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
 
 namespace Infrastructure.Repositories;
 
@@ -555,7 +555,10 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
             .Include(s => s.Results)
             .FirstOrDefaultAsync(s => s.Id == submissionId, cancellationToken);
 
-        if (entity == null) return null;
+        if (entity == null)
+        {
+            return null;
+        }
 
         return new SubmissionModel
         {
