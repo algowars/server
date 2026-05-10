@@ -1,0 +1,19 @@
+backend:
+  - changed-files:
+    - any-glob-to-any-file: ['src/**', '!src/**/*.test.*']
+
+tests:
+  - changed-files:
+    - any-glob-to-any-file: ['**/*.Tests/**', '**/*Tests.cs', '**/*Test.cs']
+
+infrastructure:
+  - changed-files:
+    - any-glob-to-any-file: ['.github/**', 'Dockerfile*', 'docker-compose*', '*.yml', '*.yaml']
+
+database:
+  - changed-files:
+    - any-glob-to-any-file: ['**/Migrations/**', '**/DbContext*', '**/*.sql']
+
+dependencies:
+  - changed-files:
+    - any-glob-to-any-file: ['**/*.csproj', '**/Directory.Packages.props', '**/NuGet.Config']
