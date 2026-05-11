@@ -10,12 +10,10 @@ public sealed class AccountEntity
     [Column("id")]
     public Guid Id { get; set; }
 
-    [Required, MaxLength(36)]
-    [Column("username")]
+    [Column("username"), Required, MaxLength(36)]
     public required string Username { get; set; }
 
-    [Required, MaxLength(255)]
-    [Column("sub")]
+    [Column("sub"), Required, MaxLength(255)]
     public required string Sub { get; set; }
 
     [MaxLength(300)]
@@ -37,10 +35,12 @@ public sealed class AccountEntity
     [Column("deleted_on")]
     public DateTime? DeletedOn { get; set; }
 
-    [MaxLength(36)]
-    [Column("previous_username")]
+    [Column("previous_username"), MaxLength(36)]
     public string? PreviousUsername { get; set; }
 
     [Column("username_last_changed_at")]
     public DateTime? UsernameLastChangedAt { get; set; }
+
+    [Column("about"), MaxLength(255)]
+    public string? About { get; set; }
 }

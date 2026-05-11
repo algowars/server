@@ -6,6 +6,8 @@ public sealed class AccountModel : BaseModel<Guid>
 
     public string? Sub { get; init; }
 
+    public string? About { get; set; }
+
     public required string Username
     {
         get => _username;
