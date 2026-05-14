@@ -49,6 +49,7 @@ public sealed class GetSubmissionStatusHandler(
                     : string.Empty,
                 ExpectedOutput = testCase?.ExpectedOutput.Value ?? string.Empty,
                 ActualOutput = result.ProgramOutput ?? result.Stdout ?? string.Empty,
+                ErrorOutput = result.Stderr,
                 Status = (int)result.Status,
             };
         });

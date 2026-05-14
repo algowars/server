@@ -68,6 +68,11 @@ public sealed class SubmissionReadyToEvaluateConsumer(IServiceScopeFactory servi
 
         for (int i = 0; i < results.Count; i++)
         {
+            if (results[i].Status != SubmissionStatus.Processing)
+            {
+                continue;
+            }
+
             string expected = i < expectedOutputs.Count ? expectedOutputs[i] : string.Empty;
             results[i].Status = comparisonService.Compare(results[i].ProgramOutput, expected);
         }
