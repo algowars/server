@@ -1,4 +1,5 @@
 ﻿using ApplicationCore.Commands.Accounts.CreateAccount;
+using ApplicationCore.Commands.Accounts.UpdateProfileSettings;
 using ApplicationCore.Commands.Accounts.UpdateUsername;
 using ApplicationCore.Commands.Accounts.UpsertAccount;
 using ApplicationCore.Dtos.Accounts;
@@ -50,7 +51,7 @@ public sealed class AccountAppService(IMediator mediator) : IAccountAppService
         return await mediator.Send(query, cancellationToken);
     }
 
-    public async Task<ProfileSettingsDto?> GetProfileSettingsAsync(
+    public async Task<Result<ProfileSettingsDto>> GetProfileSettingsAsync(
         string sub,
         CancellationToken cancellationToken
     )
@@ -78,6 +79,17 @@ public sealed class AccountAppService(IMediator mediator) : IAccountAppService
     )
     {
         var command = new UpdateUsernameCommand(accountId, newUsername, usernameLastChangedAt);
+
+        return await mediator.Send(command, cancellationToken);
+    }
+
+    public async Task<Result<UpdateProfileSettingsResult>> UpdateProfileSettingsAsync(
+        Guid accountId,
+        string? bio,
+        CancellationToken cancellationToken
+    )
+    {
+        var command = new UpdateProfileSettingsCommand(accountId, bio);
 
         return await mediator.Send(command, cancellationToken);
     }
