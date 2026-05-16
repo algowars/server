@@ -1,3 +1,3 @@
 namespace ApplicationCore.Dtos.Accounts;
 
-public sealed record ProfileSettingsDto(string Username);
+public sealed record ProfileSettingsDto(string Username, DateTime? UsernameLastChangedAt, string Bio);

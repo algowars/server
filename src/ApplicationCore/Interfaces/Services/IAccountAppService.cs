@@ -1,3 +1,4 @@
+using ApplicationCore.Commands.Accounts.UpdateProfileSettings;
 using ApplicationCore.Commands.Accounts.UpdateUsername;
 using ApplicationCore.Commands.Accounts.UpsertAccount;
 using ApplicationCore.Dtos.Accounts;
@@ -21,7 +22,7 @@ public interface IAccountAppService
         CancellationToken cancellationToken
     );
 
-    Task<ProfileSettingsDto?> GetProfileSettingsAsync(
+    Task<Result<ProfileSettingsDto>> GetProfileSettingsAsync(
         string sub,
         CancellationToken cancellationToken
     );
@@ -36,6 +37,12 @@ public interface IAccountAppService
         Guid accountId,
         string newUsername,
         DateTime? usernameLastChangedAt,
+        CancellationToken cancellationToken
+    );
+
+    Task<Result<UpdateProfileSettingsResult>> UpdateProfileSettingsAsync(
+        Guid accountId,
+        string? bio,
         CancellationToken cancellationToken
     );
 }

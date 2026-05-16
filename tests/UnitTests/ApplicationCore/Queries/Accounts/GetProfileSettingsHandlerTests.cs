@@ -36,7 +36,7 @@ public sealed class GetProfileSettingsHandlerTests
     [Test]
     public async Task Handle_returns_profile_settings_when_account_exists()
     {
-        var account = new AccountModel { Username = "user1" };
+        var account = new AccountModel { Username = "user1", About = "my bio" };
 
         _repository
             .Setup(r => r.GetBySubAsync("sub1", It.IsAny<CancellationToken>()))
@@ -50,6 +50,7 @@ public sealed class GetProfileSettingsHandlerTests
         {
             Assert.That(result.IsSuccess, Is.True);
             Assert.That(result.Value.Username, Is.EqualTo("user1"));
+            Assert.That(result.Value.Bio, Is.EqualTo("my bio"));
         });
     }
 

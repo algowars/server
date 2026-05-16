@@ -33,6 +33,7 @@ public sealed class GetProfileAggregateHandler(IAccountRepository repository)
                 {
                     Id = profile.Id,
                     Username = profile.Username,
+                    About = profile.About,
                     ImageUrl = profile.ImageUrl,
                     CreatedOn = profile.CreatedOn,
                 }

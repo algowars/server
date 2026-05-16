@@ -18,7 +18,7 @@ public sealed class GetProfileSettingsHandler(IAccountRepository accountReposito
 
             return account is null
                 ? Result.NotFound()
-                : Result.Success(new ProfileSettingsDto(account.Username));
+                : Result.Success(new ProfileSettingsDto(account.Username, account.UsernameLastChangedAt, account.About ?? ""));
         }
         catch (Exception ex)
         {

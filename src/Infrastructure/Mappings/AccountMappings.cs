@@ -11,10 +11,12 @@ public sealed class AccountMappings : IRegister
         config.NewConfig<AccountModel, AccountEntity>()
             .Map(dest => dest.Id, src => src.Id)
             .Map(dest => dest.PreviousUsername, src => src.PreviousUsername)
-            .Map(dest => dest.UsernameLastChangedAt, src => src.UsernameLastChangedAt);
+            .Map(dest => dest.UsernameLastChangedAt, src => src.UsernameLastChangedAt)
+            .Map(dest => dest.About, src => src.About);
 
         config.NewConfig<AccountEntity, AccountModel>()
             .Map(dest => dest.PreviousUsername, src => src.PreviousUsername)
-            .Map(dest => dest.UsernameLastChangedAt, src => src.UsernameLastChangedAt);
+            .Map(dest => dest.UsernameLastChangedAt, src => src.UsernameLastChangedAt)
+            .Map(dest => dest.About, src => src.About);
     }
 }

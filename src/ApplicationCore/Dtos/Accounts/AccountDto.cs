@@ -12,5 +12,7 @@ public sealed record AccountDto
 
     public required DateTime CreatedOn { get; init; }
 
+    public string? About { get; init; }
+
     public DateTime? UsernameLastChangedAt { get; init; }
 }

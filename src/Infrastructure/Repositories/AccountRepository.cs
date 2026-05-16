@@ -91,6 +91,16 @@ public sealed class AccountRepository(AppDbContext db) : IAccountRepository
             );
     }
 
+    public async Task UpdateAboutAsync(Guid id, string? about, CancellationToken cancellationToken)
+    {
+        await db.Accounts
+            .Where(a => a.Id == id)
+            .ExecuteUpdateAsync(
+                s => s.SetProperty(a => a.About, about),
+                cancellationToken
+            );
+    }
+
     public async Task<bool> ExistsByUsernameAsync(string username, CancellationToken cancellationToken)
     {
         return await db.Accounts
