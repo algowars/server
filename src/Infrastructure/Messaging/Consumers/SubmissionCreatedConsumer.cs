@@ -1,6 +1,7 @@
 using ApplicationCore.Domain.CodeExecution;
 using ApplicationCore.Domain.Submissions.Outboxes;
 using ApplicationCore.Interfaces.Services;
+using ApplicationCore.Logging;
 using ApplicationCore.Messaging;
 using MassTransit;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,15 +15,18 @@ namespace Infrastructure.Messaging.Consumers;
 /// transitions the outbox Initialized to PollExecution, then publishes
 /// SubmissionExecutionPollMessage to kick off polling.
 /// </summary>
-public sealed class SubmissionCreatedConsumer(
+public sealed partial class SubmissionCreatedConsumer(
     IServiceScopeFactory serviceScopeFactory,
     ILogger<SubmissionCreatedConsumer> logger
 ) : IConsumer<SubmissionCreatedMessage>
 {
+    private readonly ILogger<SubmissionCreatedConsumer> _logger = logger;
     public async Task Consume(ConsumeContext<SubmissionCreatedMessage> context)
     {
         CancellationToken cancellationToken = context.CancellationToken;
         using IServiceScope scope = serviceScopeFactory.CreateScope();
+
+        LogStage1Started(context.Message.SubmissionId, context.Message.OutboxId);
 
         ISubmissionAppService submissionAppService = scope.ServiceProvider.GetRequiredService<ISubmissionAppService>();
         IProblemAppService problemAppService = scope.ServiceProvider.GetRequiredService<IProblemAppService>();
@@ -33,7 +37,7 @@ public sealed class SubmissionCreatedConsumer(
 
         if (!outboxResults.IsSuccess || !outboxResults.Value.Any())
         {
-            logger.LogWarning("SubmissionCreatedConsumer: No outboxes found for submission {SubmissionId}", context.Message.SubmissionId);
+            LogStage1OutboxNotFound(context.Message.SubmissionId, context.Message.OutboxId);
             return;
         }
 
@@ -43,7 +47,7 @@ public sealed class SubmissionCreatedConsumer(
 
         if (outbox is null)
         {
-            logger.LogWarning("SubmissionCreatedConsumer: Outbox {OutboxId} not found or not in Initialized state", context.Message.OutboxId);
+            LogStage1OutboxNotFound(context.Message.SubmissionId, context.Message.OutboxId);
             return;
         }
 
@@ -54,7 +58,7 @@ public sealed class SubmissionCreatedConsumer(
 
         if (!setupResult.IsSuccess)
         {
-            logger.LogError("SubmissionCreatedConsumer: Failed to get problem setup {SetupId}: {Errors}", outbox.Submission.ProblemSetupId, string.Join(", ", setupResult.Errors));
+            LogStage1SetupFailed(context.Message.SubmissionId, outbox.Submission.ProblemSetupId, string.Join(", ", setupResult.Errors));
             return;
         }
 
@@ -62,7 +66,7 @@ public sealed class SubmissionCreatedConsumer(
 
         if (setup is null)
         {
-            logger.LogError("SubmissionCreatedConsumer: Problem setup {SetupId} not found", outbox.Submission.ProblemSetupId);
+            LogStage1SetupFailed(context.Message.SubmissionId, outbox.Submission.ProblemSetupId, "Setup not found after query");
             return;
         }
 
@@ -82,7 +86,7 @@ public sealed class SubmissionCreatedConsumer(
 
         if (!builderContexts.Any())
         {
-            logger.LogError("SubmissionCreatedConsumer: No test cases found for setup {SetupId} (submission {SubmissionId}). Ensure test suites are linked to this problem setup.", setup.Id, context.Message.SubmissionId);
+            LogStage1BuildFailed(context.Message.SubmissionId, setup.Id, "No test cases found for setup");
             return;
         }
 
@@ -90,7 +94,7 @@ public sealed class SubmissionCreatedConsumer(
 
         if (!buildResult.IsSuccess)
         {
-            logger.LogError("SubmissionCreatedConsumer: Code build failed for submission {SubmissionId}: {Errors}", context.Message.SubmissionId, string.Join(", ", buildResult.Errors));
+            LogStage1BuildFailed(context.Message.SubmissionId, setup.Id, string.Join(", ", buildResult.Errors));
             return;
         }
 
@@ -113,7 +117,7 @@ public sealed class SubmissionCreatedConsumer(
 
         if (!executeResult.IsSuccess)
         {
-            logger.LogError("SubmissionCreatedConsumer: Execution failed for submission {SubmissionId}: {Errors}", context.Message.SubmissionId, string.Join(", ", executeResult.Errors));
+            LogStage1ExecutionFailed(context.Message.SubmissionId, string.Join(", ", executeResult.Errors));
             return;
         }
 
@@ -124,5 +128,31 @@ public sealed class SubmissionCreatedConsumer(
             SubmissionId = context.Message.SubmissionId,
             OutboxId = context.Message.OutboxId,
         }, cancellationToken);
+
+        LogStage1Completed(context.Message.SubmissionId, context.Message.OutboxId);
     }
+
+    [LoggerMessage(EventId = LoggingEventIds.Submissions.Stage1Started, Level = LogLevel.Information,
+        Message = "Stage1: Starting submission execution for {submissionId} (outbox {outboxId})")]
+    private partial void LogStage1Started(Guid submissionId, Guid outboxId);
+
+    [LoggerMessage(EventId = LoggingEventIds.Submissions.Stage1OutboxNotFound, Level = LogLevel.Warning,
+        Message = "Stage1: Outbox not found or not in Initialized state for submission {submissionId} (outbox {outboxId}) — may have already been processed")]
+    private partial void LogStage1OutboxNotFound(Guid submissionId, Guid outboxId);
+
+    [LoggerMessage(EventId = LoggingEventIds.Submissions.Stage1SetupFailed, Level = LogLevel.Error,
+        Message = "Stage1: Failed to get problem setup {setupId} for submission {submissionId}: {errors}")]
+    private partial void LogStage1SetupFailed(Guid submissionId, int setupId, string errors);
+
+    [LoggerMessage(EventId = LoggingEventIds.Submissions.Stage1BuildFailed, Level = LogLevel.Error,
+        Message = "Stage1: Code build failed for submission {submissionId} (setup {setupId}): {errors}")]
+    private partial void LogStage1BuildFailed(Guid submissionId, int setupId, string errors);
+
+    [LoggerMessage(EventId = LoggingEventIds.Submissions.Stage1ExecutionFailed, Level = LogLevel.Error,
+        Message = "Stage1: Execution failed for submission {submissionId}: {errors}")]
+    private partial void LogStage1ExecutionFailed(Guid submissionId, string errors);
+
+    [LoggerMessage(EventId = LoggingEventIds.Submissions.Stage1Completed, Level = LogLevel.Information,
+        Message = "Stage1: Completed submission execution for {submissionId} (outbox {outboxId})")]
+    private partial void LogStage1Completed(Guid submissionId, Guid outboxId);
 }
