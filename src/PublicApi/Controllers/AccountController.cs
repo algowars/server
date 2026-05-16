@@ -138,13 +138,13 @@ public sealed partial class AccountController(
         CancellationToken cancellationToken
     )
     {
-        if (accountContext.Account is null)
+        if (accountContext.Account is null || accountContext.Account.Id is null)
         {
             return Unauthorized();
         }
 
         var result = await accountAppService.UpdateProfileSettingsAsync(
-            (Guid)accountContext.Account.Id,
+            accountContext.Account.Id.Value,
             request.Bio,
             cancellationToken
         );
