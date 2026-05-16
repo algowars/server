@@ -24,6 +24,8 @@ public interface IAccountRepository
 
     Task UpdateUsernameAsync(Guid id, string username, DateTime usernameLastChangedAt, CancellationToken cancellationToken);
 
+    Task UpdateAboutAsync(Guid id, string? about, CancellationToken cancellationToken);
+
     Task<bool> ExistsByUsernameAsync(string username, CancellationToken cancellationToken);
 
     Task<int> CountByUsernameBaseAsync(string usernameBase, CancellationToken cancellationToken);

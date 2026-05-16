@@ -1,3 +1,4 @@
+using ApplicationCore.Commands.Accounts.UpdateProfileSettings;
 using ApplicationCore.Commands.Accounts.UpdateUsername;
 using ApplicationCore.Commands.Accounts.UpsertAccount;
 using ApplicationCore.Domain.Accounts;
@@ -101,6 +102,54 @@ public sealed partial class AccountController(
         ];
 
         return Ok(result.Value with { Permissions = permissions });
+    }
+
+    [HttpGet("settings")]
+    [Authorize]
+    [RequiresAccount]
+    [EnableRateLimiting("Medium")]
+    [ProducesResponseType(typeof(ProfileSettingsDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetSettingsAsync(CancellationToken cancellationToken)
+    {
+        string? sub = GetSub();
+
+        if (string.IsNullOrEmpty(sub))
+        {
+            return Unauthorized();
+        }
+
+        var result = await accountAppService.GetProfileSettingsAsync(sub, cancellationToken);
+
+        return ToActionResult(result);
+    }
+
+    [HttpPut("settings")]
+    [Authorize]
+    [RequiresAccount]
+    [EnableRateLimiting("ExtraShort")]
+    [ProducesResponseType(typeof(UpdateProfileSettingsResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> UpdateProfileSettingsAsync(
+        [FromBody] UpdateProfileSettingsDto request,
+        CancellationToken cancellationToken
+    )
+    {
+        if (accountContext.Account is null)
+        {
+            return Unauthorized();
+        }
+
+        var result = await accountAppService.UpdateProfileSettingsAsync(
+            (Guid)accountContext.Account.Id,
+            request.Bio,
+            cancellationToken
+        );
+
+        return ToActionResult(result);
     }
 
     [HttpPut("username")]
