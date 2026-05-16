@@ -1,4 +1,5 @@
-﻿using PublicApi.Attributes;
+﻿using Microsoft.ApplicationInsights.DataContracts;
+using PublicApi.Attributes;
 
 namespace PublicApi.Middleware;
 
@@ -29,6 +30,16 @@ public class AccountContextMiddleware(
             if (result.IsSuccess)
             {
                 accountContext.Account = result.Value;
+
+                var requestTelemetry = context.Features.Get<RequestTelemetry>();
+                if (requestTelemetry is not null && accountContext.Account is not null)
+                {
+                    var account = accountContext.Account;
+                    requestTelemetry.Properties.TryAdd("account.id", account.Id?.ToString() ?? string.Empty);
+                    requestTelemetry.Properties.TryAdd("account.username", account.Username);
+                    requestTelemetry.Properties.TryAdd("account.permissions", string.Join(",", account.Permissions));
+                    requestTelemetry.Properties.TryAdd("account.createdOn", account.CreatedOn.ToString("O"));
+                }
             }
         }
 
