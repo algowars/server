@@ -109,6 +109,7 @@ public sealed class ProblemController(
     }
 
     [HttpGet("{problemId:guid}/solutions")]
+    [Authorize]
     [EnableRateLimiting("Short")]
     [ProducesResponseType(typeof(PaginatedResult<SubmissionDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
