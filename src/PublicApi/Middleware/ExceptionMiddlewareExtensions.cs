@@ -1,4 +1,5 @@
 using ApplicationCore.Logging;
+using Microsoft.ApplicationInsights;
 using Microsoft.AspNetCore.Diagnostics;
 using System.Net;
 using System.Text.Json;
@@ -17,6 +18,8 @@ public static class ExceptionMiddlewareExtensions
                     .RequestServices.GetRequiredService<ILoggerFactory>()
                     .CreateLogger("GlobalExceptionHandler");
 
+                var telemetryClient = context.RequestServices.GetService<TelemetryClient>();
+
                 var feature = context.Features.Get<IExceptionHandlerPathFeature>();
                 var ex = feature?.Error;
 
@@ -32,6 +35,7 @@ public static class ExceptionMiddlewareExtensions
                         context.Request.Path,
                         ex
                     );
+                    telemetryClient?.TrackException(ex);
 
                     await context.Response.WriteAsync(
                         JsonSerializer.Serialize(new { message = "Validation failed" })
@@ -41,12 +45,14 @@ public static class ExceptionMiddlewareExtensions
 
                 context.Response.StatusCode = StatusCodes.Status500InternalServerError;
 
+                var exceptionToLog = ex ?? new Exception("Unknown error");
                 AppLog.UnhandledExceptionWithPath(
                     logger,
                     context.Request.Method,
                     context.Request.Path,
-                    ex ?? new Exception("Unknown error")
+                    exceptionToLog
                 );
+                telemetryClient?.TrackException(exceptionToLog);
 
                 await context.Response.WriteAsync(
                     JsonSerializer.Serialize(new { message = "An unexpected error occurred." })
