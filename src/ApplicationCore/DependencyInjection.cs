@@ -1,4 +1,3 @@
-using System.Reflection;
 using ApplicationCore.Interfaces.Services;
 using ApplicationCore.Mappings;
 using ApplicationCore.Services;
@@ -6,6 +5,7 @@ using FluentValidation;
 using Mapster;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
+using System.Reflection;
 
 namespace ApplicationCore;
 
