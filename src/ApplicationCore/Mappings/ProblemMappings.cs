@@ -12,6 +12,7 @@ public sealed class ProblemMappings : IRegister
     {
         config
             .NewConfig<ProblemModel, ProblemDto>()
+            .Map(dest => dest.Tags, src => src.Tags.Select(tag => tag.Value).ToList())
             .Map(d => d.AvailableLanguages, s => s.GetAvailableLanguages());
 
         config.NewConfig<ProgrammingLanguage, ProgrammingLanguageDto>();

@@ -1,9 +1,11 @@
+using System.Reflection;
 using ApplicationCore.Interfaces.Services;
+using ApplicationCore.Mappings;
 using ApplicationCore.Services;
 using FluentValidation;
+using Mapster;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
-using System.Reflection;
 
 namespace ApplicationCore;
 
@@ -22,6 +24,8 @@ public static class DependencyInjection
         services.AddScoped<ICodeBuilderService, CodeBuilderService>();
         services.AddScoped<ICodeExecutionService, CodeExecutionService>();
         services.AddScoped<IExecutionComparisonService, ExecutionComparisonService>();
+
+        TypeAdapterConfig.GlobalSettings.Scan(typeof(ProblemMappings).Assembly);
 
         return services;
     }

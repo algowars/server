@@ -3,6 +3,7 @@ using ApplicationCore.Domain.Submissions;
 using ApplicationCore.Interfaces.Messaging;
 using ApplicationCore.Interfaces.Repositories;
 using FluentValidation;
+using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace UnitTests.ApplicationCore.Commands.Submissions;
@@ -13,6 +14,7 @@ public sealed class CreateSubmissionHandlerTests
     private Mock<ISubmissionRepository> _mockSubmissionRepository;
     private Mock<IMessagePublisher> _mockMessagePublisher;
     private Mock<IValidator<CreateSubmissionCommand>> _mockValidator;
+    private Mock<ILogger<CreateSubmissionHandler>> _mockLogger;
 
     private CreateSubmissionHandler _sut;
 
@@ -22,6 +24,7 @@ public sealed class CreateSubmissionHandlerTests
         _mockSubmissionRepository = new();
         _mockMessagePublisher = new();
         _mockValidator = new();
+        _mockLogger = new();
 
         _mockValidator
             .Setup(v =>
@@ -32,7 +35,8 @@ public sealed class CreateSubmissionHandlerTests
         _sut = new CreateSubmissionHandler(
             _mockSubmissionRepository.Object,
             _mockMessagePublisher.Object,
-            _mockValidator.Object
+            _mockValidator.Object,
+            _mockLogger.Object
         );
     }
 
