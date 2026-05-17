@@ -94,6 +94,37 @@ public sealed class GetProblemBySlugHandlerTests
     }
 
     [Test]
+    public async Task Handle_maps_tag_values_not_type_names()
+    {
+        var problem = new ProblemModel()
+        {
+            Id = Guid.NewGuid(),
+            Title = "Two Sum",
+            Slug = "two-sum",
+            Question = "Find two numbers",
+            Tags =
+            [
+                new TagModel { Id = 1, Value = "arrays" },
+                new TagModel { Id = 2, Value = "hashmap" },
+            ],
+            Difficulty = 1,
+            Version = 1,
+        };
+
+        _problemRepository
+            .Setup(r => r.GetProblemBySlugAsync("two-sum", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(problem);
+
+        var result = await _handler.Handle(
+            new GetProblemBySlugQuery("two-sum"),
+            CancellationToken.None
+        );
+
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Value.Tags, Is.EquivalentTo(new[] { "arrays", "hashmap" }));
+    }
+
+    [Test]
     public async Task Handle_returns_not_found_when_problem_missing()
     {
         _problemRepository
