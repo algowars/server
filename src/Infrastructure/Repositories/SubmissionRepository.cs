@@ -100,11 +100,7 @@ public sealed class SubmissionRepository(AppDbContext db) : ISubmissionRepositor
                             SubmissionId = s.Id,
                             ExecutionId = sr.ExecutionId,
                             ResultId = sr.ResultId ?? sr.Id,
-                            StatusId = sr.Status
-                                is SubmissionStatus.Accepted
-                                    or SubmissionStatus.WrongAnswer
-                                ? (int)SubmissionStatus.Processing
-                                : (int)sr.Status,
+                            StatusId = (int)sr.Status,
                             StartedAt = sr.StartedAt,
                             FinishedAt = sr.FinishedAt,
                             Stdout = sr.Stdout,
