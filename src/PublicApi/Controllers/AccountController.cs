@@ -154,7 +154,6 @@ public sealed partial class AccountController(
 
     [HttpPut("username")]
     [Authorize]
-    [RequiresAccount]
     [EnableRateLimiting("ExtraShort")]
     [ProducesResponseType(typeof(UpdateUsernameResult), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -165,15 +164,45 @@ public sealed partial class AccountController(
         CancellationToken cancellationToken
     )
     {
-        if (accountContext.Account is null)
+        string? sub = GetSub();
+
+        if (string.IsNullOrEmpty(sub))
+        {
+            return Unauthorized();
+        }
+
+        var accountResult = await accountAppService.GetAccountBySubAsync(sub, cancellationToken);
+
+        if (!accountResult.IsSuccess)
+        {
+            // Account doesn't exist yet — upsert to ensure it's created before updating username.
+            // This handles the race condition where the client submits before AccountInitializer completes.
+            var upsertResult = await accountAppService.UpsertAccountAsync(sub, null, cancellationToken);
+
+            if (!upsertResult.IsSuccess)
+            {
+                return ToActionResult(upsertResult);
+            }
+
+            accountResult = await accountAppService.GetAccountBySubAsync(sub, cancellationToken);
+
+            if (!accountResult.IsSuccess)
+            {
+                return ToActionResult(accountResult);
+            }
+        }
+
+        var account = accountResult.Value;
+
+        if (account.Id is null)
         {
             return Unauthorized();
         }
 
         var result = await accountAppService.UpdateUsernameAsync(
-            (Guid)accountContext.Account.Id,
+            account.Id.Value,
             request.Username,
-            accountContext.Account.UsernameLastChangedAt,
+            account.UsernameLastChangedAt,
             cancellationToken
         );
 
