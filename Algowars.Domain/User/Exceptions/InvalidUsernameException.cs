@@ -2,8 +2,6 @@
 
 namespace Algowars.Domain.User.Exceptions;
 
-public sealed class InvalidUsernameException : DomainException
+public sealed class InvalidUsernameException(string reason) : DomainException($"Username is invalid: {reason}")
 {
-    public InvalidUsernameException(string reason)
-        : base($"Username is invalid: {reason}") { }
 }
