@@ -1,14 +1,9 @@
-﻿using Algowars.Domain.User.Exceptions;
+using Algowars.Domain.User.Exceptions;
 
 namespace Algowars.Domain.User.ValueObjects;
 
 public sealed record Username
 {
-    public static readonly int MaxLength = 20;
-    public static readonly int MinLength = 1;
-
-    public string Value { get; }
-
     public Username(string value)
     {
         if (string.IsNullOrWhiteSpace(value))
@@ -21,5 +16,12 @@ public sealed record Username
     }
 
     public static implicit operator string(Username username) => username.Value;
+
     public override string ToString() => Value;
+
+    public static readonly int MaxLength = 20;
+
+    public static readonly int MinLength = 1;
+
+    public string Value { get; }
 }

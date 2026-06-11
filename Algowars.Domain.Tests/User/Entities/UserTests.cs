@@ -10,44 +10,78 @@ public class UserTests
     private const string ValidSub = "auth0|abc123";
 
     [Test]
-    public void Constructor_ValidArguments_CreatesUser()
+    public void ChangeUsername_DoesNotAffectOtherProperties()
     {
         var user = new UserEntity(ValidUsername, ValidSub);
+        var originalId = user.Id;
+        string originalSub = user.Sub;
 
-        Assert.Multiple(() =>
+        user.ChangeUsername(new Username("bob"));
+
+        using (Assert.EnterMultipleScope())
         {
-            Assert.That(user.Username, Is.EqualTo(ValidUsername));
-            Assert.That(user.Sub, Is.EqualTo(ValidSub));
-            Assert.That(user.Id, Is.Not.EqualTo(Guid.Empty));
-        });
+            Assert.That(user.Id, Is.EqualTo(originalId));
+            Assert.That(user.Sub, Is.EqualTo(originalSub));
+        }
     }
 
     [Test]
-    public void Constructor_NullUsername_ThrowsInvalidUsernameException()
+    public void ChangeUsername_FirstChange_Succeeds()
     {
-        Assert.Throws<InvalidUsernameException>(() => new UserEntity(null!, ValidSub));
+        var user = new UserEntity(ValidUsername, ValidSub);
+        var newUsername = new Username("bob");
+
+        user.ChangeUsername(newUsername);
+
+        Assert.That(user.Username, Is.EqualTo(newUsername));
     }
 
-    [TestCase("")]
-    [TestCase(" ")]
-    [TestCase("   ")]
-    public void Constructor_EmptyOrWhitespaceSub_ThrowsInvalidUserSubException(string sub)
+    [Test]
+    public void ChangeUsername_SetsUsernameLastChangedAt()
+    {
+        var user = new UserEntity(ValidUsername, ValidSub);
+        var before = DateTime.UtcNow;
+
+        user.ChangeUsername(new Username("bob"));
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(user.UsernameLastChangedAt, Is.Not.Null);
+            Assert.That(user.UsernameLastChangedAt, Is.GreaterThanOrEqualTo(before));
+        }
+    }
+
+    [Test]
+    public void ChangeUsername_ValidUsername_UpdatesUsername()
+    {
+        var user = new UserEntity(ValidUsername, ValidSub);
+        var newUsername = new Username("bob");
+
+        user.ChangeUsername(newUsername);
+
+        Assert.That(user.Username, Is.EqualTo(newUsername));
+    }
+
+    [Test]
+    public void ChangeUsername_WithinCooldown_ThrowsUsernameCooldownException()
+    {
+        var user = new UserEntity(ValidUsername, ValidSub);
+        user.ChangeUsername(new Username("bob"));
+
+        Assert.Throws<UsernameCooldownException>(() => user.ChangeUsername(new Username("charlie")));
+    }
+
+    [Test]
+    public void Constructor_BioIsNullByDefault()
+    {
+        var user = new UserEntity(ValidUsername, ValidSub);
+        Assert.That(user.Bio, Is.Null);
+    }
+
+    [Test]
+    public void Constructor_EmptyOrWhitespaceSub_ThrowsInvalidUserSubException([Values("", " ", "   ")] string sub)
     {
         Assert.Throws<InvalidUserSubException>(() => new UserEntity(ValidUsername, sub));
-    }
-
-    [Test]
-    public void Constructor_SetsSubCorrectly()
-    {
-        var user = new UserEntity(ValidUsername, ValidSub);
-        Assert.That(user.Sub, Is.EqualTo(ValidSub));
-    }
-
-    [Test]
-    public void Constructor_SubWithSpecialCharacters_Succeeds()
-    {
-        var user = new UserEntity(ValidUsername, "google-oauth2|abc.123-xyz");
-        Assert.That(user.Sub, Is.EqualTo("google-oauth2|abc.123-xyz"));
     }
 
     [Test]
@@ -67,10 +101,43 @@ public class UserTests
     }
 
     [Test]
-    public void Equals_SameInstance_IsEqual()
+    public void Constructor_ImageUrlIsNullByDefault()
     {
         var user = new UserEntity(ValidUsername, ValidSub);
-        Assert.That(user, Is.EqualTo(user));
+        Assert.That(user.ImageUrl, Is.Null);
+    }
+
+    [Test]
+    public void Constructor_NullUsername_ThrowsInvalidUsernameException()
+    {
+        Assert.Throws<InvalidUsernameException>(() => new UserEntity(null!, ValidSub));
+    }
+
+    [Test]
+    public void Constructor_SetsSubCorrectly()
+    {
+        var user = new UserEntity(ValidUsername, ValidSub);
+        Assert.That(user.Sub, Is.EqualTo(ValidSub));
+    }
+
+    [Test]
+    public void Constructor_SubWithSpecialCharacters_Succeeds()
+    {
+        var user = new UserEntity(ValidUsername, "google-oauth2|abc.123-xyz");
+        Assert.That(user.Sub, Is.EqualTo("google-oauth2|abc.123-xyz"));
+    }
+
+    [Test]
+    public void Constructor_ValidArguments_CreatesUser()
+    {
+        var user = new UserEntity(ValidUsername, ValidSub);
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(user.Id, Is.Not.EqualTo(Guid.Empty));
+            Assert.That(user.Sub, Is.EqualTo(ValidSub));
+            Assert.That(user.Username, Is.EqualTo(ValidUsername));
+        }
     }
 
     [Test]
@@ -90,10 +157,10 @@ public class UserTests
     }
 
     [Test]
-    public void GetHashCode_SameUser_ReturnsSameHash()
+    public void Equals_SameInstance_IsEqual()
     {
         var user = new UserEntity(ValidUsername, ValidSub);
-        Assert.That(user.GetHashCode(), Is.EqualTo(user.GetHashCode()));
+        Assert.That(user, Is.EqualTo(user));
     }
 
     [Test]
@@ -106,40 +173,69 @@ public class UserTests
     }
 
     [Test]
-    public void ChangeUsername_ValidUsername_UpdatesUsername()
+    public void GetHashCode_SameUser_ReturnsSameHash()
     {
         var user = new UserEntity(ValidUsername, ValidSub);
-        var newUsername = new Username("bob");
-
-        user.ChangeUsername(newUsername);
-
-        Assert.That(user.Username, Is.EqualTo(newUsername));
+        Assert.That(user.GetHashCode(), Is.EqualTo(user.GetHashCode()));
     }
 
     [Test]
-    public void ChangeUsername_DoesNotAffectOtherProperties()
+    public void UpdateBio_DoesNotAffectOtherProperties()
     {
         var user = new UserEntity(ValidUsername, ValidSub);
         var originalId = user.Id;
         string originalSub = user.Sub;
 
-        user.ChangeUsername(new Username("bob"));
+        user.UpdateBio(new Bio("Some bio."));
 
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(user.Id, Is.EqualTo(originalId));
             Assert.That(user.Sub, Is.EqualTo(originalSub));
-        });
+        }
     }
 
     [Test]
-    public void ChangeUsername_MultipleTimes_UsesLatestValue()
+    public void UpdateBio_Null_ClearsBio()
     {
         var user = new UserEntity(ValidUsername, ValidSub);
+        user.UpdateBio(new Bio("Some bio."));
 
-        user.ChangeUsername(new Username("bob"));
-        user.ChangeUsername(new Username("charlie"));
+        user.UpdateBio(null);
 
-        Assert.That(user.Username.Value, Is.EqualTo("charlie"));
+        Assert.That(user.Bio, Is.Null);
+    }
+
+    [Test]
+    public void UpdateBio_ValidBio_SetsBio()
+    {
+        var user = new UserEntity(ValidUsername, ValidSub);
+        var bio = new Bio("I love competitive programming.");
+
+        user.UpdateBio(bio);
+
+        Assert.That(user.Bio, Is.EqualTo(bio));
+    }
+
+    [Test]
+    public void UpdateImageUrl_Null_ClearsImageUrl()
+    {
+        var user = new UserEntity(ValidUsername, ValidSub);
+        user.UpdateImageUrl(new ImageUrl("https://example.com/avatar.png"));
+
+        user.UpdateImageUrl(null);
+
+        Assert.That(user.ImageUrl, Is.Null);
+    }
+
+    [Test]
+    public void UpdateImageUrl_ValidUrl_SetsImageUrl()
+    {
+        var user = new UserEntity(ValidUsername, ValidSub);
+        var imageUrl = new ImageUrl("https://example.com/avatar.png");
+
+        user.UpdateImageUrl(imageUrl);
+
+        Assert.That(user.ImageUrl, Is.EqualTo(imageUrl));
     }
 }
