@@ -12,6 +12,8 @@ public sealed record Username
         if (value.Length < MinLength || value.Length > MaxLength)
             throw new InvalidUsernameException($"Username must be between {MinLength} and {MaxLength} characters.");
 
+        if (!value.All(c => char.IsLetterOrDigit(c) || c == '_' || c == '-'))
+            throw new InvalidUsernameException("Username can only contain letters, digits, underscores, or hyphens.");
         Value = value;
     }
 
