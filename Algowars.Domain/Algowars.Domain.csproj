@@ -6,4 +6,9 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Folder Include="Language\" />
+    <Folder Include="Submission\" />
+  </ItemGroup>
+
 </Project>
