@@ -1,6 +1,6 @@
-using Algowars.Domain.User.Exceptions;
-using Algowars.Domain.User.ValueObjects;
-using UserEntity = Algowars.Domain.User.Entities.User;
+using Algowars.Domain.Users.Exceptions;
+using Algowars.Domain.Users.ValueObjects;
+using UserEntity = Algowars.Domain.Users.Entities.User;
 
 namespace Algowars.Domain.Tests.User.Entities;
 

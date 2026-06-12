@@ -1,5 +1,5 @@
-using Algowars.Domain.User.Exceptions;
-using Algowars.Domain.User.ValueObjects;
+using Algowars.Domain.Users.Exceptions;
+using Algowars.Domain.Users.ValueObjects;
 
 namespace Algowars.Domain.Tests.User.ValueObjects;
 

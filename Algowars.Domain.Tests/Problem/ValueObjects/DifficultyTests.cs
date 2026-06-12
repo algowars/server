@@ -1,6 +1,6 @@
-using Algowars.Domain.Problem.Enums;
-using Algowars.Domain.Problem.Exceptions;
-using Algowars.Domain.Problem.ValueObjects;
+using Algowars.Domain.Problems.Enums;
+using Algowars.Domain.Problems.Exceptions;
+using Algowars.Domain.Problems.ValueObjects;
 
 namespace Algowars.Domain.Tests.Problem.ValueObjects;
 
