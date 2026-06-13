@@ -1,7 +1,7 @@
 ﻿using Algowars.Domain.Users.ValueObjects;
 using FluentValidation;
 
-namespace Algowars.Application.Commands.User.CreateUser;
+namespace Algowars.Application.Commands.Users.CreateUser;
 
 internal sealed class CreateUserValidator : AbstractValidator<CreateUserCommand>
 {
