@@ -1,7 +1,6 @@
 ﻿using Algowars.Domain.SeedWork;
 using Algowars.Domain.Users;
 using Algowars.Domain.Users.Factories;
-using Algowars.Domain.Users.ValueObjects;
 using ApplicationCore.Commands;
 using Ardalis.Result;
 using FluentValidation;
@@ -24,7 +23,7 @@ internal sealed partial class CreateUserHandler(
             return Result.Conflict("A user with this account already exists.");
 
         var foundUserByUsername = await userRepository.FindByUsername(user.Username, cancellationToken);
-        if (foundUserByUsername is not null)
+        if (foundUserByUsername is not null)      
             return Result.Conflict("Username is already taken.");
 
         
