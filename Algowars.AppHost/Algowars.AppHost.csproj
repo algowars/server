@@ -1,0 +1,22 @@
+<Project Sdk="Aspire.AppHost.Sdk/13.4.3">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <UserSecretsId>7741b847-a2e4-4336-a406-03297fbd0d5c</UserSecretsId>
+    <AssemblyName>Algowars.AppHost</AssemblyName>
+    <RootNamespace>Algowars.AppHost</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Aspire.Hosting.PostgreSQL" />
+    <PackageReference Include="Aspire.Hosting.RabbitMQ" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Algowars.Api\Algowars.Api.csproj" IsAspireProjectResource="true" />
+  </ItemGroup>
+
+</Project>
