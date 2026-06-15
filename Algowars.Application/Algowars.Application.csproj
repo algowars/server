@@ -10,6 +10,7 @@
 	<PackageReference Include="Ardalis.Result" />
 	<PackageReference Include="FluentValidation" />
 	<PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
+	<PackageReference Include="MassTransit" />
 	<PackageReference Include="Mapster" />
 	<PackageReference Include="MediatR" />
   </ItemGroup>

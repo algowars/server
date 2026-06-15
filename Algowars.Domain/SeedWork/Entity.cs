@@ -3,10 +3,12 @@ namespace Algowars.Domain.SeedWork;
 public abstract class Entity
 {
     public Guid Id { get; protected set; }
+    public DateTime CreatedOn { get; protected set; }
 
     protected Entity()
     {
         Id = Guid.NewGuid();
+        CreatedOn = DateTime.UtcNow;
     }
 
     public override bool Equals(object? obj)
