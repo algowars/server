@@ -15,5 +15,5 @@ Restructuring the Algowars Server from a `src/`+`tests/` layout to `Algowars.*` 
 - ✅ 05-persistence-layer: Migrate Infrastructure → Algowars.Infrastructure ([Content](tasks/05-persistence-layer/task.md), [Progress](tasks/05-persistence-layer/progress-details.md))
 - ✅ 06-api-layer: Migrate PublicApi → Algowars.Api ([Content](tasks/06-api-layer/task.md), [Progress](tasks/06-api-layer/progress-details.md))
 - 🔲 07-test-project: Migrate UnitTests → Algowars.UnitTests
-- 🔲 08-ef-migrations: Add EF Core code-first migration
+- 🔄 08-ef-migrations: Add EF Core code-first migration ([Content](tasks/08-ef-migrations/task.md))
 - 🔲 09-submission-outbox-redesign: Per-step outbox ledger with retry tracking

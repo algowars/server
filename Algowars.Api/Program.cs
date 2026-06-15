@@ -3,7 +3,9 @@ using Algowars.Api.Extensions;
 using Algowars.Api.Middleware;
 using Algowars.Application;
 using Algowars.Infrastructure;
+using Algowars.Infrastructure.Persistence;
 using Asp.Versioning;
+using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -58,4 +60,10 @@ app.UseUserContext();
 app.MapControllers();
 app.MapDefaultEndpoints();
 
-app.Run();
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AlgoWarsDbContext>();
+    await db.Database.MigrateAsync();
+}
+
+await app.RunAsync();
