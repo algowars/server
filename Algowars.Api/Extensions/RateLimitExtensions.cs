@@ -14,18 +14,10 @@ internal static class RateLimitExtensions
 
         foreach (var type in controllersAssembly.GetTypes().Where(t => t.IsClass && !t.IsAbstract))
         {
-            foreach (var attr in type.GetCustomAttributes<UserRateLimitAttribute>(true))
-                userLimits.Add((attr.Count, attr.Seconds));
-            foreach (var attr in type.GetCustomAttributes<GlobalRateLimitAttribute>(true))
-                globalLimits.Add((attr.Count, attr.Seconds));
+            CollectFromMember(type, userLimits, globalLimits);
 
             foreach (var method in type.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly))
-            {
-                foreach (var attr in method.GetCustomAttributes<UserRateLimitAttribute>(true))
-                    userLimits.Add((attr.Count, attr.Seconds));
-                foreach (var attr in method.GetCustomAttributes<GlobalRateLimitAttribute>(true))
-                    globalLimits.Add((attr.Count, attr.Seconds));
-            }
+                CollectFromMember(method, userLimits, globalLimits);
         }
 
         services.AddRateLimiter(options =>
@@ -37,6 +29,39 @@ internal static class RateLimitExtensions
         });
 
         return services;
+    }
+
+    private static void CollectFromMember(MemberInfo member, HashSet<(int, int)> userLimits, HashSet<(int, int)> globalLimits)
+    {
+        foreach (var attr in member.GetCustomAttributes<UserRateLimitAttribute>(true))
+            userLimits.Add((attr.Count, attr.Seconds));
+
+        foreach (var attr in member.GetCustomAttributes<GlobalRateLimitAttribute>(true))
+            globalLimits.Add((attr.Count, attr.Seconds));
+
+        foreach (var attr in member.GetCustomAttributes<EnableRateLimitingAttribute>(true))
+            if (attr.PolicyName is not null)
+                ParsePolicyName(attr.PolicyName, userLimits, globalLimits);
+    }
+
+    private static void ParsePolicyName(string policyName, HashSet<(int, int)> userLimits, HashSet<(int, int)> globalLimits)
+    {
+        bool isUser = policyName.StartsWith("User_", StringComparison.Ordinal);
+        bool isGlobal = policyName.StartsWith("Global_", StringComparison.Ordinal);
+
+        if (!isUser && !isGlobal)
+            return;
+
+        string suffix = isUser
+            ? policyName["User_".Length..]
+            : policyName["Global_".Length..];
+
+        string[] parts = suffix.Split(':');
+        if (parts.Length == 2 && int.TryParse(parts[0], out int count) && int.TryParse(parts[1], out int seconds))
+        {
+            if (isUser) userLimits.Add((count, seconds));
+            else globalLimits.Add((count, seconds));
+        }
     }
 
     private static void AddUserPolicy(RateLimiterOptions options, int count, int seconds)

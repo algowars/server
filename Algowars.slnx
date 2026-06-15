@@ -1,9 +1,23 @@
-﻿<Solution>
-  <Project Path="Algowars.Domain/Algowars.Domain.csproj" />
-  <Project Path="Algowars.Application/Algowars.Application.csproj" />
-  <Project Path="Algowars.Infrastructure/Algowars.Infrastructure.csproj" />
-  <Project Path="Algowars.Api/Algowars.Api.csproj" />
-  <Project Path="Algowars.ServiceDefaults/Algowars.ServiceDefaults.csproj" />
-  <Project Path="Algowars.AppHost/Algowars.AppHost.csproj" />
-  <Project Path="Algowars.UnitTests/Algowars.UnitTests.csproj" />
+<Solution>
+  <Project Path="Algowars.Api/Algowars.Api.csproj">
+    <Build Solution="Debug|*" Project="false" />
+  </Project>
+  <Project Path="Algowars.AppHost/Algowars.AppHost.csproj">
+    <Build Solution="Debug|*" Project="false" />
+  </Project>
+  <Project Path="Algowars.Application/Algowars.Application.csproj">
+    <Build Solution="Debug|*" Project="false" />
+  </Project>
+  <Project Path="Algowars.Domain/Algowars.Domain.csproj">
+    <Build Solution="Debug|*" Project="false" />
+  </Project>
+  <Project Path="Algowars.Infrastructure/Algowars.Infrastructure.csproj">
+    <Build Solution="Debug|*" Project="false" />
+  </Project>
+  <Project Path="Algowars.ServiceDefaults/Algowars.ServiceDefaults.csproj">
+    <Build Solution="Debug|*" Project="false" />
+  </Project>
+  <Project Path="Algowars.UnitTests/Algowars.UnitTests.csproj">
+    <Build Solution="Debug|*" Project="false" />
+  </Project>
 </Solution>
