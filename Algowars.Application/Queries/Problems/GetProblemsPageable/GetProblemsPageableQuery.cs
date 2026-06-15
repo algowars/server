@@ -3,4 +3,4 @@ using Algowars.Application.Dtos.Problems;
 
 namespace Algowars.Application.Queries.Problems.GetProblemsPageable;
 
-internal sealed record GetProblemsPageableQuery(PaginationRequest Pagination) : IQuery<PaginatedResult<ProblemDto>>;
+public sealed record GetProblemsPageableQuery(PaginationRequest Pagination) : IQuery<PaginatedResult<ProblemDto>>;

@@ -2,7 +2,7 @@ using Algowars.Domain.Submissions.Enums;
 
 namespace Algowars.Application.Commands.Submissions.CreateSubmission;
 
-internal sealed record CreateSubmissionCommand(
+public sealed record CreateSubmissionCommand(
     Guid UserId,
     Guid ProblemVersionId,
     Guid LanguageVersionId,

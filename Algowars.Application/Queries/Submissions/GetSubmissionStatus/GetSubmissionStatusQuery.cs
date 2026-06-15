@@ -2,4 +2,4 @@ using Algowars.Application.Dtos.Submissions;
 
 namespace Algowars.Application.Queries.Submissions.GetSubmissionStatus;
 
-internal sealed record GetSubmissionStatusQuery(Guid SubmissionId) : IQuery<SubmissionStatusDto>;
+public sealed record GetSubmissionStatusQuery(Guid SubmissionId) : IQuery<SubmissionStatusDto>;

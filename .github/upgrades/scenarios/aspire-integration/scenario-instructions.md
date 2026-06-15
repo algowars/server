@@ -19,6 +19,11 @@ Restructure solution to Algowars.* layout at repo root, introduce DDD Domain pro
 - Projects move to repo root — no src/ or tests/ subdirectories
 - Submission outbox redesigned as append-only per-step ledger (task 09, done last): each pipeline step inserts a new SubmissionOutbox row; AttemptCount and Status are per-row; old lookup tables (submission_outbox_statuses, submission_outbox_types) removed; new ISubmissionOutboxRepository extracted from ISubmissionRepository
 
+## User Preferences
+### Execution Style
+- Skip task 07 (test project migration) — do tests last, after all other tasks are complete
+- No code comments in generated files
+
 ## Source Control
 - **Source Branch**: master
 - **Working Branch**: aspire-integration
