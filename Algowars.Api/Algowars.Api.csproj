@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+	<TargetFramework>net10.0</TargetFramework>
+	<ImplicitUsings>enable</ImplicitUsings>
+	<Nullable>enable</Nullable>
+	<UserSecretsId>fc934385-92ad-4500-8c5d-dfae2e8ecc14</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+	<PackageReference Include="Ardalis.Result.AspNetCore" />
+	<PackageReference Include="Asp.Versioning.Mvc" />
+	<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
+	<PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+	<PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+	  <PrivateAssets>all</PrivateAssets>
+	  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+	</PackageReference>
+	<PackageReference Include="NWebsec.AspNetCore.Core" />
+	<PackageReference Include="NWebsec.AspNetCore.Middleware" />
+	<PackageReference Include="Scalar.AspNetCore" />
+  </ItemGroup>
+
+  <ItemGroup>
+	<ProjectReference Include="..\Algowars.Application\Algowars.Application.csproj" />
+	<ProjectReference Include="..\Algowars.Infrastructure\Algowars.Infrastructure.csproj" />
+	<ProjectReference Include="..\Algowars.ServiceDefaults\Algowars.ServiceDefaults.csproj" />
+  </ItemGroup>
+
+</Project>
