@@ -13,6 +13,6 @@ internal sealed partial class SubmissionCreatedConsumer(
         return Task.CompletedTask;
     }
 
-    [LoggerMessage(Level = LogLevel.Information, Message = "Submission {SubmissionId} received — processing stub (outbox redesign pending task 09)")]
+    [LoggerMessage(Level = LogLevel.Information, Message = "Submission {SubmissionId} received — Execute outbox step seeded")]
     private partial void LogSubmissionReceived(Guid submissionId);
 }

@@ -1,6 +1,7 @@
 using Algowars.Application.Messaging;
 using Algowars.Domain.Problems;
 using Algowars.Domain.Submissions;
+using Algowars.Domain.Submissions.Outbox;
 using Algowars.Domain.Users;
 using Algowars.Infrastructure.Messaging.Consumers;
 using Algowars.Infrastructure.Persistence;
@@ -20,6 +21,7 @@ public static class InfrastructureServiceRegistration
         builder.Services.AddScoped<IUserRepository, UserRepository>();
         builder.Services.AddScoped<IProblemRepository, ProblemRepository>();
         builder.Services.AddScoped<ISubmissionRepository, SubmissionRepository>();
+        builder.Services.AddScoped<ISubmissionOutboxRepository, SubmissionOutboxRepository>();
 
         builder.Services.AddMassTransit(bus =>
         {

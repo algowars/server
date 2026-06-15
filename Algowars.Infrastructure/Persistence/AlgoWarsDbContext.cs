@@ -18,6 +18,7 @@ public sealed class AlgoWarsDbContext(DbContextOptions<AlgoWarsDbContext> option
     public DbSet<SubmissionDataModel> Submissions { get; set; }
     public DbSet<SubmissionResultDataModel> SubmissionResults { get; set; }
     public DbSet<SubmissionTestCaseDataModel> SubmissionTestCases { get; set; }
+    public DbSet<SubmissionOutboxDataModel> SubmissionOutboxSteps { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
