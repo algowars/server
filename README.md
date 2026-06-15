@@ -4,31 +4,40 @@
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=algowars_server&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=algowars_server)
 [![codecov](https://codecov.io/gh/algowars/server/branch/master/graph/badge.svg)](https://codecov.io/gh/algowars/server)
 
-## Local user secrets setup
+## Prerequisites
 
-The scripts below populate user secrets for `src/PublicApi/PublicApi.csproj`.
-CORS is configured in `src/PublicApi/appsettings.Development.json`.
+- [.NET 10 SDK](https://dotnet.microsoft.com/download)
+- [Docker Desktop](https://www.docker.com/products/docker-desktop) (for Postgres + RabbitMQ containers)
+- [Aspire workload](https://learn.microsoft.com/dotnet/aspire/fundamentals/setup-tooling): `dotnet workload install aspire`
 
-### PowerShell (Windows)
-
-From the repository root:
+## Running locally
 
 ```powershell
-./scripts/setup-user-secrets.ps1
+dotnet run --project Algowars.AppHost
 ```
 
-### Bash (Linux/macOS/Git Bash)
+Aspire starts Postgres and RabbitMQ in Docker, applies all pending EF migrations, and launches the API. The Aspire dashboard opens at `http://localhost:15888`.
 
-From the repository root:
+## Configuration
 
-```bash
-./scripts/setup-user-secrets.sh
+All secrets are stored in [user secrets](https://learn.microsoft.com/aspnet/core/security/app-secrets) on the `Algowars.Api` project.
+
+```powershell
+cd Algowars.Api
+dotnet user-secrets set "Auth0:Authority"   "https://<your-tenant>.auth0.com/"
+dotnet user-secrets set "Auth0:Audience"    "<your-api-identifier>"
 ```
 
-### Prompt behavior
+### CORS
 
-- Press `Enter` to use the shown default value.
-- Type `skip` to leave a key unchanged.
-- Set `MessageBus:Transport` to `RabbitMQ` or `AzureServiceBus`.
-  - `RabbitMQ`: prompts only RabbitMQ settings.
-  - `AzureServiceBus`: prompts only Azure Service Bus connection string.
+In development, `http://localhost:3000`, `http://localhost:4200`, and `http://localhost:5173` are allowed by default (`appsettings.Development.json`). Add more origins there or via user secrets:
+
+```powershell
+dotnet user-secrets set "Cors:AllowedOrigins:0" "http://localhost:3000"
+```
+
+In production set `Cors:AllowedOrigins` to your deployed frontend URL(s).
+
+### Message bus
+
+Aspire wires RabbitMQ automatically in dev. For production set `ConnectionStrings:algowars-mq` to an Azure Service Bus connection string (starts with `amqps://`).
