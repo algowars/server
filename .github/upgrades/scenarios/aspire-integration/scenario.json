@@ -3,13 +3,14 @@
   "operationId": "cc2fb073-27b6-4234-a7a9-22890dc7d29e",
   "description": "Adds Aspire orchestration to an existing repository for inner-loop development and optional Azure deployment readiness. Use when asked to \u0022aspirerify a project\u0022, \u0022add Aspire to a solution\u0022, \u0022integrate Aspire\u0022, \u0022set up an AppHost\u0022, \u0022add aspire init\u0022, or \u0022orchestrate services with Aspire\u0022. Handles CLI setup, TFM compatibility gating, inter-service communication mapping, and delegates AppHost wiring to the Aspire CLI agent skills.\n",
   "startTime": "2026-06-15T01:07:20.8641751Z",
-  "lastUpdateTime": "2026-06-15T02:00:06.0220631Z",
+  "lastUpdateTime": "2026-06-15T02:09:38.2308851Z",
   "properties": {
     "taskStates": {
       "01-project-scaffolding": "Completed",
       "02-domain-layer": "Completed",
       "03-aspire-setup": "Completed",
-      "04-application-layer": "Completed"
+      "04-application-layer": "Completed",
+      "05-persistence-layer": "Completed"
     }
   },
   "folderPath": ""

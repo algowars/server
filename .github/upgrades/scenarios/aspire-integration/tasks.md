@@ -4,7 +4,7 @@
 
 Restructuring the Algowars Server from a `src/`+`tests/` layout to `Algowars.*` projects at repo root. Introduces a pure DDD `Algowars.Domain` project, Aspire orchestration (AppHost + ServiceDefaults), replaces all appsettings-based DB/MQ config with Aspire-managed connections, renames the Account domain to User, and adopts EF Core code-first migrations.
 
-**Progress**: 4/9 tasks complete <progress value="44" max="100"></progress> 44%
+**Progress**: 5/9 tasks complete <progress value="56" max="100"></progress> 56%
 
 ## Tasks
 
@@ -12,7 +12,7 @@ Restructuring the Algowars Server from a `src/`+`tests/` layout to `Algowars.*` 
 - ✅ 02-domain-layer: Create Algowars.Domain ([Content](tasks/02-domain-layer/task.md), [Progress](tasks/02-domain-layer/progress-details.md))
 - ✅ 03-aspire-setup: Create Algowars.ServiceDefaults and Algowars.AppHost ([Content](tasks/03-aspire-setup/task.md), [Progress](tasks/03-aspire-setup/progress-details.md))
 - ✅ 04-application-layer: Migrate ApplicationCore → Algowars.Application ([Content](tasks/04-application-layer/task.md), [Progress](tasks/04-application-layer/progress-details.md))
-- 🔲 05-persistence-layer: Migrate Infrastructure → Algowars.Infrastructure
+- ✅ 05-persistence-layer: Migrate Infrastructure → Algowars.Infrastructure ([Content](tasks/05-persistence-layer/task.md), [Progress](tasks/05-persistence-layer/progress-details.md))
 - 🔲 06-api-layer: Migrate PublicApi → Algowars.Api
 - 🔲 07-test-project: Migrate UnitTests → Algowars.UnitTests
 - 🔲 08-ef-migrations: Add EF Core code-first migration
