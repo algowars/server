@@ -6,6 +6,11 @@ var builder = WebApplication.CreateBuilder(args);
 builder.AddServiceDefaults();
 
 builder.Services.AddControllers();
+builder.Services.AddApiVersioning(options =>
+{
+    options.DefaultApiVersion = new Asp.Versioning.ApiVersion(1);
+    options.AssumeDefaultVersionWhenUnspecified = true;
+});
 builder.Services.AddApplication();
 builder.AddInfrastructure();
 builder.Services.AddOpenApi();

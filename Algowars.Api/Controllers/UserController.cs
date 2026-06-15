@@ -6,7 +6,7 @@ namespace Algowars.Api.Controllers;
 
 [ApiController]
 [Route("api/v{version:apiVersion}/[controller]")]
-public class UsersController(IUserService userService) : ControllerBase
+public class UserController(IUserService userService) : ControllerBase
 {
     [HttpPost]
     [ProducesResponseType(typeof(Guid), StatusCodes.Status201Created)]
