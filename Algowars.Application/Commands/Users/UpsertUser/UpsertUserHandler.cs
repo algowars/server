@@ -19,7 +19,9 @@ internal sealed class UpsertUserHandler(
         var existing = await userRepository.FindBySubAsync(request.Sub, cancellationToken);
 
         if (existing is not null)
+        {
             return await UpdateExisting(existing, request, cancellationToken);
+        }
 
         return await CreateNew(request, cancellationToken);
     }
@@ -36,7 +38,9 @@ internal sealed class UpsertUserHandler(
             {
                 var taken = await userRepository.FindByUsername(desiredUsername, cancellationToken);
                 if (taken is not null)
+                {
                     return Result.Conflict("Username is already taken.");
+                }
 
                 try
                 {
@@ -61,7 +65,9 @@ internal sealed class UpsertUserHandler(
         {
             var taken = await userRepository.FindByUsername(new Username(raw), cancellationToken);
             if (taken is not null)
+            {
                 return Result.Conflict("Username is already taken.");
+            }
         }
 
         var user = userFactory.Create(new CreateUserParams(raw, request.Sub, request.ImageUrl));

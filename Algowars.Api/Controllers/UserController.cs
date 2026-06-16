@@ -1,6 +1,7 @@
 using Algowars.Api.Attributes;
 using Algowars.Api.Context;
 using Algowars.Application.Commands.Users.UpsertUser;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Algowars.Application.Dtos.Users;
 using Algowars.Application.Queries.Users.GetProfileAggregate;
 using Algowars.Application.Queries.Users.GetProfileSettings;
@@ -25,12 +26,14 @@ public sealed class UserController(ISender sender) : BaseApiController
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> UpsertUserAsync(
-        [FromBody] UpsertUserRequest? request,
+        [FromBody(EmptyBodyBehavior = EmptyBodyBehavior.Allow)] UpsertUserRequest? request,
         CancellationToken cancellationToken)
     {
         string? sub = GetSub();
         if (string.IsNullOrEmpty(sub))
+        {
             return Unauthorized();
+        }
 
         string? imageUrl = request?.ImageUrl ?? User.FindFirst("picture")?.Value;
         var result = await sender.Send(new UpsertUserCommand(sub, imageUrl, request?.Username), cancellationToken);
@@ -45,7 +48,9 @@ public sealed class UserController(ISender sender) : BaseApiController
     public async Task<IActionResult> GetProfileAsync(string username, CancellationToken cancellationToken)
     {
         if (string.IsNullOrEmpty(username))
+        {
             return BadRequest("Username is required");
+        }
 
         return ToActionResult(await sender.Send(new GetProfileAggregateQuery(username), cancellationToken));
     }
@@ -61,7 +66,9 @@ public sealed class UserController(ISender sender) : BaseApiController
     {
         string? sub = GetSub();
         if (string.IsNullOrEmpty(sub))
+        {
             return Unauthorized();
+        }
 
         var result = await sender.Send(new GetUserBySubQuery(sub), cancellationToken);
         return ToActionResult(result);
@@ -78,7 +85,9 @@ public sealed class UserController(ISender sender) : BaseApiController
     {
         string? sub = GetSub();
         if (string.IsNullOrEmpty(sub))
+        {
             return Unauthorized();
+        }
 
         return ToActionResult(await sender.Send(new GetProfileSettingsQuery(sub), cancellationToken));
     }

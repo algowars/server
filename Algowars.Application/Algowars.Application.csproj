@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
 	<TargetFramework>net10.0</TargetFramework>
@@ -17,6 +17,10 @@
 
   <ItemGroup>
 	<ProjectReference Include="..\Algowars.Domain\Algowars.Domain.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Commands\Users\CreateUser\" />
   </ItemGroup>
 
 </Project>

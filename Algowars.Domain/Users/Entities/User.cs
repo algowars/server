@@ -38,7 +38,9 @@ public sealed class User : AggregateRoot
     {
         if (UsernameLastChangedAt.HasValue &&
             DateTime.UtcNow - UsernameLastChangedAt.Value < TimeSpan.FromDays(MaxDaysUntilUsernameChange))
+        {
             throw new UsernameCooldownException(UsernameLastChangedAt.Value);
+        }
 
         Username = username;
         UsernameLastChangedAt = DateTime.UtcNow;

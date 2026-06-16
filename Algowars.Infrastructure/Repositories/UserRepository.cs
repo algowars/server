@@ -27,7 +27,10 @@ internal sealed class UserRepository(AlgoWarsDbContext db) : IUserRepository
     public async Task UpdateAsync(User user, CancellationToken cancellationToken)
     {
         var model = await db.Users.FirstOrDefaultAsync(u => u.Id == user.Id, cancellationToken);
-        if (model is null) return;
+        if (model is null)
+        {
+            return;
+        }
 
         model.Username = user.Username.Value;
         model.ImageUrl = user.ImageUrl?.Value;
