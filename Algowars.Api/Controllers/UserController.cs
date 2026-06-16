@@ -23,9 +23,7 @@ public sealed class UserController(ISender sender) : BaseApiController
     [EnableRateLimiting("User_10:60")]
     [ProducesResponseType(typeof(Guid), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> UpsertUserAsync(
-        [FromBody] UpsertUserRequest request,
-        CancellationToken cancellationToken)
+    public async Task<IActionResult> UpsertUserAsync(CancellationToken cancellationToken)
     {
         string? sub = GetSub();
         if (string.IsNullOrEmpty(sub))
@@ -35,8 +33,8 @@ public sealed class UserController(ISender sender) : BaseApiController
         if (existing.IsSuccess)
             return Ok(existing.Value.Id);
 
-        var result = await sender.Send(
-            new CreateUserCommand(request.Username, sub, request.ImageUrl), cancellationToken);
+        string? imageUrl = User.FindFirst("picture")?.Value;
+        var result = await sender.Send(new CreateUserCommand(sub, imageUrl), cancellationToken);
         return ToActionResult(result);
     }
 
@@ -86,5 +84,3 @@ public sealed class UserController(ISender sender) : BaseApiController
         return ToActionResult(await sender.Send(new GetProfileSettingsQuery(sub), cancellationToken));
     }
 }
-
-public sealed record UpsertUserRequest(string Username, string? ImageUrl);

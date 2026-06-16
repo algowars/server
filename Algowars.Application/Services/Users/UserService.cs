@@ -6,6 +6,6 @@ namespace Algowars.Application.Services.Users;
 
 internal sealed class UserService(ISender sender) : IUserService
 {
-    public async Task<Result<Guid>> CreateUserAsync(string username, string sub, string? imageUrl, CancellationToken cancellationToken = default)
-        => await sender.Send(new CreateUserCommand(username, sub, imageUrl), cancellationToken);
+    public async Task<Result<Guid>> CreateUserAsync(string sub, string? imageUrl, CancellationToken cancellationToken = default)
+        => await sender.Send(new CreateUserCommand(sub, imageUrl), cancellationToken);
 }

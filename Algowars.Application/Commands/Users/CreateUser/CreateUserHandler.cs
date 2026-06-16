@@ -2,6 +2,7 @@ using Algowars.Domain.SeedWork;
 using Algowars.Domain.Users;
 using Algowars.Domain.Users.Entities;
 using Algowars.Domain.Users.Factories;
+using Algowars.Domain.Users.ValueObjects;
 using Ardalis.Result;
 using FluentValidation;
 
@@ -15,15 +16,21 @@ internal sealed class CreateUserHandler(
 {
     protected override async Task<Result<Guid>> HandleValidated(CreateUserCommand request, CancellationToken cancellationToken)
     {
-        var user = userFactory.Create(new CreateUserParams(request.Username, request.Sub, request.ImageUrl));
-
-        if (await userRepository.FindBySubAsync(user.Sub, cancellationToken) is not null)
+        if (await userRepository.FindBySubAsync(request.Sub, cancellationToken) is not null)
             return Result.Conflict("A user with this account already exists.");
 
-        if (await userRepository.FindByUsername(user.Username, cancellationToken) is not null)
-            return Result.Conflict("Username is already taken.");
+        string raw = GenerateUsername();
+        while (await userRepository.FindByUsername(new Username(raw), cancellationToken) is not null)
+            raw = GenerateUsername();
 
+        var user = userFactory.Create(new CreateUserParams(raw, request.Sub, request.ImageUrl));
         await userRepository.AddAsync(user, cancellationToken);
         return Result.Success(user.Id);
+    }
+
+    private static string GenerateUsername()
+    {
+        string suffix = Guid.NewGuid().ToString("N")[..8];
+        return $"user_{suffix}";
     }
 }
