@@ -11,7 +11,7 @@ internal sealed class UserRepository(AlgoWarsDbContext db) : IUserRepository
 {
     public async Task AddAsync(User user, CancellationToken cancellationToken)
     {
-        var model = new UserDataModel
+        db.Users.Add(new UserDataModel
         {
             Id = user.Id,
             Username = user.Username.Value,
@@ -20,8 +20,21 @@ internal sealed class UserRepository(AlgoWarsDbContext db) : IUserRepository
             Bio = user.Bio?.Value,
             UsernameLastChangedAt = user.UsernameLastChangedAt,
             CreatedOn = user.CreatedOn,
-        };
-        db.Users.Add(model);
+        });
+        await db.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task UpdateAsync(User user, CancellationToken cancellationToken)
+    {
+        var model = await db.Users.FirstOrDefaultAsync(u => u.Id == user.Id, cancellationToken);
+        if (model is null) return;
+
+        model.Username = user.Username.Value;
+        model.ImageUrl = user.ImageUrl?.Value;
+        model.Bio = user.Bio?.Value;
+        model.UsernameLastChangedAt = user.UsernameLastChangedAt;
+        model.UpdatedOn = DateTime.UtcNow;
+
         await db.SaveChangesAsync(cancellationToken);
     }
 
@@ -48,9 +61,14 @@ internal sealed class UserRepository(AlgoWarsDbContext db) : IUserRepository
 
     private static User MapToDomain(UserDataModel model)
     {
-        var user = new User(new Username(model.Username), model.Sub);
-        if (model.ImageUrl is not null) user.UpdateImageUrl(new ImageUrl(model.ImageUrl));
-        if (model.Bio is not null) user.UpdateBio(new Bio(model.Bio));
+        var user = User.Reconstitute(
+            model.Id,
+            new Username(model.Username),
+            model.Sub,
+            model.ImageUrl is not null ? new ImageUrl(model.ImageUrl) : null,
+            model.Bio is not null ? new Bio(model.Bio) : null,
+            model.UsernameLastChangedAt,
+            model.CreatedOn);
         return user;
     }
 }

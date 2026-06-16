@@ -1,6 +1,6 @@
 using Algowars.Api.Attributes;
 using Algowars.Api.Context;
-using Algowars.Application.Commands.Users.CreateUser;
+using Algowars.Application.Commands.Users.UpsertUser;
 using Algowars.Application.Dtos.Users;
 using Algowars.Application.Queries.Users.GetProfileAggregate;
 using Algowars.Application.Queries.Users.GetProfileSettings;
@@ -23,18 +23,17 @@ public sealed class UserController(ISender sender) : BaseApiController
     [EnableRateLimiting("User_10:60")]
     [ProducesResponseType(typeof(Guid), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> UpsertUserAsync(CancellationToken cancellationToken)
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> UpsertUserAsync(
+        [FromBody] UpsertUserRequest? request,
+        CancellationToken cancellationToken)
     {
         string? sub = GetSub();
         if (string.IsNullOrEmpty(sub))
             return Unauthorized();
 
-        var existing = await sender.Send(new GetUserBySubQuery(sub), cancellationToken);
-        if (existing.IsSuccess)
-            return Ok(existing.Value.Id);
-
-        string? imageUrl = User.FindFirst("picture")?.Value;
-        var result = await sender.Send(new CreateUserCommand(sub, imageUrl), cancellationToken);
+        string? imageUrl = request?.ImageUrl ?? User.FindFirst("picture")?.Value;
+        var result = await sender.Send(new UpsertUserCommand(sub, imageUrl, request?.Username), cancellationToken);
         return ToActionResult(result);
     }
 
@@ -84,3 +83,5 @@ public sealed class UserController(ISender sender) : BaseApiController
         return ToActionResult(await sender.Send(new GetProfileSettingsQuery(sub), cancellationToken));
     }
 }
+
+public sealed record UpsertUserRequest(string? Username, string? ImageUrl);

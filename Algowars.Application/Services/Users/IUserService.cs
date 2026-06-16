@@ -4,5 +4,5 @@ namespace Algowars.Application.Services.Users;
 
 public interface IUserService
 {
-    Task<Result<Guid>> CreateUserAsync(string sub, string? imageUrl, CancellationToken cancellationToken = default);
+    Task<Result<Guid>> UpsertUserAsync(string sub, string? imageUrl, string? username = null, CancellationToken cancellationToken = default);
 }
