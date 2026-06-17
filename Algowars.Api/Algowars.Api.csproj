@@ -10,10 +10,12 @@
     <PackageReference Include="Ardalis.Result.AspNetCore" />
     <PackageReference Include="Asp.Versioning.Mvc" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+    <PackageReference Include="Scalar.AspNetCore" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Algowars.Application\Algowars.Application.csproj" />
+    <ProjectReference Include="..\Infrastructure\Algowars.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>
