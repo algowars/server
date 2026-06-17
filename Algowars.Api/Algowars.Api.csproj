@@ -18,7 +18,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Algowars.Application\Algowars.Application.csproj" />
-    <ProjectReference Include="..\Algowars.Infrastructure\Algowars.Infrastructure.csproj" />
     <ProjectReference Include="..\Algowars.ServiceDefaults\Algowars.ServiceDefaults.csproj" />
   </ItemGroup>
 
