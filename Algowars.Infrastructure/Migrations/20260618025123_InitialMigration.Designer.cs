@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Algowars.Infrastructure.Migrations
 {
     [DbContext(typeof(AlgoWarsDbContext))]
-    [Migration("20260614173828_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20260618025123_InitialMigration")]
+    partial class InitialMigration
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

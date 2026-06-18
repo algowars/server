@@ -1,5 +1,5 @@
 using Algowars.Application;
-using Infrastructure;
+using Algowars.Infrastructure;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -11,7 +11,7 @@ builder.Services.AddApiVersioning(options =>
     options.AssumeDefaultVersionWhenUnspecified = true;
 });
 builder.Services.AddApplication();
-builder.Services.AddInfrastructure(builder.Configuration);
+builder.AddInfrastructure();
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
