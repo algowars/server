@@ -1,40 +1,52 @@
+using Algowars.Application.Settings;
 using Algowars.Domain.Users;
 using Algowars.Infrastructure.Persistence;
 using Algowars.Infrastructure.Repositories;
-using MassTransit;
+using Algowars.Infrastructure.Settings;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 
 namespace Algowars.Infrastructure;
 
 public static class InfrastructureServiceRegistration
 {
-    public static IHostApplicationBuilder AddInfrastructure(this IHostApplicationBuilder builder)
+    public static IServiceCollection AddInfrastructure(
+        this IServiceCollection services,
+        IConfiguration configuration)
     {
-        builder.AddNpgsqlDbContext<AlgoWarsDbContext>("algowars-db");
+        services.AddOption<ConnectionStringOptions>(configuration);
 
-        builder.Services.AddScoped<IUserRepository, UserRepository>();
+        services.AddPersistence();
+        services.AddRepositories();
 
-        builder.Services.AddMassTransit(x =>
+        return services;
+    }
+
+    private static IServiceCollection AddPersistence(this IServiceCollection services)
+    {
+        services.AddDbContext<AlgowarsDbContext>((serviceProvider, dbOptions) =>
         {
-            if (builder.Environment.IsDevelopment())
-            {
-                x.UsingRabbitMq((ctx, cfg) =>
-                {
-                    cfg.Host(builder.Configuration["ConnectionStrings:algowars-mq"]);
-                    cfg.ConfigureEndpoints(ctx);
-                });
-            }
-            else
-            {
-                x.UsingAzureServiceBus((ctx, cfg) =>
-                {
-                    cfg.Host(builder.Configuration["ConnectionStrings:algowars-mq"]);
-                    cfg.ConfigureEndpoints(ctx);
-                });
-            }
+            var options = serviceProvider
+                .GetRequiredService<ConnectionStringOptions>();
+
+            dbOptions.UseNpgsql(options.DefaultConnection);
         });
 
-        return builder;
+        return services;
+    }
+
+    private static IServiceCollection AddRepositories(this IServiceCollection services)
+    {
+        services.AddScoped<IUserRepository, UserRepository>();
+
+        return services;
+    }
+
+    public static async Task MigrateAsync(this IServiceProvider services)
+    {
+        using var scope = services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AlgowarsDbContext>();
+        await db.Database.MigrateAsync();
     }
 }

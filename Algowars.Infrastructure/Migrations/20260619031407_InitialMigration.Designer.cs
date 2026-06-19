@@ -11,8 +11,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 namespace Algowars.Infrastructure.Migrations
 {
-    [DbContext(typeof(AlgoWarsDbContext))]
-    [Migration("20260618025123_InitialMigration")]
+    [DbContext(typeof(AlgowarsDbContext))]
+    [Migration("20260619031407_InitialMigration")]
     partial class InitialMigration
     {
         /// <inheritdoc />
@@ -25,7 +25,7 @@ namespace Algowars.Infrastructure.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("Algowars.Infrastructure.Persistence.Models.Users.UserDataModel", b =>
+            modelBuilder.Entity("Algowars.Domain.Users.Entities.User", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -44,7 +44,8 @@ namespace Algowars.Infrastructure.Migrations
 
                     b.Property<string>("Sub")
                         .IsRequired()
-                        .HasColumnType("text")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
                         .HasColumnName("sub");
 
                     b.Property<string>("Username")
@@ -65,7 +66,7 @@ namespace Algowars.Infrastructure.Migrations
                     b.HasIndex("Username")
                         .IsUnique();
 
-                    b.ToTable("users");
+                    b.ToTable("users", (string)null);
                 });
 #pragma warning restore 612, 618
         }

@@ -1,20 +1,14 @@
-using Algowars.Infrastructure.Persistence.Models.Users;
+using Algowars.Domain.Users.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Algowars.Infrastructure.Persistence;
 
-internal sealed class AlgoWarsDbContext(DbContextOptions<AlgoWarsDbContext> options) : DbContext(options)
+internal sealed class AlgowarsDbContext(DbContextOptions<AlgowarsDbContext> options) : DbContext(options)
 {
-    public DbSet<UserDataModel> Users => Set<UserDataModel>();
+    public DbSet<User> Users { get; init; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<UserDataModel>()
-            .HasIndex(u => u.Sub).IsUnique();
-
-        modelBuilder.Entity<UserDataModel>()
-            .HasIndex(u => u.Username).IsUnique();
-
-        base.OnModelCreating(modelBuilder);
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(AlgowarsDbContext).Assembly);
     }
 }
