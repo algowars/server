@@ -12,7 +12,7 @@ public class UserController(IUserService userService) : ControllerBase
     [ProducesResponseType(typeof(Guid), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
-    public async Task<ActionResult<Guid>> CreateUser(
+    public async Task<ActionResult<Guid>> UpsertAccount(
         [FromBody] CreateUserRequest request,
         CancellationToken cancellationToken)
     => this.ToActionResult(await userService.CreateUserAsync(
