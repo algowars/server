@@ -1,10 +1,15 @@
-using Algowars.Domain.Users.Entities;
+using Algowars.Application.Users.Dtos;
 
 namespace Algowars.Application;
 
 public sealed class UserContext
 {
-    public User? User { get; set; }
+    public UserDto? User { get; set; }
+
+    public IReadOnlyList<string> Permissions { get; set; } = [];
 
     public bool IsAuthenticated => User is not null;
+
+    public bool HasPermission(string permission) =>
+        Permissions.Contains(permission);
 }

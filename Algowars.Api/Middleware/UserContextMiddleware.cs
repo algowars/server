@@ -33,6 +33,9 @@ public partial class AccountContextMiddleware(
         if (result.IsSuccess)
         {
             userContext.User = result.Value;
+            userContext.Permissions = [.. context.User
+                .FindAll("permissions")
+                .Select(c => c.Value)];
 
             var requestTelemetry = context.Features.Get<RequestTelemetry>();
             if (requestTelemetry is not null)

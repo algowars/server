@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Algowars.Infrastructure.Repositories;
 
-internal sealed class UserRepository(AlgowarsDbContext context) : IUserRepository
+internal sealed class UserRepository(AlgowarsDbContext context) : IUserWriteRepository
 {
     public async Task AddAsync(User user, CancellationToken cancellationToken)
     {
@@ -22,6 +22,12 @@ internal sealed class UserRepository(AlgowarsDbContext context) : IUserRepositor
     public async Task<User?> FindBySubAsync(string sub, CancellationToken cancellationToken)
     {
         return await context.Users.FirstOrDefaultAsync(u => u.Sub == sub, cancellationToken);
+    }
+
+    public async Task UpdateAsync(User user, CancellationToken cancellationToken)
+    {
+        context.Users.Update(user);
+        await context.SaveChangesAsync(cancellationToken);
     }
 
     public async Task<User?> FindByUsername(Username username, CancellationToken cancellationToken)

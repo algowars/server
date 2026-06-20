@@ -1,26 +1,27 @@
+using Algowars.Api.Attributes;
+using Algowars.Api.Requests.User;
+using Algowars.Application;
 using Algowars.Application.Services.Users;
+using Algowars.Application.Users.Dtos;
 using Ardalis.Result.AspNetCore;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Algowars.Api.Controllers;
 
 [ApiController]
 [Route("api/v{version:apiVersion}/[controller]")]
-public class UserController(IUserService userService) : ControllerBase
+public class UserController(IUserService userService, UserContext userContext) : ControllerBase
 {
-    [HttpPost]
-    [ProducesResponseType(typeof(Guid), StatusCodes.Status201Created)]
+    [HttpPut]
+    [RequireUser]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status409Conflict)]
-    public async Task<ActionResult<Guid>> UpsertAccount(
-        [FromBody] CreateUserRequest request,
-        CancellationToken cancellationToken)
-    => this.ToActionResult(await userService.CreateUserAsync(
-        request.Username,
-        request.Sub,
-        request.ImageUrl,
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<Unit>> UpsertAccount(
+        [FromBody] UpsertUserRequest request, CancellationToken cancellationToken)
+    => this.ToActionResult(await userService.UpsertAccountAsync(
+        userContext.User!.Id,
+        new UpsertUserDto(request.ImageUrl, request.Bio),
         cancellationToken));
-    
 }
-
-public sealed record CreateUserRequest(string Username, string Sub, string? ImageUrl);

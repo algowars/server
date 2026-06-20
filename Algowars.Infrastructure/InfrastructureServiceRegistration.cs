@@ -1,3 +1,4 @@
+using Algowars.Application.Users;
 using Algowars.Application.Settings;
 using Algowars.Domain.Users;
 using Algowars.Infrastructure.Persistence;
@@ -38,7 +39,8 @@ public static class InfrastructureServiceRegistration
 
     private static IServiceCollection AddRepositories(this IServiceCollection services)
     {
-        services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<IUserWriteRepository, UserRepository>();
+        services.AddScoped<IUserReadRepository, UserReadRepository>();
 
         return services;
     }

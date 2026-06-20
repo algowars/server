@@ -1,21 +1,31 @@
-using Algowars.Application.Commands.Users.CreateUser;
-using Algowars.Domain.Users;
-using Algowars.Domain.Users.Entities;
+using Algowars.Application.Commands.Users.UpsertUser;
+using Algowars.Application.Queries.Users.GetUserBySub;
+using Algowars.Application.Users;
+using Algowars.Application.Users.Dtos;
 using Ardalis.Result;
 using MediatR;
 
 namespace Algowars.Application.Services.Users;
 
-internal sealed class UserService(IMediator mediator, IUserRepository userRepository) : IUserService
+public interface IUserService
 {
-    public async Task<Result<Guid>> CreateUserAsync(string username, string sub, string? imageUrl, CancellationToken cancellationToken = default)
+    Task<Result<UserDto>> GetBySubAsync(string sub, CancellationToken cancellationToken);
+
+    Task<Result<Unit>> UpsertAccountAsync(Guid userId, UpsertUserDto request, CancellationToken cancellationToken);
+}
+
+
+internal sealed class UserService(IMediator mediator) : IUserService
+{
+    public async Task<Result<UserDto>> GetBySubAsync(string sub, CancellationToken cancellationToken = default)
     {
-        return await mediator.Send(new CreateUserCommand(username, sub, imageUrl), cancellationToken);
+        var result = await mediator.Send(new GetUserBySubQuery(sub), cancellationToken);
+        return result;
     }
 
-    public async Task<Result<User>> GetBySubAsync(string sub, CancellationToken cancellationToken = default)
+    public async Task<Result<Unit>> UpsertAccountAsync(Guid userId, UpsertUserDto request, CancellationToken cancellationToken)
     {
-        var user = await userRepository.FindBySubAsync(sub, cancellationToken);
-        return user is null ? Result.NotFound() : Result.Success(user);
+        var result = await mediator.Send(new UpsertUserCommand(userId, request.ImageUrl, request.Bio), cancellationToken);
+        return result;  
     }
 }
