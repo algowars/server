@@ -1,7 +1,6 @@
 using Algowars.Api;
 using Algowars.Application;
 using Algowars.Infrastructure;
-using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 

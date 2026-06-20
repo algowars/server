@@ -1,7 +1,7 @@
+using Algowars.Api.Extensions;
 using Algowars.Api.Settings;
 using Algowars.Infrastructure;
 using Asp.Versioning;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Scalar.AspNetCore;
 
 namespace Algowars.Api;
@@ -34,16 +34,7 @@ public static class ApiServiceRegistration
             });
         });
 
-        var auth0Options = configuration.GetSection(Auth0Options.SectionName).Get<Auth0Options>()
-            ?? throw new InvalidOperationException($"Configuration section '{Auth0Options.SectionName}' is missing or invalid.");
-
-        services.AddSingleton(auth0Options);
-        services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-            .AddJwtBearer(options =>
-            {
-                options.Authority = $"https://{auth0Options.Domain}/";
-                options.Audience = auth0Options.Audience;
-            });
+        services.AddAuth0(configuration);
 
         return services;
     }
