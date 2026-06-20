@@ -1,4 +1,5 @@
 using Algowars.Api.Extensions;
+using Algowars.Api.Middleware;
 using Algowars.Api.Settings;
 using Algowars.Infrastructure;
 using Asp.Versioning;
@@ -35,6 +36,8 @@ public static class ApiServiceRegistration
         });
 
         services.AddAuth0(configuration);
+        services.AddAppInsights(configuration);
+        services.AddScoped<AccountContextMiddleware>();
 
         return services;
     }
@@ -52,6 +55,7 @@ public static class ApiServiceRegistration
         app.UseCors(CorsPolicyName);
         app.UseAuthentication();
         app.UseAuthorization();
+        app.UseMiddleware<AccountContextMiddleware>();
         app.MapControllers();
     }
 }
