@@ -6,5 +6,6 @@ internal static class LoggingEventIds
     {
         public const int ContextMissingSub = 1000;
         public const int ContextResolveFailed = 1001;
+        public const int ContextPublicEndpoint = 1002;
     }
 }

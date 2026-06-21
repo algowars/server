@@ -31,7 +31,8 @@ public static class ApiServiceRegistration
             {
                 policy.WithOrigins(corsOptions.AllowedOrigins)
                       .AllowAnyHeader()
-                      .AllowAnyMethod();
+                      .AllowAnyMethod()
+                      .AllowCredentials();
             });
         });
 

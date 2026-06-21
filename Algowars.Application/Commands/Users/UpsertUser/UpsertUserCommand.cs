@@ -4,4 +4,4 @@ using MediatR;
 
 namespace Algowars.Application.Commands.Users.UpsertUser;
 
-internal sealed record UpsertUserCommand(Guid UserId, string? ImageUrl, string? Bio) : ICommand<Unit>;
+internal sealed record UpsertUserCommand(string Sub, string? Username, string? ImageUrl, string? Bio) : ICommand<Unit>;

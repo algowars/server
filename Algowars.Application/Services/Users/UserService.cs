@@ -11,7 +11,7 @@ public interface IUserService
 {
     Task<Result<UserDto>> GetBySubAsync(string sub, CancellationToken cancellationToken);
 
-    Task<Result<Unit>> UpsertAccountAsync(Guid userId, UpsertUserDto request, CancellationToken cancellationToken);
+    Task<Result<Unit>> UpsertAccountAsync(string sub, UpsertUserDto request, CancellationToken cancellationToken);
 }
 
 
@@ -23,9 +23,9 @@ internal sealed class UserService(IMediator mediator) : IUserService
         return result;
     }
 
-    public async Task<Result<Unit>> UpsertAccountAsync(Guid userId, UpsertUserDto request, CancellationToken cancellationToken)
+    public async Task<Result<Unit>> UpsertAccountAsync(string sub, UpsertUserDto request, CancellationToken cancellationToken)
     {
-        var result = await mediator.Send(new UpsertUserCommand(userId, request.ImageUrl, request.Bio), cancellationToken);
+        var result = await mediator.Send(new UpsertUserCommand(sub, request.Username, request.ImageUrl, request.Bio), cancellationToken);
         return result;  
     }
 }

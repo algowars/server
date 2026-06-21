@@ -1,26 +1,43 @@
-﻿using Algowars.Domain.Users;
-using Algowars.Domain.Users.ValueObjects;
-using ApplicationCore.Commands;
+﻿using Algowars.Application.Services.Users;
+using Algowars.Application.Commands;
 using Ardalis.Result;
 using FluentValidation;
 using MediatR;
+using Algowars.Domain.SeedWork;
+using Algowars.Domain.Users;
+using Algowars.Domain.Users.Entities;
+using Algowars.Domain.Users.Factories;
+using Algowars.Domain.Users.ValueObjects;
+using ApplicationCore.Commands;
 
 namespace Algowars.Application.Commands.Users.UpsertUser;
 
 internal sealed partial class UpsertUserHandler(
     IValidator<UpsertUserCommand> validator,
+    IAggregateFactory<User, CreateUserParams> userFactory,
+    IUsernameGeneratorService usernameGenerator,
     IUserWriteRepository userRepository) : AbstractCommandHandler<UpsertUserCommand, Unit>(validator)
 {
     protected override async Task<Result<Unit>> HandleValidated(UpsertUserCommand request, CancellationToken cancellationToken)
     {
-        var user = await userRepository.FindByIdAsync(request.UserId, cancellationToken);
+        User? user = await userRepository.FindBySubAsync(request.Sub, cancellationToken);
+
         if (user is null)
-            return Result<Unit>.NotFound("User not found.");
+        {
+            string username = string.IsNullOrWhiteSpace(request.Username)
+                ? usernameGenerator.Generate()
+                : request.Username;
 
-        user.UpdateBio(request.Bio is not null ? new Bio(request.Bio) : null);
-        user.UpdateImageUrl(request.ImageUrl is not null ? new ImageUrl(request.ImageUrl) : null);
-
-        await userRepository.UpdateAsync(user, cancellationToken);
+            User newUser = userFactory.Create(new CreateUserParams(username, request.Sub, request.ImageUrl));
+            newUser.UpdateBio(request.Bio is not null ? new Bio(request.Bio) : null);
+            await userRepository.AddAsync(newUser, cancellationToken);
+        }
+        else
+        {
+            user.UpdateBio(request.Bio is not null ? new Bio(request.Bio) : null);
+            user.UpdateImageUrl(request.ImageUrl is not null ? new ImageUrl(request.ImageUrl) : null);
+            await userRepository.UpdateAsync(user, cancellationToken);
+        }
 
         return Result.Success(Unit.Value);
     }

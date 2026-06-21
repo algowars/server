@@ -16,6 +16,7 @@ public static class ApplicationServiceRegistration
 
         services.AddScoped<IAggregateFactory<User, CreateUserParams>, UserFactory>();
         services.AddScoped<IUserService, UserService>();
+        services.AddScoped<IUsernameGeneratorService, UsernameGeneratorService>();
         services.AddScoped<UserContext>();
 
         return services;
