@@ -1,3 +1,4 @@
+using Algowars.Application.Services.Problems;
 using Algowars.Application.Services.Users;
 using Algowars.Domain.SeedWork;
 using Algowars.Domain.Users.Entities;
@@ -15,9 +16,17 @@ public static class ApplicationServiceRegistration
         services.AddValidatorsFromAssembly(typeof(ApplicationServiceRegistration).Assembly, includeInternalTypes: true);
 
         services.AddScoped<IAggregateFactory<User, CreateUserParams>, UserFactory>();
+        services.AddServices();
+        services.AddScoped<UserContext>();
+
+        return services;
+    }
+
+    private static IServiceCollection AddServices(this IServiceCollection services)
+    {
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<IUsernameGeneratorService, UsernameGeneratorService>();
-        services.AddScoped<UserContext>();
+        services.AddScoped<IProblemService, ProblemService>();
 
         return services;
     }

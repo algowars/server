@@ -71,8 +71,8 @@ internal sealed class DemoDataSeeder(AlgowarsDbContext context) : ISeeder
                 .Include(s => s.TestSuites)
                 .FirstAsync(s => s.Id == id, cancellationToken);
 
-            ((ICollection<TestSuite>)setup.TestSuites).Add(sampleSuite);
-            ((ICollection<TestSuite>)setup.TestSuites).Add(hiddenSuite);
+            ((List<TestSuite>)setup.TestSuites).Add(sampleSuite);
+            ((List<TestSuite>)setup.TestSuites).Add(hiddenSuite);
         }
 
         await context.SaveChangesAsync(cancellationToken);

@@ -23,7 +23,7 @@ public static class InfrastructureServiceRegistration
 
         services.AddPersistence();
         services.AddRepositories();
-        services.AddSeeders();
+        services.AddSeeder();
 
         return services;
     }
@@ -48,6 +48,13 @@ public static class InfrastructureServiceRegistration
         services.AddScoped<IProblemReadRepository, ProblemReadRepository>();
         services.AddScoped<ITestSuiteRepository, TestSuiteRepository>();
 
+        return services;
+    }
+
+    private static IServiceCollection AddSeeder(this IServiceCollection services)
+    {
+        services.AddScoped<LanguageSeeder>();
+        services.AddScoped<DemoDataSeeder>();
         return services;
     }
 
