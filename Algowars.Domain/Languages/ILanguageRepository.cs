@@ -1,11 +1,9 @@
 using Algowars.Domain.Languages.ValueObjects;
+using Algowars.Domain.SeedWork;
 
 namespace Algowars.Domain.Languages;
 
-public interface ILanguageRepository
+public interface ILanguageRepository : IRepository<Entities.Language>
 {
-    Task AddAsync(Entities.Language language, CancellationToken cancellationToken = default);
-    Task<Entities.Language?> FindByIdAsync(Guid id, CancellationToken cancellationToken = default);
     Task<Entities.Language?> FindBySlugAsync(LanguageSlug slug, CancellationToken cancellationToken = default);
-    Task UpdateAsync(Entities.Language language, CancellationToken cancellationToken = default);
 }

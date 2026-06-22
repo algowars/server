@@ -1,5 +1,4 @@
 using Algowars.Domain.Problems.Enums;
-using Algowars.Domain.Problems.Exceptions;
 using Algowars.Domain.Problems.ValueObjects;
 using ProblemEntity = Algowars.Domain.Problems.Entities.Problem;
 
@@ -18,9 +17,49 @@ public class ProblemTests
         new(ValidSlug, ValidTitle, ValidQuestion, ValidDifficulty, ValidTimeLimit, ValidMemoryLimit);
 
     [Test]
+    public void Constructor_SetsSlug()
+    {
+        ProblemEntity problem = CreateProblem();
+
+        Assert.That(problem.Slug, Is.EqualTo(ValidSlug));
+    }
+
+    [Test]
+    public void Constructor_SetsContentFields()
+    {
+        ProblemEntity problem = CreateProblem();
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(problem.Title, Is.EqualTo(ValidTitle));
+            Assert.That(problem.Question, Is.EqualTo(ValidQuestion));
+            Assert.That(problem.Difficulty, Is.EqualTo(ValidDifficulty));
+            Assert.That(problem.TimeLimit, Is.EqualTo(ValidTimeLimit));
+            Assert.That(problem.MemoryLimit, Is.EqualTo(ValidMemoryLimit));
+        }
+    }
+
+    [Test]
+    public void Constructor_SetsStatusToDraft()
+    {
+        ProblemEntity problem = CreateProblem();
+
+        Assert.That(problem.Status, Is.EqualTo(ProblemStatus.Draft));
+    }
+
+    [Test]
+    public void Constructor_SetsCreatedAt()
+    {
+        DateTime before = DateTime.UtcNow;
+        ProblemEntity problem = CreateProblem();
+
+        Assert.That(problem.CreatedAt, Is.GreaterThanOrEqualTo(before));
+    }
+
+    [Test]
     public void Archive_SetsStatusToArchived()
     {
-        var problem = CreateProblem();
+        ProblemEntity problem = CreateProblem();
 
         problem.Archive();
 
@@ -28,138 +67,68 @@ public class ProblemTests
     }
 
     [Test]
-    public void Constructor_CreatesInitialDraftVersion()
-    {
-        var problem = CreateProblem();
-
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(problem.Versions, Has.Count.EqualTo(1));
-            Assert.That(problem.Versions.First().VersionNumber, Is.EqualTo(1));
-            Assert.That(problem.Versions.First().IsPublished, Is.False);
-        }
-    }
-
-    [Test]
-    public void Constructor_SetsSlug()
-    {
-        var problem = CreateProblem();
-
-        Assert.That(problem.Slug, Is.EqualTo(ValidSlug));
-    }
-
-    [Test]
-    public void Constructor_SetsStatusToDraft()
-    {
-        var problem = CreateProblem();
-
-        Assert.That(problem.Status, Is.EqualTo(ProblemStatus.Draft));
-    }
-
-    [Test]
-    public void CreateNewVersion_CopiesValuesFromLatestVersion()
-    {
-        var problem = CreateProblem();
-
-        var newVersion = problem.CreateNewVersion();
-
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(newVersion.Title, Is.EqualTo(ValidTitle));
-            Assert.That(newVersion.Question, Is.EqualTo(ValidQuestion));
-            Assert.That(newVersion.Difficulty, Is.EqualTo(ValidDifficulty));
-            Assert.That(newVersion.TimeLimit, Is.EqualTo(ValidTimeLimit));
-            Assert.That(newVersion.MemoryLimit, Is.EqualTo(ValidMemoryLimit));
-        }
-    }
-
-    [Test]
-    public void CreateNewVersion_IncrementsVersionNumber()
-    {
-        var problem = CreateProblem();
-
-        var newVersion = problem.CreateNewVersion();
-
-        Assert.That(newVersion.VersionNumber, Is.EqualTo(2));
-    }
-
-    [Test]
-    public void CreateNewVersion_AddsVersionToCollection()
-    {
-        var problem = CreateProblem();
-
-        problem.CreateNewVersion();
-
-        Assert.That(problem.Versions, Has.Count.EqualTo(2));
-    }
-
-    [Test]
-    public void CurrentVersion_BeforePublish_IsNull()
-    {
-        var problem = CreateProblem();
-
-        Assert.That(problem.CurrentVersion, Is.Null);
-    }
-
-    [Test]
-    public void CurrentVersion_AfterPublish_ReturnsPublishedVersion()
-    {
-        var problem = CreateProblem();
-        var versionId = problem.Versions.First().Id;
-
-        problem.Publish(versionId);
-
-        Assert.That(problem.CurrentVersion, Is.Not.Null);
-        Assert.That(problem.CurrentVersion!.Id, Is.EqualTo(versionId));
-    }
-
-    [Test]
-    public void DraftVersion_ReturnsLatestUnpublishedVersion()
-    {
-        var problem = CreateProblem();
-        var newVersion = problem.CreateNewVersion();
-
-        problem.Publish(problem.Versions.First().Id);
-
-        Assert.That(problem.DraftVersion.Id, Is.EqualTo(newVersion.Id));
-    }
-
-    [Test]
     public void Publish_SetsStatusToPublished()
     {
-        var problem = CreateProblem();
-        var versionId = problem.Versions.First().Id;
+        ProblemEntity problem = CreateProblem();
 
-        problem.Publish(versionId);
+        problem.Publish();
 
         Assert.That(problem.Status, Is.EqualTo(ProblemStatus.Published));
     }
 
     [Test]
-    public void Publish_SetsVersionPublishedAt()
+    public void UpdateContent_UpdatesAllContentFields()
     {
-        var problem = CreateProblem();
-        var versionId = problem.Versions.First().Id;
-        var before = DateTime.UtcNow;
+        ProblemEntity problem = CreateProblem();
+        Title newTitle = new("Three Sum");
+        Question newQuestion = new(new string('b', Question.MinLength));
+        Difficulty newDifficulty = new(1500);
+        TimeLimit newTimeLimit = new(2000);
+        MemoryLimit newMemoryLimit = new(128);
 
-        problem.Publish(versionId);
+        problem.UpdateContent(newTitle, newQuestion, newDifficulty, newTimeLimit, newMemoryLimit);
 
-        Assert.That(problem.Versions.First().PublishedAt, Is.GreaterThanOrEqualTo(before));
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(problem.Title, Is.EqualTo(newTitle));
+            Assert.That(problem.Question, Is.EqualTo(newQuestion));
+            Assert.That(problem.Difficulty, Is.EqualTo(newDifficulty));
+            Assert.That(problem.TimeLimit, Is.EqualTo(newTimeLimit));
+            Assert.That(problem.MemoryLimit, Is.EqualTo(newMemoryLimit));
+        }
     }
 
     [Test]
-    public void Publish_UnknownVersionId_ThrowsProblemVersionNotFoundException()
+    public void UpdateContent_AddsHistoryEntry()
     {
-        var problem = CreateProblem();
+        ProblemEntity problem = CreateProblem();
 
-        Assert.Throws<ProblemVersionNotFoundException>(() => problem.Publish(Guid.NewGuid()));
+        problem.UpdateContent(
+            new Title("Three Sum"),
+            new Question(new string('b', Question.MinLength)),
+            new Difficulty(1500),
+            new TimeLimit(2000),
+            new MemoryLimit(128));
+
+        Assert.That(problem.History, Has.Count.EqualTo(1));
+    }
+
+    [Test]
+    public void UpdateContent_MultipleUpdates_AddsMultipleHistoryEntries()
+    {
+        ProblemEntity problem = CreateProblem();
+
+        problem.UpdateContent(new Title("Three Sum"), new Question(new string('b', Question.MinLength)), new Difficulty(1500), new TimeLimit(2000), new MemoryLimit(128));
+        problem.UpdateContent(new Title("Four Sum"), new Question(new string('c', Question.MinLength)), new Difficulty(2500), new TimeLimit(3000), new MemoryLimit(256));
+
+        Assert.That(problem.History, Has.Count.EqualTo(2));
     }
 
     [Test]
     public void UpdateSlug_ChangesSlug()
     {
-        var problem = CreateProblem();
-        var newSlug = new Slug("three-sum");
+        ProblemEntity problem = CreateProblem();
+        Slug newSlug = new("three-sum");
 
         problem.UpdateSlug(newSlug);
 
@@ -167,13 +136,29 @@ public class ProblemTests
     }
 
     [Test]
-    public void UpdateSlug_DoesNotAffectVersions()
+    public void AddSetup_AddsToSetups()
     {
-        var problem = CreateProblem();
-        int versionCount = problem.Versions.Count;
+        ProblemEntity problem = CreateProblem();
 
-        problem.UpdateSlug(new Slug("three-sum"));
+        problem.AddSetup(Guid.NewGuid(), "def twoSum():", "twoSum");
 
-        Assert.That(problem.Versions, Has.Count.EqualTo(versionCount));
+        Assert.That(problem.Setups, Has.Count.EqualTo(1));
+    }
+
+    [Test]
+    public void AddSetup_SetsProperties()
+    {
+        ProblemEntity problem = CreateProblem();
+        Guid langVersionId = Guid.NewGuid();
+
+        Algowars.Domain.Problems.Entities.ProblemSetup setup = problem.AddSetup(langVersionId, "def twoSum():", "twoSum");
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(setup.LanguageVersionId, Is.EqualTo(langVersionId));
+            Assert.That(setup.InitialCode, Is.EqualTo("def twoSum():"));
+            Assert.That(setup.FunctionName, Is.EqualTo("twoSum"));
+        }
     }
 }
+

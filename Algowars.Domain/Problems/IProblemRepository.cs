@@ -1,12 +1,9 @@
-using Algowars.Domain.Problems.Entities;
 using Algowars.Domain.Problems.ValueObjects;
+using Algowars.Domain.SeedWork;
 
 namespace Algowars.Domain.Problems;
 
-public interface IProblemRepository
+public interface IProblemRepository : IRepository<Entities.Problem>
 {
-    Task AddAsync(Entities.Problem problem);
-    Task<Entities.Problem?> FindByIdAsync(Guid id);
-    Task<Entities.Problem?> FindBySlugAsync(Slug slug);
-    Task UpdateAsync(Entities.Problem problem);
+    Task<Entities.Problem?> FindBySlugAsync(Slug slug, CancellationToken cancellationToken = default);
 }

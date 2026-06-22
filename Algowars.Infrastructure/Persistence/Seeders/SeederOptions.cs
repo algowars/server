@@ -1,0 +1,16 @@
+namespace Algowars.Infrastructure.Persistence.Seeders;
+
+public sealed class SeederOptions
+{
+    /// <summary>
+    /// Seeds reference data that never changes (languages and their versions).
+    /// Safe to run in any environment.
+    /// </summary>
+    public bool SeedStaticData { get; init; }
+
+    /// <summary>
+    /// Seeds demo/sample data (example problems, test suites).
+    /// Intended for development and staging environments only.
+    /// </summary>
+    public bool SeedDemoData { get; init; }
+}

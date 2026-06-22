@@ -1,3 +1,4 @@
+using Algowars.Domain.Languages.Entities;
 using Algowars.Domain.Languages.Enums;
 using Algowars.Domain.Languages.Exceptions;
 using Algowars.Domain.Languages.ValueObjects;
@@ -10,6 +11,7 @@ public class LanguageTests
     private static readonly LanguageName ValidName = new("Python");
     private static readonly LanguageSlug ValidSlug = new("python");
     private static readonly LanguageVersion ValidVersion = new("3.11");
+    private static readonly Judge0Id ValidJudge0Id = new(109);
 
     private static LanguageEntity CreateLanguage() => new(ValidName, ValidSlug);
 
@@ -29,7 +31,7 @@ public class LanguageTests
     {
         var language = CreateLanguage();
 
-        language.AddVersion(ValidVersion);
+        language.AddVersion(ValidVersion, ValidJudge0Id);
 
         Assert.That(language.Versions, Has.Count.EqualTo(1));
     }
@@ -39,8 +41,8 @@ public class LanguageTests
     {
         var language = CreateLanguage();
 
-        language.AddVersion(new LanguageVersion("3.10"));
-        language.AddVersion(new LanguageVersion("3.11"));
+        language.AddVersion(new LanguageVersion("3.10"), new Judge0Id(100));
+        language.AddVersion(new LanguageVersion("3.11"), new Judge0Id(109));
 
         Assert.That(language.Versions, Has.Count.EqualTo(2));
     }
@@ -50,12 +52,13 @@ public class LanguageTests
     {
         var language = CreateLanguage();
 
-        var entry = language.AddVersion(ValidVersion);
+        LanguageVersionEntry entry = language.AddVersion(ValidVersion, ValidJudge0Id);
 
         using (Assert.EnterMultipleScope())
         {
             Assert.That(entry.IsActive, Is.True);
             Assert.That(entry.Version, Is.EqualTo(ValidVersion));
+            Assert.That(entry.Judge0Id, Is.EqualTo(ValidJudge0Id));
         }
     }
 
@@ -101,7 +104,7 @@ public class LanguageTests
     public void DeprecateVersion_DoesNotRemoveVersion()
     {
         var language = CreateLanguage();
-        var entry = language.AddVersion(ValidVersion);
+        LanguageVersionEntry entry = language.AddVersion(ValidVersion, ValidJudge0Id);
 
         language.DeprecateVersion(entry.Id);
 
@@ -111,8 +114,8 @@ public class LanguageTests
     [Test]
     public void DeprecateVersion_SetsVersionToDeprecated()
     {
-        var language = CreateLanguage();
-        var entry = language.AddVersion(ValidVersion);
+        LanguageEntity language = CreateLanguage();
+        LanguageVersionEntry entry = language.AddVersion(ValidVersion, ValidJudge0Id);
 
         language.DeprecateVersion(entry.Id);
 

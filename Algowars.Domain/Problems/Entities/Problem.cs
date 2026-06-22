@@ -1,5 +1,4 @@
 using Algowars.Domain.Problems.Enums;
-using Algowars.Domain.Problems.Exceptions;
 using Algowars.Domain.Problems.ValueObjects;
 using Algowars.Domain.SeedWork;
 
@@ -10,8 +9,13 @@ public sealed class Problem : AggregateRoot
     public Problem(Slug slug, Title title, Question question, Difficulty difficulty, TimeLimit timeLimit, MemoryLimit memoryLimit)
     {
         Slug = slug ?? throw new ArgumentNullException(nameof(slug));
+        Title = title ?? throw new ArgumentNullException(nameof(title));
+        Question = question ?? throw new ArgumentNullException(nameof(question));
+        Difficulty = difficulty ?? throw new ArgumentNullException(nameof(difficulty));
+        TimeLimit = timeLimit ?? throw new ArgumentNullException(nameof(timeLimit));
+        MemoryLimit = memoryLimit ?? throw new ArgumentNullException(nameof(memoryLimit));
         Status = ProblemStatus.Draft;
-        _versions.Add(new ProblemVersion(1, title, question, difficulty, timeLimit, memoryLimit));
+        CreatedAt = DateTime.UtcNow;
     }
 
     public void Archive()
@@ -19,22 +23,20 @@ public sealed class Problem : AggregateRoot
         Status = ProblemStatus.Archived;
     }
 
-    public ProblemVersion CreateNewVersion()
+    public void Publish()
     {
-        var latest = CurrentVersion ?? _versions.Last();
-        int nextNumber = _versions.Max(v => v.VersionNumber) + 1;
-        var newVersion = new ProblemVersion(nextNumber, latest.Title, latest.Question, latest.Difficulty, latest.TimeLimit, latest.MemoryLimit);
-        _versions.Add(newVersion);
-        return newVersion;
+        Status = ProblemStatus.Published;
     }
 
-    public void Publish(Guid versionId)
+    public void UpdateContent(Title title, Question question, Difficulty difficulty, TimeLimit timeLimit, MemoryLimit memoryLimit)
     {
-        var version = _versions.FirstOrDefault(v => v.Id == versionId)
-            ?? throw new ProblemVersionNotFoundException(versionId);
+        Title = title ?? throw new ArgumentNullException(nameof(title));
+        Question = question ?? throw new ArgumentNullException(nameof(question));
+        Difficulty = difficulty ?? throw new ArgumentNullException(nameof(difficulty));
+        TimeLimit = timeLimit ?? throw new ArgumentNullException(nameof(timeLimit));
+        MemoryLimit = memoryLimit ?? throw new ArgumentNullException(nameof(memoryLimit));
 
-        version.Publish();
-        Status = ProblemStatus.Published;
+        _history.Add(new ProblemHistory(Title, Question, Difficulty, TimeLimit, MemoryLimit));
     }
 
     public void UpdateSlug(Slug slug)
@@ -42,20 +44,28 @@ public sealed class Problem : AggregateRoot
         Slug = slug ?? throw new ArgumentNullException(nameof(slug));
     }
 
+    public ProblemSetup AddSetup(Guid languageVersionId, string initialCode, string functionName)
+    {
+        var setup = new ProblemSetup(languageVersionId, initialCode, functionName);
+        _setups.Add(setup);
+        return setup;
+    }
+
     private Problem() { }
 
-    public ProblemVersion? CurrentVersion => _versions
-        .Where(v => v.IsPublished)
-        .OrderByDescending(v => v.VersionNumber)
-        .FirstOrDefault();
-
-    public ProblemVersion DraftVersion => _versions
-        .OrderByDescending(v => v.VersionNumber)
-        .First(v => !v.IsPublished);
-
     public Slug Slug { get; private set; } = null!;
+    public Title Title { get; private set; } = null!;
+    public Question Question { get; private set; } = null!;
+    public Difficulty Difficulty { get; private set; } = null!;
+    public TimeLimit TimeLimit { get; private set; } = null!;
+    public MemoryLimit MemoryLimit { get; private set; } = null!;
     public ProblemStatus Status { get; private set; }
-    public IReadOnlyCollection<ProblemVersion> Versions => _versions.AsReadOnly();
+    public DateTime CreatedAt { get; private set; }
 
-    private readonly List<ProblemVersion> _versions = [];
+    public IReadOnlyCollection<ProblemHistory> History => _history.AsReadOnly();
+    public IReadOnlyCollection<ProblemSetup> Setups => _setups.AsReadOnly();
+
+    private readonly List<ProblemHistory> _history = [];
+    private readonly List<ProblemSetup> _setups = [];
 }
+ 

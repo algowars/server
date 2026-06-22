@@ -1,10 +1,8 @@
+using Algowars.Domain.SeedWork;
 using Algowars.Domain.Submissions.Entities;
 
 namespace Algowars.Domain.Submissions;
 
-public interface ISubmissionRepository
+public interface ISubmissionRepository : IRepository<Submission>
 {
-    Task AddAsync(Submission submission, CancellationToken cancellationToken);
-    Task<Submission?> FindByIdAsync(Guid id, CancellationToken cancellationToken);
-    Task UpdateAsync(Submission submission, CancellationToken cancellationToken);
 }

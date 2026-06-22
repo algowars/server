@@ -1,6 +1,5 @@
 using Algowars.Application.Commands.Users.UpsertUser;
 using Algowars.Application.Queries.Users.GetUserBySub;
-using Algowars.Application.Users;
 using Algowars.Application.Users.Dtos;
 using Ardalis.Result;
 using MediatR;

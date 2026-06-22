@@ -14,7 +14,7 @@ namespace Algowars.Api.Controllers;
 
 [ApiController]
 [Route("api/v{version:apiVersion}/[controller]")]
-public class UserController(IUserService userService, UserContext userContext) : ControllerBase
+public sealed class UserController(IUserService userService, UserContext userContext) : ControllerBase
 {
     [HttpGet]
     [RequireUser]
@@ -45,7 +45,7 @@ public class UserController(IUserService userService, UserContext userContext) :
 
         return this.ToActionResult(await userService.UpsertAccountAsync(
         sub,
-        new UpsertUserDto(request.Username, request.ImageUrl, request.Bio),
+        new UpsertUserDto(request.Username, request.Picture, request.Bio),
         cancellationToken));
     }
 

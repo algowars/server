@@ -19,9 +19,9 @@ public sealed class Language : AggregateRoot
         Status = LanguageStatus.Active;
     }
 
-    public LanguageVersionEntry AddVersion(LanguageVersion version)
+    public LanguageVersionEntry AddVersion(LanguageVersion version, Judge0Id judge0Id)
     {
-        var entry = new LanguageVersionEntry(version);
+        var entry = new LanguageVersionEntry(version, judge0Id);
         _versions.Add(entry);
         return entry;
     }
