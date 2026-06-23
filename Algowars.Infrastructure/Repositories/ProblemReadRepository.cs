@@ -1,6 +1,7 @@
 using Algowars.Application.Pagination;
 using Algowars.Application.Problems;
 using Algowars.Application.Problems.Dtos;
+using Algowars.Domain.Problems.Entities;
 using Algowars.Domain.Problems.Enums;
 using Algowars.Domain.Problems.ValueObjects;
 using Algowars.Infrastructure.Persistence;
@@ -10,6 +11,9 @@ namespace Algowars.Infrastructure.Repositories;
 
 internal sealed class ProblemReadRepository(AlgowarsDbContext context) : IProblemReadRepository
 {
+    public async Task<Problem?> FindBySlugAsync(string slug, CancellationToken cancellationToken)
+    => await context.Problems.Where(problem => problem.Slug.Value == slug).SingleOrDefaultAsync(cancellationToken);
+
     public async Task<PageResult<ProblemDto>> GetPagedAsync(PaginationRequest pagination, CancellationToken cancellationToken = default)
     {
         int offset = (pagination.Page - 1) * pagination.Size;

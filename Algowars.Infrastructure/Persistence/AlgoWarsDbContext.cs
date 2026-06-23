@@ -1,5 +1,6 @@
 using Algowars.Domain.Languages.Entities;
 using Algowars.Domain.Problems.Entities;
+using Algowars.Domain.Problems.Enums;
 using Algowars.Domain.TestSuites.Entities;
 using Algowars.Domain.Users.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -16,5 +17,7 @@ internal sealed class AlgowarsDbContext(DbContextOptions<AlgowarsDbContext> opti
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AlgowarsDbContext).Assembly);
+
+        modelBuilder.Entity<Problem>().HasQueryFilter(problem => problem.Status == ProblemStatus.Published);
     }
 }

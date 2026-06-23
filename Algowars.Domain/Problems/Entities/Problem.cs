@@ -51,14 +51,14 @@ public sealed class Problem : AggregateRoot
         return setup;
     }
 
-    private Problem() { }
+    public IEnumerable<Guid> AvailableLanguageVersionIds() => _setups.Select(setup => setup.LanguageVersionId);
 
-    public Slug Slug { get; private set; } = null!;
-    public Title Title { get; private set; } = null!;
-    public Question Question { get; private set; } = null!;
-    public Difficulty Difficulty { get; private set; } = null!;
-    public TimeLimit TimeLimit { get; private set; } = null!;
-    public MemoryLimit MemoryLimit { get; private set; } = null!;
+    public Slug Slug { get; private set; }
+    public Title Title { get; private set; }
+    public Question Question { get; private set; }
+    public Difficulty Difficulty { get; private set; }
+    public TimeLimit TimeLimit { get; private set; }
+    public MemoryLimit MemoryLimit { get; private set; }
     public ProblemStatus Status { get; private set; }
     public DateTime CreatedAt { get; private set; }
 
