@@ -16,13 +16,13 @@ internal sealed class ProblemConfiguration : IEntityTypeConfiguration<Problem>
         builder.Property(p => p.Id)
             .HasColumnName("id");
 
-        builder.Property(p => p.Slug)
-            .HasColumnName("slug")
-            .HasMaxLength(Slug.MaxLength)
-            .IsRequired()
-            .HasConversion(
-                s => s.Value,
-                v => new Slug(v));
+        builder.OwnsOne(p => p.Slug, slug =>
+        {
+            slug.Property(s => s.Value)
+                .HasColumnName("slug")
+                .HasMaxLength(Slug.MaxLength)
+                .IsRequired();
+        });
 
         builder.Property(p => p.Title)
             .HasColumnName("title")

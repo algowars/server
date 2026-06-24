@@ -23,4 +23,12 @@ public sealed class ProblemController(IProblemService problemService) : Controll
             Timestamp = query.Timestamp
         }, cancellationToken));
     }
+
+    [HttpGet("{slug}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ProblemWithSetupsDto>> GetProblemBySlug(string slug, CancellationToken cancellationToken)
+    {
+        return this.ToActionResult(await problemService.GetProblemWithSetupsBySlug(slug, cancellationToken));
+    }
 }

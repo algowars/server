@@ -10,6 +10,7 @@ using Algowars.Infrastructure.Settings;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Algowars.Application.Languages;
 
 namespace Algowars.Infrastructure;
 
@@ -43,10 +44,11 @@ public static class InfrastructureServiceRegistration
 
     private static IServiceCollection AddRepositories(this IServiceCollection services)
     {
-        services.AddScoped<IUserWriteRepository, UserRepository>();
-        services.AddScoped<IUserReadRepository, UserReadRepository>();
+        services.AddScoped<ILanguageReadRepository, LanguageReadRepository>();
         services.AddScoped<IProblemReadRepository, ProblemReadRepository>();
         services.AddScoped<ITestSuiteRepository, TestSuiteRepository>();
+        services.AddScoped<IUserReadRepository, UserReadRepository>();
+        services.AddScoped<IUserWriteRepository, UserRepository>();
 
         return services;
     }

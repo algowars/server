@@ -1,6 +1,6 @@
 ﻿
 namespace Algowars.Application.Problems.Dtos;
 
-public sealed record ProblemSetupLanguageVersionDto(int LanguageVersionId, string LanguageVersionName);
+public sealed record ProblemSetupLanguageVersionDto(Guid VersionId, string Version);
 
-public sealed record ProblemSetupLanguageDto(int LanguageId, string LanguageName, IEnumerable<ProblemSetupLanguageVersionDto> LanguageVersions);
+public sealed record ProblemSetupLanguageDto(Guid Id, string Name, IEnumerable<ProblemSetupLanguageVersionDto> Versions);

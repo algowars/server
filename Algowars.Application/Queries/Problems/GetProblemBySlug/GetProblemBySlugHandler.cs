@@ -2,10 +2,6 @@
 using Algowars.Application.Problems;
 using Algowars.Application.Problems.Dtos;
 using Ardalis.Result;
-using System;
-using System.Collections.Generic;
-using System.Text;
-
 namespace Algowars.Application.Queries.Problems.GetProblemBySlug;
 
 internal sealed class GetProblemBySlugHandler(IProblemReadRepository problemReadRepository, ILanguageReadRepository languageReadRepository) : IQueryHandler<GetProblemBySlugQuery, ProblemWithSetupsDto>
@@ -23,12 +19,19 @@ internal sealed class GetProblemBySlugHandler(IProblemReadRepository problemRead
 
         return Result.Success(
             new ProblemWithSetupsDto(
-                Id:  problem.Id,
+                Id: problem.Id,
                 Slug: problem.Slug,
                 Title: problem.Title,
                 DifficultyTier: problem.Difficulty.Tier,
                 Question: problem.Question,
                 AvailableSetups: languages.Select(language => new ProblemSetupLanguageDto(
-                    language.Id, language.Name, LanguageVersions: language.Versions.Select))))
+                    language.Id, 
+                    language.Name, 
+                    Versions: language.Versions.Select(version => new ProblemSetupLanguageVersionDto(
+                        version.Id, version.Version
+                    ))
+                    )
+                ))
+            );
     }
 }

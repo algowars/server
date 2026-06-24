@@ -51,6 +51,8 @@ public sealed class Problem : AggregateRoot
         return setup;
     }
 
+    private Problem() { }
+
     public IEnumerable<Guid> AvailableLanguageVersionIds() => _setups.Select(setup => setup.LanguageVersionId);
 
     public Slug Slug { get; private set; }

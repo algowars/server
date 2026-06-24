@@ -1,4 +1,6 @@
 using Algowars.Domain.Languages.Entities;
+using Algowars.Domain.Languages.Enums;
+using Algowars.Domain.Languages.ValueObjects;
 using Algowars.Domain.Problems.Entities;
 using Algowars.Domain.Problems.Enums;
 using Algowars.Domain.TestSuites.Entities;
@@ -19,5 +21,7 @@ internal sealed class AlgowarsDbContext(DbContextOptions<AlgowarsDbContext> opti
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AlgowarsDbContext).Assembly);
 
         modelBuilder.Entity<Problem>().HasQueryFilter(problem => problem.Status == ProblemStatus.Published);
+        modelBuilder.Entity<Language>().HasQueryFilter(language => language.Status == LanguageStatus.Active);
+        modelBuilder.Entity<LanguageVersionEntry>().HasQueryFilter(version => version.Status == LanguageVersionStatus.Active);
     }
 }
