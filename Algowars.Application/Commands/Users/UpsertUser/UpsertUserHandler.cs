@@ -34,6 +34,18 @@ internal sealed partial class UpsertUserHandler(
         }
         else
         {
+            bool usernameChanged = !string.IsNullOrWhiteSpace(request.Username)
+                && request.Username != user.Username.Value;
+
+            if (usernameChanged)
+            {
+                if (user.UsernameLastChangedAt.HasValue &&
+                    DateTime.UtcNow - user.UsernameLastChangedAt.Value < TimeSpan.FromDays(User.MaxDaysUntilUsernameChange))
+                    return Result.Invalid(new ValidationError("Username can only be changed once every 30 days."));
+
+                user.ChangeUsername(new Username(request.Username!));
+            }
+
             user.UpdateBio(request.Bio is not null ? new Bio(request.Bio) : null);
             user.UpdateImageUrl(request.ImageUrl is not null ? new ImageUrl(request.ImageUrl) : null);
             await userRepository.UpdateAsync(user, cancellationToken);

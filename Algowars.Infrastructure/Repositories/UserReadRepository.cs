@@ -11,7 +11,7 @@ internal sealed class UserReadRepository(AlgowarsDbContext context) : IUserReadR
     {
         return await context.Users
             .Where(u => u.Sub == sub)
-            .Select(u => new UserDto(u.Id, u.Sub, u.Username.Value, u.ImageUrl != null ? u.ImageUrl.Value : null))
+            .Select(u => new UserDto(u.Id, u.Sub, u.Username.Value, u.ImageUrl != null ? u.ImageUrl.Value : null, UsernameLastChangedAt: u.UsernameLastChangedAt))
             .FirstOrDefaultAsync(cancellationToken);
     }
 
@@ -19,7 +19,7 @@ internal sealed class UserReadRepository(AlgowarsDbContext context) : IUserReadR
     {
         return await context.Users
             .Where(u => u.Id == id)
-            .Select(u => new UserDto(u.Id, u.Sub, u.Username.Value, u.ImageUrl != null ? u.ImageUrl.Value : null))
+            .Select(u => new UserDto(u.Id, u.Sub, u.Username.Value, u.ImageUrl != null ? u.ImageUrl.Value : null, UsernameLastChangedAt: u.UsernameLastChangedAt))
             .FirstOrDefaultAsync(cancellationToken);
     }
 }

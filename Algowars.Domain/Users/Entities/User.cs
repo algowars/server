@@ -38,5 +38,5 @@ public sealed class User(Username username, string sub) : AggregateRoot
 
     public DateTime? UsernameLastChangedAt { get; private set; }
 
-    private static readonly int MaxDaysUntilUsernameChange = 30;
+    public static readonly int MaxDaysUntilUsernameChange = 30;
 }

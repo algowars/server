@@ -1,4 +1,5 @@
 using Algowars.Api;
+using Algowars.Api.Middleware;
 using Algowars.Application;
 using Algowars.Infrastructure;
 
@@ -11,4 +12,6 @@ builder.Services.AddInfrastructure(builder.Configuration);
 var app = builder.Build();
 
 await app.UseApi();
+
+app.UseGlobalExceptionHandler();
 app.Run();
