@@ -12,7 +12,7 @@ namespace Algowars.Infrastructure.Repositories;
 internal sealed class ProblemReadRepository(AlgowarsDbContext context) : IProblemReadRepository
 {
     public async Task<Problem?> FindBySlugAsync(string slug, CancellationToken cancellationToken)
-    => await context.Problems.AsNoTracking().Where(problem => problem.Slug.Value == slug).SingleOrDefaultAsync(cancellationToken);
+    => await context.Problems.AsNoTracking().Include(problem => problem.Setups).Where(problem => problem.Slug.Value == slug).SingleOrDefaultAsync(cancellationToken);
 
     public async Task<PageResult<ProblemDto>> GetPagedAsync(PaginationRequest pagination, CancellationToken cancellationToken = default)
     {

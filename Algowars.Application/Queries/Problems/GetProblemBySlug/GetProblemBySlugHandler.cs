@@ -24,7 +24,7 @@ internal sealed class GetProblemBySlugHandler(IProblemReadRepository problemRead
                 Title: problem.Title,
                 DifficultyTier: problem.Difficulty.Tier,
                 Question: problem.Question,
-                AvailableSetups: languages.Select(language => new ProblemSetupLanguageDto(
+                AvailableLanguages: languages.Select(language => new ProblemSetupLanguageDto(
                     language.Id, 
                     language.Name, 
                     Versions: language.Versions.Select(version => new ProblemSetupLanguageVersionDto(
