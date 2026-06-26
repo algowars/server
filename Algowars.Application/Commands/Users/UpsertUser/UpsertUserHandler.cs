@@ -41,7 +41,7 @@ internal sealed partial class UpsertUserHandler(
             {
                 if (user.UsernameLastChangedAt.HasValue &&
                     DateTime.UtcNow - user.UsernameLastChangedAt.Value < TimeSpan.FromDays(User.MaxDaysUntilUsernameChange))
-                    return Result.Invalid(new ValidationError("Username can only be changed once every 30 days."));
+                    return Result.Invalid(new ValidationError("Username", "Username can only be changed once every 30 days."));
 
                 user.ChangeUsername(new Username(request.Username!));
             }
