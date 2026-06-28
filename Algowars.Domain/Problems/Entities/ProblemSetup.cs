@@ -1,5 +1,6 @@
 using Algowars.Domain.SeedWork;
 using Algowars.Domain.TestSuites.Entities;
+using Algowars.Domain.TestSuites.Enums;
 
 namespace Algowars.Domain.Problems.Entities;
 
@@ -21,6 +22,8 @@ public sealed class ProblemSetup : Entity
     }
 
     private ProblemSetup() { }
+
+    public IEnumerable<TestSuite> PublicTestSuites() => [.. _testSuites.Where(testSuite => testSuite.Type == TestSuiteType.Sample)];
 
     public Guid LanguageVersionId { get; private set; }
     public string InitialCode { get; private set; } = null!;

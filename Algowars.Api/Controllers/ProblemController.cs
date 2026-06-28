@@ -31,4 +31,12 @@ public sealed class ProblemController(IProblemService problemService) : Controll
     {
         return this.ToActionResult(await problemService.GetProblemWithSetupsBySlug(slug, cancellationToken));
     }
+
+    [HttpGet("{slug}/setup")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ProblemSetupDto>> GetProblemSetup(string slug, [FromQuery] Guid languageVersionId, CancellationToken cancellationToken)
+    {
+        return this.ToActionResult(await problemService.GetProblemSetupAsync(slug, languageVersionId, cancellationToken));
+    }
 }

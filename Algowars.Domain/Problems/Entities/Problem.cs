@@ -55,6 +55,8 @@ public sealed class Problem : AggregateRoot
 
     public IEnumerable<Guid> AvailableLanguageVersionIds() => _setups.Select(setup => setup.LanguageVersionId);
 
+    public ProblemSetup? FindSetupByLanguageVersionId(Guid languageVersionId) => _setups.SingleOrDefault(setup => setup.LanguageVersionId == languageVersionId);
+
     public Slug Slug { get; private set; }
     public Title Title { get; private set; }
     public Question Question { get; private set; }
