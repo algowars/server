@@ -1,5 +1,4 @@
 using Algowars.Domain.SeedWork;
-using Algowars.Domain.Submissions.Entities;
 using Algowars.Domain.Submissions.Enums;
 using Algowars.Domain.Submissions.Exceptions;
 using Algowars.Domain.Submissions.ValueObjects;

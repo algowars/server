@@ -25,4 +25,18 @@ internal sealed class TestSuiteRepository(AlgowarsDbContext context) : ITestSuit
             .Include(s => s.TestCases)
             .FirstOrDefaultAsync(s => s.Id == id, cancellationToken);
     }
+
+    public async Task<IReadOnlyList<Guid>> FindTestCaseIdsByProblemSetupIdAsync(
+        Guid problemSetupId,
+        CancellationToken cancellationToken = default)
+    {
+        return await context.Problems
+            .AsNoTracking()
+            .SelectMany(p => p.Setups)
+            .Where(s => s.Id == problemSetupId)
+            .SelectMany(s => s.TestSuites)
+            .SelectMany(ts => ts.TestCases)
+            .Select(tc => tc.Id)
+            .ToListAsync(cancellationToken);
+    }
 }

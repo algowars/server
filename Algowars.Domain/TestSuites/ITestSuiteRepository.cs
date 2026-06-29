@@ -5,4 +5,5 @@ namespace Algowars.Domain.TestSuites;
 
 public interface ITestSuiteRepository : IRepository<TestSuite>
 {
+    Task<IReadOnlyList<Guid>> FindTestCaseIdsByProblemSetupIdAsync(Guid problemSetupId, CancellationToken cancellationToken = default);
 }
