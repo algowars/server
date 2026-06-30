@@ -9,7 +9,7 @@ public class SubmissionResultTests
     private static readonly SourceCode ValidSourceCode = new("int main() {}");
 
     private static Submission CreateSubmission(params Guid[] testCaseIds) =>
-        new(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), SubmissionType.Submit, ValidSourceCode, testCaseIds);
+        new(Guid.NewGuid(), Guid.NewGuid(), SubmissionType.Submit, ValidSourceCode, testCaseIds);
 
     [Test]
     public void InitialStatus_IsPending()

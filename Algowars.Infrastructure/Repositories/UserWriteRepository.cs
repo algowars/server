@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Algowars.Infrastructure.Repositories;
 
-internal sealed class UserRepository(AlgowarsDbContext context) : IUserWriteRepository
+internal sealed class UserWriteRepository(AlgowarsDbContext context) : IUserWriteRepository
 {
     public async Task AddAsync(User user, CancellationToken cancellationToken)
     {

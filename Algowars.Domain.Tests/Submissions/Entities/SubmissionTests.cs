@@ -8,8 +8,7 @@ namespace Algowars.Domain.Tests.Submissions.Entities;
 public class SubmissionTests
 {
     private static readonly Guid UserId = Guid.NewGuid();
-    private static readonly Guid ProblemVersionId = Guid.NewGuid();
-    private static readonly Guid LanguageVersionId = Guid.NewGuid();
+    private static readonly Guid ProblemSetupId = Guid.NewGuid();
     private static readonly SourceCode ValidSourceCode = new("int main() {}");
     private static readonly Guid TestCaseId1 = Guid.NewGuid();
     private static readonly Guid TestCaseId2 = Guid.NewGuid();
@@ -17,7 +16,7 @@ public class SubmissionTests
     private static Submission CreateSubmission(
         SubmissionType type = SubmissionType.Submit,
         IEnumerable<Guid>? testCaseIds = null) =>
-        new(UserId, ProblemVersionId, LanguageVersionId, type, ValidSourceCode,
+        new(UserId, ProblemSetupId, type, ValidSourceCode,
             testCaseIds ?? [TestCaseId1, TestCaseId2]);
 
     [Test]
@@ -86,8 +85,7 @@ public class SubmissionTests
         using (Assert.EnterMultipleScope())
         {
             Assert.That(submission.UserId, Is.EqualTo(UserId));
-            Assert.That(submission.ProblemVersionId, Is.EqualTo(ProblemVersionId));
-            Assert.That(submission.LanguageVersionId, Is.EqualTo(LanguageVersionId));
+            Assert.That(submission.ProblemSetupId, Is.EqualTo(ProblemSetupId));
             Assert.That(submission.Type, Is.EqualTo(SubmissionType.Run));
             Assert.That(submission.SourceCode, Is.EqualTo(ValidSourceCode));
             Assert.That(submission.Status, Is.EqualTo(SubmissionStatus.Queued));

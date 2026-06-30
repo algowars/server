@@ -1,16 +1,22 @@
+using Algowars.Application.Configuration;
+using Algowars.Application.Languages;
+using Algowars.Application.Messaging;
 using Algowars.Application.Problems;
-using Algowars.Application.Users;
 using Algowars.Application.Settings;
+using Algowars.Application.Users;
+using Algowars.Domain.Submissions;
 using Algowars.Domain.TestSuites;
 using Algowars.Domain.Users;
+using Algowars.Infrastructure.Messaging;
+using Algowars.Infrastructure.Messaging.Consumers;
 using Algowars.Infrastructure.Persistence;
 using Algowars.Infrastructure.Persistence.Seeders;
 using Algowars.Infrastructure.Repositories;
 using Algowars.Infrastructure.Settings;
+using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Algowars.Application.Languages;
 
 namespace Algowars.Infrastructure;
 
@@ -20,11 +26,62 @@ public static class InfrastructureServiceRegistration
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        services.AddOption<ConnectionStringOptions>(configuration);
+        services.AddOptions(configuration);
 
         services.AddPersistence();
         services.AddRepositories();
+
+        services.AddMessageBus(configuration);
+
         services.AddSeeder();
+
+        return services;
+    }
+
+
+    private static IServiceCollection AddMessageBus(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddScoped<IMessagePublisher, MassTransitMessagePublisher>();
+
+        services.AddMassTransit(bus =>
+        {
+            bus.AddConsumer<SubmissionCreatedConsumer>();
+
+            var opts = configuration
+                .GetSection(MessageBusOptions.SectionName)
+                .Get<MessageBusOptions>() ?? new MessageBusOptions();
+
+            if (opts.Transport.Equals("AzureServiceBus", StringComparison.OrdinalIgnoreCase))
+            {
+                bus.UsingAzureServiceBus((ctx, cfg) =>
+                {
+                    var busOpts = ctx.GetRequiredService<MessageBusOptions>();
+                    cfg.Host(busOpts.AzureServiceBus.ConnectionString);
+                    cfg.ConfigureEndpoints(ctx);
+                });
+            }
+            else
+            {
+                bus.UsingRabbitMq((ctx, cfg) =>
+                {
+                    var busOpts = ctx.GetRequiredService<MessageBusOptions>();
+                    cfg.Host(busOpts.RabbitMQ.Host, busOpts.RabbitMQ.VirtualHost, h =>
+                    {
+                        h.Username(busOpts.RabbitMQ.Username);
+                        h.Password(busOpts.RabbitMQ.Password);
+                    });
+                    cfg.ConfigureEndpoints(ctx);
+                });
+            }
+        });
+
+        return services;
+    }
+
+    private static IServiceCollection AddOptions(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddOption<ConnectionStringOptions>(configuration);
+        services.AddOption<MessageBusOptions>(configuration);
 
         return services;
     }
@@ -46,9 +103,10 @@ public static class InfrastructureServiceRegistration
     {
         services.AddScoped<ILanguageReadRepository, LanguageReadRepository>();
         services.AddScoped<IProblemReadRepository, ProblemReadRepository>();
-        services.AddScoped<ITestSuiteRepository, TestSuiteRepository>();
+        services.AddScoped<ISubmissionWriteRepository, SubmissionWriteRepository>();
+        services.AddScoped<ITestSuiteWriteRepository, TestSuiteWriteRepository>();
         services.AddScoped<IUserReadRepository, UserReadRepository>();
-        services.AddScoped<IUserWriteRepository, UserRepository>();
+        services.AddScoped<IUserWriteRepository, UserWriteRepository>();
 
         return services;
     }

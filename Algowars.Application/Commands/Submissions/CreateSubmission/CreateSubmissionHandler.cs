@@ -16,8 +16,8 @@ namespace Algowars.Application.Commands.Submissions.CreateSubmission;
 internal sealed partial class CreateSubmissionHandler(
     IValidator<CreateSubmissionCommand> validator,
     IAggregateFactory<Submission, CreateSubmissionParams> submissionFactory,
-    ISubmissionRepository submissionRepository,
-    ITestSuiteRepository testSuiteRepository,
+    ISubmissionWriteRepository submissionRepository,
+    ITestSuiteWriteRepository testSuiteRepository,
     IMessagePublisher messagePublisher) : AbstractCommandHandler<CreateSubmissionCommand, Unit>(validator)
 {
     protected override async Task<Result<Unit>> HandleValidated(CreateSubmissionCommand request, CancellationToken cancellationToken)
@@ -28,7 +28,6 @@ internal sealed partial class CreateSubmissionHandler(
         var submission = submissionFactory.Create(new CreateSubmissionParams(
             request.CreatedById,
             request.ProblemSetupId,
-            request.LanguageVersionId,
             request.Type,
             new SourceCode(request.Code),
             testCaseIds));

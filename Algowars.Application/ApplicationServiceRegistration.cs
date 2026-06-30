@@ -1,6 +1,8 @@
 using Algowars.Application.Services.Problems;
 using Algowars.Application.Services.Users;
 using Algowars.Domain.SeedWork;
+using Algowars.Domain.Submissions.Entities;
+using Algowars.Domain.Submissions.Factories;
 using Algowars.Domain.Users.Entities;
 using Algowars.Domain.Users.Factories;
 using FluentValidation;
@@ -15,9 +17,17 @@ public static class ApplicationServiceRegistration
         services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(ApplicationServiceRegistration).Assembly));
         services.AddValidatorsFromAssembly(typeof(ApplicationServiceRegistration).Assembly, includeInternalTypes: true);
 
-        services.AddScoped<IAggregateFactory<User, CreateUserParams>, UserFactory>();
+        services.AddFactories();
         services.AddServices();
         services.AddScoped<UserContext>();
+
+        return services;
+    }
+
+    private static IServiceCollection AddFactories(this IServiceCollection services)
+    {
+        services.AddScoped<IAggregateFactory<User, CreateUserParams>, UserFactory>();
+        services.AddScoped<IAggregateFactory<Submission, CreateSubmissionParams>, SubmissionFactory>();
 
         return services;
     }

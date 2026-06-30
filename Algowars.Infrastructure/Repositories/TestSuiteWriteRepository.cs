@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Algowars.Infrastructure.Repositories;
 
-internal sealed class TestSuiteRepository(AlgowarsDbContext context) : ITestSuiteRepository
+internal sealed class TestSuiteWriteRepository(AlgowarsDbContext context) : ITestSuiteWriteRepository
 {
     public async Task AddAsync(TestSuite testSuite, CancellationToken cancellationToken = default)
     {

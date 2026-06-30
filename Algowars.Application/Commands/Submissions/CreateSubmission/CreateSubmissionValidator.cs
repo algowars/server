@@ -9,7 +9,6 @@ internal sealed class CreateSubmissionValidator : AbstractValidator<CreateSubmis
     public CreateSubmissionValidator()
     {
         RuleFor(x => x.ProblemSetupId).NotEmpty();
-        RuleFor(x => x.LanguageVersionId).NotEmpty();
         RuleFor(x => x.Code).NotEmpty().MaximumLength(SourceCode.MaxLength);
         RuleFor(x => x.CreatedById).NotEmpty();
     }

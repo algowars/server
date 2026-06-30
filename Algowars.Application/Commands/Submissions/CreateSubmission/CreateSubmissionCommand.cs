@@ -5,7 +5,6 @@ namespace Algowars.Application.Commands.Submissions.CreateSubmission;
 
 internal sealed record CreateSubmissionCommand(
     Guid ProblemSetupId,
-    Guid LanguageVersionId,
     SubmissionType Type,
     string Code,
     Guid CreatedById) : ICommand<Unit>;

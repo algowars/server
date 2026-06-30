@@ -7,8 +7,7 @@ namespace Algowars.Domain.Submissions.Factories;
 
 public sealed record CreateSubmissionParams(
     Guid UserId,
-    Guid ProblemVersionId,
-    Guid LanguageVersionId,
+    Guid ProblemSetupId,
     SubmissionType Type,
     SourceCode SourceCode,
     IEnumerable<Guid> TestCaseIds);
@@ -19,8 +18,7 @@ public sealed class SubmissionFactory : IAggregateFactory<Submission, CreateSubm
     {
         return new Submission(
             parameters.UserId,
-            parameters.ProblemVersionId,
-            parameters.LanguageVersionId,
+            parameters.ProblemSetupId,
             parameters.Type,
             parameters.SourceCode,
             parameters.TestCaseIds);

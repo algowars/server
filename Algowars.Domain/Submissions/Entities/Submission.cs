@@ -9,15 +9,13 @@ public sealed class Submission : AggregateRoot
 {
     public Submission(
         Guid userId,
-        Guid problemVersionId,
-        Guid languageVersionId,
+        Guid problemSetupId,
         SubmissionType type,
         SourceCode sourceCode,
         IEnumerable<Guid> testCaseIds)
     {
         UserId = userId;
-        ProblemVersionId = problemVersionId;
-        LanguageVersionId = languageVersionId;
+        ProblemSetupId = problemSetupId;
         Type = type;
         SourceCode = sourceCode ?? throw new ArgumentNullException(nameof(sourceCode));
         Status = SubmissionStatus.Queued;
@@ -62,8 +60,7 @@ public sealed class Submission : AggregateRoot
 
     private Submission() { }
 
-    public Guid LanguageVersionId { get; private set; }
-    public Guid ProblemVersionId { get; private set; }
+    public Guid ProblemSetupId { get; private set; }
     public IReadOnlyCollection<SubmissionResult> Results => _results.AsReadOnly();
     public SourceCode SourceCode { get; private set; } = null!;
     public SubmissionStatus Status { get; private set; }
