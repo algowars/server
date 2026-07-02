@@ -22,6 +22,8 @@
 		</PackageReference>
 		<PackageReference Include="Microsoft.Extensions.Configuration.Binder" />
 		<PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+		<PackageReference Include="Quartz" />
+		<PackageReference Include="Quartz.Extensions.Hosting" />
 	</ItemGroup>
 
 </Project>

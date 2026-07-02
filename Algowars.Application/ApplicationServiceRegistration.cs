@@ -1,3 +1,4 @@
+using Algowars.Application.Events;
 using Algowars.Application.Services.Problems;
 using Algowars.Application.Services.Users;
 using Algowars.Domain.SeedWork;
@@ -19,6 +20,7 @@ public static class ApplicationServiceRegistration
 
         services.AddFactories();
         services.AddServices();
+        services.AddScoped<IDomainEventDispatcher, MediatRDomainEventDispatcher>();
         services.AddScoped<UserContext>();
 
         return services;

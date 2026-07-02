@@ -1,5 +1,4 @@
-﻿using Algowars.Application.Messaging;
-using Algowars.Application.Messaging.Messages;
+﻿using Algowars.Application.Events;
 using Algowars.Domain.SeedWork;
 using Algowars.Domain.Submissions;
 using Algowars.Domain.Submissions.Entities;
@@ -18,7 +17,7 @@ internal sealed partial class CreateSubmissionHandler(
     IAggregateFactory<Submission, CreateSubmissionParams> submissionFactory,
     ISubmissionWriteRepository submissionRepository,
     ITestSuiteWriteRepository testSuiteRepository,
-    IMessagePublisher messagePublisher) : AbstractCommandHandler<CreateSubmissionCommand, Unit>(validator)
+    IDomainEventDispatcher domainEventDispatcher) : AbstractCommandHandler<CreateSubmissionCommand, Unit>(validator)
 {
     protected override async Task<Result<Unit>> HandleValidated(CreateSubmissionCommand request, CancellationToken cancellationToken)
     {
@@ -34,7 +33,7 @@ internal sealed partial class CreateSubmissionHandler(
 
         await submissionRepository.AddAsync(submission, cancellationToken);
 
-        await messagePublisher.PublishAsync(new SubmissionCreatedMessage(submission.Id), cancellationToken);
+        await domainEventDispatcher.DispatchAsync(submission.PopDomainEvents(), cancellationToken);
 
         return Result.Success();
     }

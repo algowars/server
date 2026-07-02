@@ -1,4 +1,5 @@
 using Algowars.Application.Configuration;
+using Algowars.Application.Jobs.Submissions;
 using Algowars.Application.Languages;
 using Algowars.Application.Messaging;
 using Algowars.Application.Problems;
@@ -7,6 +8,7 @@ using Algowars.Application.Users;
 using Algowars.Domain.Submissions;
 using Algowars.Domain.TestSuites;
 using Algowars.Domain.Users;
+using Algowars.Infrastructure.Jobs.Submissions;
 using Algowars.Infrastructure.Messaging;
 using Algowars.Infrastructure.Messaging.Consumers;
 using Algowars.Infrastructure.Persistence;
@@ -17,6 +19,7 @@ using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Quartz;
 
 namespace Algowars.Infrastructure;
 
@@ -32,6 +35,7 @@ public static class InfrastructureServiceRegistration
         services.AddRepositories();
 
         services.AddMessageBus(configuration);
+        services.AddJobs(configuration);
 
         services.AddSeeder();
 
@@ -74,6 +78,28 @@ public static class InfrastructureServiceRegistration
                 });
             }
         });
+
+        return services;
+    }
+
+    private static IServiceCollection AddJobs(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddScoped<ISubmissionCleanupService, SubmissionCleanupService>();
+
+        var opts = configuration
+            .GetSection(JobScheduleOptions.SectionName)
+            .Get<JobScheduleOptions>() ?? new JobScheduleOptions();
+
+        services.AddQuartz(q =>
+        {
+            q.AddJob<SubmissionCleanupJob>(SubmissionCleanupJob.Key, j => j.StoreDurably());
+            q.AddTrigger(t => t
+                .ForJob(SubmissionCleanupJob.Key)
+                .WithIdentity("SubmissionCleanupJob-trigger")
+                .WithCronSchedule(opts.SubmissionCleanupJob.CronExpression));
+        });
+
+        services.AddQuartzHostedService(q => q.WaitForJobsToComplete = true);
 
         return services;
     }

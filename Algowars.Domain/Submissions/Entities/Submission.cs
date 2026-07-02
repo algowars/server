@@ -1,5 +1,6 @@
 using Algowars.Domain.SeedWork;
 using Algowars.Domain.Submissions.Enums;
+using Algowars.Domain.Submissions.Events;
 using Algowars.Domain.Submissions.Exceptions;
 using Algowars.Domain.Submissions.ValueObjects;
 
@@ -22,6 +23,8 @@ public sealed class Submission : AggregateRoot
 
         foreach (Guid testCaseId in testCaseIds)
             _results.Add(new SubmissionResult(testCaseId));
+
+        AddDomainEvent(new SubmissionCreatedDomainEvent(Id));
     }
 
     public void Complete()
