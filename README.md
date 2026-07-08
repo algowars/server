@@ -1,34 +1,52 @@
 # Algowars Server
 
-[![ci](https://github.com/algowars/server/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/algowars/server/actions/workflows/ci.yml)
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=algowars_server&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=algowars_server)
-[![codecov](https://codecov.io/gh/algowars/server/branch/master/graph/badge.svg)](https://codecov.io/gh/algowars/server)
+Backend for Algowars, a competitive programming platform. Built with .NET.
 
-## Local user secrets setup
+## Requirements
 
-The scripts below populate user secrets for `src/PublicApi/PublicApi.csproj`.
-CORS is configured in `src/PublicApi/appsettings.Development.json`.
+- .NET 10 SDK
+- docker
+- dotnet-ef CLI
 
-### PowerShell (Windows)
-
-From the repository root:
-
-```powershell
-./scripts/setup-user-secrets.ps1
+```
+dotnet tool install --global dotnet-ef
 ```
 
-### Bash (Linux/macOS/Git Bash)
+### Getting started
 
-From the repository root:
+To get started with the project. You need a postgresql server and a message broker. You can use the docker compose file to spin this up. To do so run the command:
 
-```bash
-./scripts/setup-user-secrets.sh
+```
+docker-compose up
 ```
 
-### Prompt behavior
+### Migrations
 
-- Press `Enter` to use the shown default value.
-- Type `skip` to leave a key unchanged.
-- Set `MessageBus:Transport` to `RabbitMQ` or `AzureServiceBus`.
-  - `RabbitMQ`: prompts only RabbitMQ settings.
-  - `AzureServiceBus`: prompts only Azure Service Bus connection string.
+Migrations are managed in `Algowars.Infrastructure`. To add a new migration:
+
+```
+dotnet ef migrations add <MigrationName> --project Algowars.Infrastructure --startup-project Algowars.Api
+```
+
+To apply migrations against the local database (requires Aspire to be running):
+
+```
+dotnet ef database update --project Algowars.Infrastructure --startup-project Algowars.Api
+```
+
+To apply migrations against an external database:
+
+```
+dotnet ef database update --project Algowars.Infrastructure --connection "<connection string>"
+```
+
+### Project structure
+
+| Project                    | Description                         |
+| -------------------------- | ----------------------------------- |
+| `Algowars.AppHost`         | Aspire orchestration                |
+| `Algowars.Api`             | HTTP API                            |
+| `Algowars.Application`     | Application logic and handlers      |
+| `Algowars.Domain`          | Domain models                       |
+| `Algowars.Infrastructure`  | EF Core, repositories, persistence  |
+| `Algowars.ServiceDefaults` | Shared Aspire service configuration |

@@ -2,7 +2,7 @@ $ErrorActionPreference = 'Stop'
 
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $repoRoot = Split-Path -Parent $scriptRoot
-$projectPath = Join-Path $repoRoot 'src/PublicApi/PublicApi.csproj'
+$projectPath = Join-Path $repoRoot 'Algowars.Api/Algowars.Api.csproj'
 $skipToken = '__SKIP__'
 
 if (-not (Get-Command dotnet -ErrorAction SilentlyContinue)) {

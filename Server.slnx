@@ -1,0 +1,10 @@
+<Solution>
+  <Project Path="Algowars.Api/Algowars.Api.csproj" />
+  <Project Path="Algowars.Application/Algowars.Application.csproj" Id="b818290e-d668-40b1-a0a3-eb1534425589" />
+  <Project Path="Algowars.Domain.Tests/Algowars.Domain.Tests.csproj" Id="a2c94f5e-bc0c-4c2e-9abe-fb218af6392c" />
+  <Project Path="Algowars.Domain/Algowars.Domain.csproj" />
+  <Project Path="Algowars.Infrastructure/Algowars.Infrastructure.csproj" Id="8946de77-b331-4639-8b68-92dc7f45c822" />
+  <Project Path="Algowars.Seeder/Algowars.Seeder.csproj">
+    <Build Solution="Debug|*" Project="false" />
+  </Project>
+</Solution>
