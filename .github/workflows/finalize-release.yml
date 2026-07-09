@@ -1,0 +1,93 @@
+name: Finalize Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Release version without v prefix (for example 1.8.0).
+        required: true
+        type: string
+      target_ref:
+        description: Branch or commit SHA to tag.
+        required: false
+        default: main
+        type: string
+      prerelease:
+        description: Mark the GitHub release as prerelease.
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+
+concurrency:
+  group: finalize-release
+  cancel-in-progress: false
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: Production
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          ref: ${{ inputs.target_ref }}
+          fetch-depth: 0
+
+      - name: Validate version
+        id: validate
+        shell: bash
+        env:
+          VERSION_INPUT: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+
+          VERSION="${VERSION_INPUT}"
+          if ! [[ "${VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Version must be SemVer without v prefix, for example 1.8.0"
+            exit 1
+          fi
+
+          TAG="v${VERSION}"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+
+      - name: Fail if tag already exists
+        shell: bash
+        env:
+          TAG: ${{ steps.validate.outputs.tag }}
+        run: |
+          set -euo pipefail
+
+          git fetch --tags
+          if git rev-parse "${TAG}" >/dev/null 2>&1; then
+            echo "Tag already exists: ${TAG}"
+            exit 1
+          fi
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Create and push tag
+        shell: bash
+        env:
+          TAG: ${{ steps.validate.outputs.tag }}
+        run: |
+          set -euo pipefail
+
+          git tag -a "${TAG}" -m "Release ${TAG}"
+          git push origin "${TAG}"
+
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@718ea10b132b3b2eba29c1007bb80653f286566b
+        with:
+          tag_name: ${{ steps.validate.outputs.tag }}
+          target_commitish: ${{ inputs.target_ref }}
+          generate_release_notes: true
+          prerelease: ${{ inputs.prerelease }}

@@ -1,0 +1,128 @@
+name: Release Train
+
+on:
+  schedule:
+    - cron: "0 14 * * 1"
+  workflow_dispatch:
+    inputs:
+      base_branch:
+        description: Base branch to cut from.
+        required: false
+        default: main
+        type: string
+      release_branch:
+        description: Optional release branch name override.
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-train
+  cancel-in-progress: false
+
+jobs:
+  cut-release-branch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      DEFAULT_BASE_BRANCH: main
+      RELEASE_INTERVAL_DAYS: "21"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          fetch-depth: 0
+
+      - name: Resolve branch names
+        id: names
+        shell: bash
+        env:
+          BASE_BRANCH_INPUT: ${{ github.event.inputs.base_branch }}
+          RELEASE_BRANCH_INPUT: ${{ github.event.inputs.release_branch }}
+        run: |
+          set -euo pipefail
+
+          BASE_BRANCH="${BASE_BRANCH_INPUT}"
+          if [ -z "${BASE_BRANCH}" ]; then
+            BASE_BRANCH="${DEFAULT_BASE_BRANCH}"
+          fi
+
+          if [ -n "${RELEASE_BRANCH_INPUT}" ]; then
+            RELEASE_BRANCH="${RELEASE_BRANCH_INPUT}"
+          else
+            RELEASE_BRANCH="release/$(date -u +'%Y.%m.%d')"
+          fi
+
+          echo "base_branch=${BASE_BRANCH}" >> "$GITHUB_OUTPUT"
+          echo "release_branch=${RELEASE_BRANCH}" >> "$GITHUB_OUTPUT"
+
+      - name: Evaluate release gate
+        id: gate
+        shell: bash
+        env:
+          BASE_BRANCH: ${{ steps.names.outputs.base_branch }}
+          RELEASE_BRANCH: ${{ steps.names.outputs.release_branch }}
+          RELEASE_INTERVAL_DAYS: ${{ env.RELEASE_INTERVAL_DAYS }}
+        run: |
+          set -euo pipefail
+
+          git fetch origin "${BASE_BRANCH}" --prune
+
+          if git ls-remote --exit-code --heads origin "${RELEASE_BRANCH}" >/dev/null 2>&1; then
+            echo "should_run=false" >> "$GITHUB_OUTPUT"
+            echo "reason=Release branch already exists: ${RELEASE_BRANCH}" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          LATEST_RELEASE_BRANCH="$(git for-each-ref --format='%(refname:short)' refs/remotes/origin/release/* | sed 's#^origin/##' | sort | tail -n1)"
+
+          if [ -n "${LATEST_RELEASE_BRANCH}" ]; then
+            LAST_RELEASE_DATE="${LATEST_RELEASE_BRANCH#release/}"
+            if [[ "${LAST_RELEASE_DATE}" =~ ^[0-9]{4}\.[0-9]{2}\.[0-9]{2}$ ]]; then
+              LAST_RELEASE_EPOCH="$(date -u -d "${LAST_RELEASE_DATE//./-}" +%s)"
+              NOW_EPOCH="$(date -u +%s)"
+              DAYS_SINCE_LAST_RELEASE="$(( (NOW_EPOCH - LAST_RELEASE_EPOCH) / 86400 ))"
+
+              if [ "${DAYS_SINCE_LAST_RELEASE}" -lt "${RELEASE_INTERVAL_DAYS}" ]; then
+                echo "should_run=false" >> "$GITHUB_OUTPUT"
+                echo "reason=Only ${DAYS_SINCE_LAST_RELEASE} day(s) since ${LATEST_RELEASE_BRANCH}; need ${RELEASE_INTERVAL_DAYS}+ day(s)." >> "$GITHUB_OUTPUT"
+                exit 0
+              fi
+            fi
+
+            COMMITS_AHEAD="$(git rev-list --count "origin/${LATEST_RELEASE_BRANCH}..origin/${BASE_BRANCH}")"
+            if [ "${COMMITS_AHEAD}" -eq 0 ]; then
+              echo "should_run=false" >> "$GITHUB_OUTPUT"
+              echo "reason=No new commits on ${BASE_BRANCH} since ${LATEST_RELEASE_BRANCH}." >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          fi
+
+          echo "should_run=true" >> "$GITHUB_OUTPUT"
+          echo "reason=Release gate passed." >> "$GITHUB_OUTPUT"
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Create and push release branch
+        if: ${{ steps.gate.outputs.should_run == 'true' }}
+        shell: bash
+        env:
+          BASE_BRANCH: ${{ steps.names.outputs.base_branch }}
+          RELEASE_BRANCH: ${{ steps.names.outputs.release_branch }}
+        run: |
+          set -euo pipefail
+
+          git switch --create "${RELEASE_BRANCH}" "origin/${BASE_BRANCH}"
+          git push --set-upstream origin "${RELEASE_BRANCH}"
+
+          echo "Created release branch: ${RELEASE_BRANCH}"
+
+      - name: Skip summary
+        if: ${{ steps.gate.outputs.should_run != 'true' }}
+        run: echo "Skipping release branch creation. ${{ steps.gate.outputs.reason }}"
