@@ -1,5 +1,5 @@
-using Algowars.Domain.Submissions.Enums;
 using Algowars.Domain.SeedWork;
+using Algowars.Domain.Submissions.Enums;
 
 namespace Algowars.Domain.Submissions.Entities;
 

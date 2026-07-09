@@ -72,4 +72,3 @@ public sealed class Problem : AggregateRoot
     private readonly List<ProblemHistory> _history = [];
     private readonly List<ProblemSetup> _setups = [];
 }
- 

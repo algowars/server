@@ -35,4 +35,3 @@ internal sealed class UserWriteRepository(AlgowarsDbContext context) : IUserWrit
         return await context.Users.FirstOrDefaultAsync(u => u.Username == username, cancellationToken);
     }
 }
-
