@@ -8,7 +8,7 @@ on:
       base_branch:
         description: Base branch to cut from.
         required: false
-        default: main
+        default: master
         type: string
       release_branch:
         description: Optional release branch name override.
@@ -27,7 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
-      DEFAULT_BASE_BRANCH: main
+      DEFAULT_BASE_BRANCH: master
       RELEASE_INTERVAL_DAYS: "21"
 
     steps:
