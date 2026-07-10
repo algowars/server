@@ -1,4 +1,4 @@
-﻿using Algowars.Infrastructure;
+using Algowars.Infrastructure;
 using Algowars.Infrastructure.Persistence.Seeders;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;

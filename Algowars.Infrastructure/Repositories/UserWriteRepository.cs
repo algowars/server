@@ -1,4 +1,4 @@
-﻿using Algowars.Domain.Users;
+using Algowars.Domain.Users;
 using Algowars.Domain.Users.Entities;
 using Algowars.Domain.Users.ValueObjects;
 using Algowars.Infrastructure.Persistence;
