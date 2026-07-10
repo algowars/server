@@ -176,8 +176,8 @@ public class UserTests
     public void GetHashCode_SameUser_ReturnsSameHash()
     {
         var user = new UserEntity(ValidUsername, ValidSub);
-        var hash1 = user.GetHashCode();
-        var hash2 = user.GetHashCode();
+        int hash1 = user.GetHashCode();
+        int hash2 = user.GetHashCode();
         Assert.That(hash1, Is.EqualTo(hash2));
     }
 
