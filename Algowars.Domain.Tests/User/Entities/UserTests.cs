@@ -160,7 +160,7 @@ public class UserTests
     public void Equals_SameInstance_IsEqual()
     {
         var user = new UserEntity(ValidUsername, ValidSub);
-        Assert.That(user, Is.EqualTo(user));
+        Assert.That(user.Equals(user), Is.True);
     }
 
     [Test]
@@ -176,7 +176,9 @@ public class UserTests
     public void GetHashCode_SameUser_ReturnsSameHash()
     {
         var user = new UserEntity(ValidUsername, ValidSub);
-        Assert.That(user.GetHashCode(), Is.EqualTo(user.GetHashCode()));
+        var hash1 = user.GetHashCode();
+        var hash2 = user.GetHashCode();
+        Assert.That(hash1, Is.EqualTo(hash2));
     }
 
     [Test]
