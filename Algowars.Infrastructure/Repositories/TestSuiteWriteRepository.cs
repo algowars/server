@@ -1,4 +1,4 @@
-using Algowars.Domain.TestSuites;
+﻿using Algowars.Domain.TestSuites;
 using Algowars.Domain.TestSuites.Entities;
 using Algowars.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
