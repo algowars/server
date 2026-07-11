@@ -43,6 +43,19 @@ public static class InfrastructureServiceRegistration
         return services;
     }
 
+    /// <summary>
+    /// Minimal registration for the Seeder CLI — persistence only, no message bus or jobs.
+    /// </summary>
+    public static IServiceCollection AddInfrastructureForSeeder(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        services.AddOptions(configuration);
+        services.AddPersistence();
+        services.AddSeeder();
+
+        return services;
+    }
 
     private static IServiceCollection AddMessageBus(this IServiceCollection services, IConfiguration configuration)
     {

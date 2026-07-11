@@ -23,7 +23,7 @@ IConfiguration configuration = new ConfigurationBuilder()
     .Build();
 
 ServiceCollection services = new();
-services.AddInfrastructure(configuration);
+services.AddInfrastructureForSeeder(configuration);
 
 await using ServiceProvider provider = services.BuildServiceProvider();
 IServiceProvider sp = provider;

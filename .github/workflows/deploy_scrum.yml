@@ -64,8 +64,6 @@ jobs:
         env:
           ASPNETCORE_ENVIRONMENT: Production
           ConnectionStrings__DefaultConnection: ${{ secrets.DB_CONNECTION_STRING }}
-          MessageBus__Transport: AzureServiceBus
-          MessageBus__AzureServiceBus__ConnectionString: ${{ secrets.SERVICE_BUS_CONNECTION_STRING }}
 
   deploy:
     runs-on: ubuntu-latest
