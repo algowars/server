@@ -1,4 +1,5 @@
 using Algowars.Domain.Languages.Entities;
+using Algowars.Domain.Languages.ValueObjects;
 using Algowars.Domain.Problems.Entities;
 using Algowars.Domain.Problems.ValueObjects;
 using Algowars.Domain.TestSuites.Entities;
@@ -96,7 +97,7 @@ internal sealed class TwoSumProblemSeeder(AlgowarsDbContext context) : ISeeder
 
     private async Task<LanguageVersionEntry> GetVersionAsync(string slug, CancellationToken cancellationToken)
         => await context.Languages
-            .Where(l => l.Slug.Value == slug)
+            .Where(l => l.Slug == new LanguageSlug(slug))
             .SelectMany(l => l.Versions)
             .FirstAsync(cancellationToken);
 
