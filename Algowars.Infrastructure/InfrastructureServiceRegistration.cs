@@ -174,5 +174,12 @@ public static class InfrastructureServiceRegistration
             var demoSeeder = scope.ServiceProvider.GetRequiredService<DemoDataSeeder>();
             await demoSeeder.SeedAsync(cancellationToken);
         }
+
+        if (options.SeedOnce)
+        {
+            var onceSeeds = scope.ServiceProvider.GetServices<OnceSeeder>();
+            foreach (OnceSeeder seed in onceSeeds)
+                await seed.SeedAsync(cancellationToken);
+        }
     }
 }

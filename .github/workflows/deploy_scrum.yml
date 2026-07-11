@@ -68,7 +68,7 @@ jobs:
   seed-once:
     runs-on: ubuntu-latest
     needs: seed
-    environment: Scrum
+    environment: Scrum-Once-Seed
 
     steps:
       - name: Checkout code
