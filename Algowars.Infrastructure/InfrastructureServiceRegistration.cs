@@ -164,20 +164,24 @@ public static class InfrastructureServiceRegistration
     public static async Task SeedAsync(this IServiceProvider services, SeederOptions options, CancellationToken cancellationToken = default)
     {
         using var scope = services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AlgowarsDbContext>();
 
         if (options.SeedStaticData)
         {
             var languageSeeder = scope.ServiceProvider.GetRequiredService<LanguageSeeder>();
             await languageSeeder.SeedAsync(cancellationToken);
+            db.ChangeTracker.Clear();
 
             var twoSumSeeder = scope.ServiceProvider.GetRequiredService<TwoSumProblemSeeder>();
             await twoSumSeeder.SeedAsync(cancellationToken);
+            db.ChangeTracker.Clear();
         }
 
         if (options.SeedDemoData)
         {
             var demoSeeder = scope.ServiceProvider.GetRequiredService<DemoDataSeeder>();
             await demoSeeder.SeedAsync(cancellationToken);
+            db.ChangeTracker.Clear();
         }
     }
 }
