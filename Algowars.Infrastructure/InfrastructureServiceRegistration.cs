@@ -13,7 +13,8 @@ using Algowars.Infrastructure.Messaging;
 using Algowars.Infrastructure.Messaging.Consumers;
 using Algowars.Infrastructure.Persistence;
 using Algowars.Infrastructure.Persistence.Seeders;
-using Algowars.Infrastructure.Persistence.Seeders.Once.Problems;
+using Algowars.Infrastructure.Persistence.Seeders.Problems;
+
 using Algowars.Infrastructure.Repositories;
 using Algowars.Infrastructure.Settings;
 using Azure.Messaging.ServiceBus;
@@ -149,11 +150,7 @@ public static class InfrastructureServiceRegistration
     private static IServiceCollection AddSeeder(this IServiceCollection services)
     {
         services.AddScoped<LanguageSeeder>();
-
-        // Once-only seeds — each runs exactly once, tracked in seed_history.
-        // Add new problem/data seeds here. Never remove or rename existing entries.
-        services.AddScoped<OnceSeeder, SeedTwoSumProblem>();
-
+        services.AddScoped<TwoSumProblemSeeder>();
         return services;
     }
 
@@ -172,19 +169,15 @@ public static class InfrastructureServiceRegistration
         {
             var languageSeeder = scope.ServiceProvider.GetRequiredService<LanguageSeeder>();
             await languageSeeder.SeedAsync(cancellationToken);
+
+            var twoSumSeeder = scope.ServiceProvider.GetRequiredService<TwoSumProblemSeeder>();
+            await twoSumSeeder.SeedAsync(cancellationToken);
         }
 
         if (options.SeedDemoData)
         {
             var demoSeeder = scope.ServiceProvider.GetRequiredService<DemoDataSeeder>();
             await demoSeeder.SeedAsync(cancellationToken);
-        }
-
-        if (options.SeedOnce)
-        {
-            var onceSeeds = scope.ServiceProvider.GetServices<OnceSeeder>();
-            foreach (OnceSeeder seed in onceSeeds)
-                await seed.SeedAsync(cancellationToken);
         }
     }
 }

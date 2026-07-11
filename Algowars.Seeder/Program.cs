@@ -5,15 +5,13 @@ using Microsoft.Extensions.DependencyInjection;
 
 bool seedStatic = args.Contains("--static") || args.Contains("--all");
 bool seedDemo = args.Contains("--demo") || args.Contains("--all");
-bool seedOnce = args.Contains("--once") || args.Contains("--all");
 
-if (!seedStatic && !seedDemo && !seedOnce)
+if (!seedStatic && !seedDemo)
 {
-    Console.WriteLine("Usage: dotnet run --project Algowars.Seeder -- [--static] [--demo] [--once] [--all]");
+    Console.WriteLine("Usage: dotnet run --project Algowars.Seeder -- [--static] [--demo] [--all]");
     Console.WriteLine();
-    Console.WriteLine("  --static   Seed reference data (languages and versions) — idempotent, safe every deploy");
+    Console.WriteLine("  --static   Seed reference data (languages, versions, problems) — idempotent, safe every deploy");
     Console.WriteLine("  --demo     Seed demo data (example problems and test suites)");
-    Console.WriteLine("  --once     Run pending once-only seeds (tracked in seed_history table)");
     Console.WriteLine("  --all      Seed everything");
     return 1;
 }
@@ -34,8 +32,7 @@ await sp.MigrateAsync();
 await sp.SeedAsync(new SeederOptions
 {
     SeedStaticData = seedStatic,
-    SeedDemoData = seedDemo,
-    SeedOnce = seedOnce
+    SeedDemoData = seedDemo
 });
 
 Console.WriteLine("Done.");

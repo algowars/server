@@ -27,4 +27,8 @@
 		<PackageReference Include="Quartz.Extensions.Hosting" />
 	</ItemGroup>
 
+	<ItemGroup>
+	  <Folder Include="Persistence\Seeders\Once\Problems\" />
+	</ItemGroup>
+
 </Project>

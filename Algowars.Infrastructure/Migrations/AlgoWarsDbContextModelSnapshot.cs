@@ -601,22 +601,6 @@ namespace Algowars.Infrastructure.Migrations
                 {
                     b.Navigation("TestCases");
                 });
-
-            modelBuilder.Entity("Algowars.Infrastructure.Persistence.Seeders.SeedHistoryEntry", b =>
-                {
-                    b.Property<string>("Name")
-                        .HasMaxLength(300)
-                        .HasColumnType("character varying(300)")
-                        .HasColumnName("name");
-
-                    b.Property<DateTime>("ExecutedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("executed_at");
-
-                    b.HasKey("Name");
-
-                    b.ToTable("seed_history", (string)null);
-                });
 #pragma warning restore 612, 618
         }
     }

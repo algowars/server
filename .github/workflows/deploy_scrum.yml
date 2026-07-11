@@ -65,32 +65,9 @@ jobs:
           ASPNETCORE_ENVIRONMENT: Production
           ConnectionStrings__DefaultConnection: ${{ secrets.DB_CONNECTION_STRING }}
 
-  seed-once:
-    runs-on: ubuntu-latest
-    needs: seed
-    environment: Scrum-Once-Seed
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '10.0.x'
-
-      - name: Restore dependencies
-        run: dotnet restore
-
-      - name: Run once seed
-        run: dotnet run --project Algowars.Seeder -- --once
-        env:
-          ASPNETCORE_ENVIRONMENT: Production
-          ConnectionStrings__DefaultConnection: ${{ secrets.DB_CONNECTION_STRING }}
-
   deploy:
     runs-on: ubuntu-latest
-    needs: [seed, seed-once]
+    needs: seed
     if: ${{ always() && needs.seed.result == 'success' }}
     environment:
       name: Scrum
