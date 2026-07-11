@@ -27,14 +27,25 @@ internal sealed class TwoSumProblemSeeder(AlgowarsDbContext context) : ISeeder
         LanguageVersionEntry tsVersion = await GetVersionAsync("typescript", cancellationToken);
         LanguageVersionEntry pyVersion = await GetVersionAsync("python", cancellationToken);
 
-        Problem? problem = await context.Problems
-            .IgnoreQueryFilters()
-            .Include(p => p.Setups)
-            .FirstOrDefaultAsync(p => p.Slug.Value == ProblemSlug, cancellationToken);
+        context.ChangeTracker.Clear();
 
-        if (problem is null)
+        (Guid versionId, string code, string funcName)[] desiredSetups =
+        [
+            (jsVersion.Id, "function twoSum(nums, target) {\n    \n}", "twoSum"),
+            (tsVersion.Id, "function twoSum(nums: number[], target: number): number[] {\n    \n}", "twoSum"),
+            (pyVersion.Id, "def two_sum(nums: list[int], target: int) -> list[int]:\n    pass", "two_sum"),
+        ];
+
+        Guid? existingId = await context.Problems
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .Where(p => p.Slug.Value == ProblemSlug)
+            .Select(p => (Guid?)p.Id)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (existingId is null)
         {
-            problem = new Problem(
+            Problem problem = new(
                 new Slug(ProblemSlug),
                 new Title("Two Sum"),
                 new Question("Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target. You may assume that each input would have exactly one solution, and you may not use the same element twice."),
@@ -43,26 +54,40 @@ internal sealed class TwoSumProblemSeeder(AlgowarsDbContext context) : ISeeder
                 new MemoryLimit(64));
 
             problem.Publish();
+
+            foreach ((Guid versionId, string code, string funcName) in desiredSetups)
+                problem.AddSetup(versionId, code, funcName);
+
             context.Problems.Add(problem);
+            await context.SaveChangesAsync(cancellationToken);
+            context.ChangeTracker.Clear();
+            return problem.Id;
         }
 
-        Guid[] desiredVersionIds = [jsVersion.Id, tsVersion.Id, pyVersion.Id];
-        string[] initialCodes =
-        [
-            "function twoSum(nums, target) {\n    \n}",
-            "function twoSum(nums: number[], target: number): number[] {\n    \n}",
-            "def two_sum(nums: list[int], target: int) -> list[int]:\n    pass"
-        ];
-        string[] functionNames = ["twoSum", "twoSum", "two_sum"];
+        // Problem exists — add only missing setups
+        HashSet<Guid> existingVersionIds = await context.Set<ProblemSetup>()
+            .AsNoTracking()
+            .Where(s => EF.Property<Guid>(s, "problem_id") == existingId.Value)
+            .Select(s => s.LanguageVersionId)
+            .ToHashSetAsync(cancellationToken);
 
-        for (int i = 0; i < desiredVersionIds.Length; i++)
+        List<(Guid versionId, string code, string funcName)> missing =
+            desiredSetups.Where(d => !existingVersionIds.Contains(d.versionId)).ToList();
+
+        if (missing.Count > 0)
         {
-            if (!problem.Setups.Any(s => s.LanguageVersionId == desiredVersionIds[i]))
-                problem.AddSetup(desiredVersionIds[i], initialCodes[i], functionNames[i]);
+            Problem tracked = await context.Problems
+                .IgnoreQueryFilters()
+                .FirstAsync(p => p.Id == existingId.Value, cancellationToken);
+
+            foreach ((Guid versionId, string code, string funcName) in missing)
+                tracked.AddSetup(versionId, code, funcName);
+
+            await context.SaveChangesAsync(cancellationToken);
+            context.ChangeTracker.Clear();
         }
 
-        await context.SaveChangesAsync(cancellationToken);
-        return problem.Id;
+        return existingId.Value;
     }
 
     private async Task EnsureTestSuitesLinkedAsync(Guid problemId, CancellationToken cancellationToken)
