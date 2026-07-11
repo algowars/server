@@ -5,6 +5,7 @@ using Algowars.Domain.Problems.Enums;
 using Algowars.Domain.Submissions.Entities;
 using Algowars.Domain.TestSuites.Entities;
 using Algowars.Domain.Users.Entities;
+using Algowars.Infrastructure.Persistence.Seeders;
 using Microsoft.EntityFrameworkCore;
 
 namespace Algowars.Infrastructure.Persistence;
@@ -20,6 +21,8 @@ internal sealed class AlgowarsDbContext(DbContextOptions<AlgowarsDbContext> opti
     public DbSet<TestSuite> TestSuites { get; init; }
 
     public DbSet<User> Users { get; init; }
+
+    public DbSet<SeedHistoryEntry> SeedHistory { get; init; }
 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

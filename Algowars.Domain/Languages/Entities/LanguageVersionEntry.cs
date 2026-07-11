@@ -13,6 +13,11 @@ public sealed class LanguageVersionEntry : Entity
         Status = LanguageVersionStatus.Active;
     }
 
+    public void Activate()
+    {
+        Status = LanguageVersionStatus.Active;
+    }
+
     public void Deprecate()
     {
         Status = LanguageVersionStatus.Deprecated;
