@@ -1,0 +1,194 @@
+name: Deploy Scrum
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+    inputs:
+      target_ref:
+        description: Branch or commit SHA to deploy.
+        required: false
+        default: master
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-scrum-${{ github.event_name == 'workflow_dispatch' && inputs.target_ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          ref: ${{ inputs.target_ref || github.ref }}
+          fetch-depth: 1
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('Directory.Packages.props', 'nuget.config', 'Server.slnx', '**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Restore solution dependencies
+        run: dotnet restore Server.slnx
+
+      - name: Verify formatting
+        run: dotnet format Server.slnx --verify-no-changes --no-restore
+
+      - name: Build solution
+        run: dotnet build Server.slnx -c Release --no-restore
+
+      - name: Run solution tests
+        run: dotnet test Server.slnx -c Release --no-build
+
+      - name: Publish API
+        run: dotnet publish Algowars.Api/Algowars.Api.csproj -c Release --no-build -o ./artifacts/deployable/publish
+
+      - name: Install EF Core CLI
+        run: dotnet tool install --global dotnet-ef
+
+      - name: Create migrations bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          dotnet ef migrations bundle \
+            --project Algowars.Infrastructure \
+            --output ./artifacts/deployable/algowars-migrate
+
+          chmod +x ./artifacts/deployable/algowars-migrate
+
+      - name: Upload deployable artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: scrum-deployable
+          path: ./artifacts/deployable
+          if-no-files-found: error
+
+  deploy:
+    needs: package
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment:
+      name: Scrum
+      url: ${{ vars.APP_URL }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          ref: ${{ inputs.target_ref || github.ref }}
+          fetch-depth: 1
+
+      - name: Download deployable artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: scrum-deployable
+          path: ./artifacts/deployable
+
+      - name: Apply database migrations
+        shell: bash
+        env:
+          DB_CONNECTION_STRING: ${{ secrets.DB_CONNECTION_STRING }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${DB_CONNECTION_STRING:-}" ]; then
+            echo "Missing required environment secret: DB_CONNECTION_STRING"
+            exit 1
+          fi
+
+          chmod +x ./artifacts/deployable/algowars-migrate
+          ./artifacts/deployable/algowars-migrate --connection "${DB_CONNECTION_STRING}"
+
+      - name: Validate environment settings
+        shell: bash
+        env:
+          DEPLOY_SCRIPT_PATH: ${{ vars.DEPLOY_SCRIPT_PATH }}
+          DB_CONNECTION_STRING: ${{ secrets.DB_CONNECTION_STRING }}
+          AUTH0_DOMAIN: ${{ secrets.AUTH0_DOMAIN }}
+          AUTH0_AUDIENCE: ${{ secrets.AUTH0_AUDIENCE }}
+          CORS_ALLOWED_ORIGINS: ${{ vars.CORS_ALLOWED_ORIGINS }}
+          MESSAGEBUS_TRANSPORT: ${{ vars.MESSAGEBUS_TRANSPORT }}
+          RABBITMQ_HOST: ${{ secrets.RABBITMQ_HOST }}
+          RABBITMQ_VIRTUALHOST: ${{ secrets.RABBITMQ_VIRTUALHOST }}
+          RABBITMQ_USERNAME: ${{ secrets.RABBITMQ_USERNAME }}
+          RABBITMQ_PASSWORD: ${{ secrets.RABBITMQ_PASSWORD }}
+          AZURE_SERVICEBUS_CONNECTION_STRING: ${{ secrets.AZURE_SERVICEBUS_CONNECTION_STRING }}
+        run: |
+          set -euo pipefail
+
+          required=(DEPLOY_SCRIPT_PATH DB_CONNECTION_STRING AUTH0_DOMAIN AUTH0_AUDIENCE CORS_ALLOWED_ORIGINS MESSAGEBUS_TRANSPORT)
+          for name in "${required[@]}"; do
+            if [ -z "${!name:-}" ]; then
+              echo "Missing required environment setting: ${name}"
+              exit 1
+            fi
+          done
+
+          if [ ! -f "${DEPLOY_SCRIPT_PATH}" ]; then
+            echo "Deployment script not found: ${DEPLOY_SCRIPT_PATH}"
+            exit 1
+          fi
+
+          case "${MESSAGEBUS_TRANSPORT}" in
+            RabbitMQ)
+              for name in RABBITMQ_HOST RABBITMQ_VIRTUALHOST RABBITMQ_USERNAME RABBITMQ_PASSWORD; do
+                if [ -z "${!name:-}" ]; then
+                  echo "Missing required RabbitMQ setting: ${name}"
+                  exit 1
+                fi
+              done
+              ;;
+            AzureServiceBus)
+              if [ -z "${AZURE_SERVICEBUS_CONNECTION_STRING:-}" ]; then
+                echo "Missing required Azure Service Bus secret: AZURE_SERVICEBUS_CONNECTION_STRING"
+                exit 1
+              fi
+              ;;
+            *)
+              echo "Unsupported MESSAGEBUS_TRANSPORT: ${MESSAGEBUS_TRANSPORT}"
+              exit 1
+              ;;
+          esac
+
+      - name: Execute deployment script
+        shell: bash
+        env:
+          APP_URL: ${{ vars.APP_URL }}
+          ASPNETCORE_ENVIRONMENT: Scrum
+          APPLICATIONINSIGHTS_CONNECTION_STRING: ${{ secrets.APPLICATIONINSIGHTS_CONNECTION_STRING }}
+          AUTH0_AUDIENCE: ${{ secrets.AUTH0_AUDIENCE }}
+          AUTH0_DOMAIN: ${{ secrets.AUTH0_DOMAIN }}
+          AZURE_SERVICEBUS_CONNECTION_STRING: ${{ secrets.AZURE_SERVICEBUS_CONNECTION_STRING }}
+          CORS_ALLOWED_ORIGINS: ${{ vars.CORS_ALLOWED_ORIGINS }}
+          DB_CONNECTION_STRING: ${{ secrets.DB_CONNECTION_STRING }}
+          DEPLOY_SCRIPT_PATH: ${{ vars.DEPLOY_SCRIPT_PATH }}
+          MESSAGEBUS_TRANSPORT: ${{ vars.MESSAGEBUS_TRANSPORT }}
+          MIGRATION_BUNDLE_PATH: ${{ github.workspace }}/artifacts/deployable/algowars-migrate
+          PUBLISH_DIR: ${{ github.workspace }}/artifacts/deployable/publish
+          QUARTZ_SUBMISSIONCLEANUPJOB_CRONEXPRESSION: ${{ vars.QUARTZ_SUBMISSIONCLEANUPJOB_CRONEXPRESSION }}
+          RABBITMQ_HOST: ${{ secrets.RABBITMQ_HOST }}
+          RABBITMQ_PASSWORD: ${{ secrets.RABBITMQ_PASSWORD }}
+          RABBITMQ_USERNAME: ${{ secrets.RABBITMQ_USERNAME }}
+          RABBITMQ_VIRTUALHOST: ${{ secrets.RABBITMQ_VIRTUALHOST }}
+        run: |
+          set -euo pipefail
+
+          chmod +x "${DEPLOY_SCRIPT_PATH}"
+          "${DEPLOY_SCRIPT_PATH}"
