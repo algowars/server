@@ -39,7 +39,6 @@ public static class ApiServiceRegistration
         services.AddAuth0(configuration);
         services.AddAppInsights(configuration);
         services.AddScoped<AccountContextMiddleware>();
-        services.AddHealthChecks();
 
         return services;
     }
@@ -59,6 +58,5 @@ public static class ApiServiceRegistration
         app.UseAuthorization();
         app.UseMiddleware<AccountContextMiddleware>();
         app.MapControllers();
-        app.MapHealthChecks("/health");
     }
 }
