@@ -30,11 +30,14 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
+      - name: Restore dependencies
+        run: dotnet restore
+
       - name: Install EF Core tools
         run: dotnet tool install --global dotnet-ef
 
       - name: Run migrations
-        run: dotnet ef database update --project Algowars.Infrastructure --startup-project Algowars.Api --no-build
+        run: dotnet ef database update --project Algowars.Infrastructure --startup-project Algowars.Api
         env:
           ASPNETCORE_ENVIRONMENT: Production
           ConnectionStrings__DefaultConnection: ${{ secrets.DB_CONNECTION_STRING }}
