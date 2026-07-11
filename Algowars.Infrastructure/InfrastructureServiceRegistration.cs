@@ -50,7 +50,7 @@ public static class InfrastructureServiceRegistration
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        services.AddOptions(configuration);
+        services.AddOption<ConnectionStringOptions>(configuration);
         services.AddPersistence();
         services.AddSeeder();
 
