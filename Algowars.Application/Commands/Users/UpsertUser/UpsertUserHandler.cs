@@ -1,14 +1,14 @@
-﻿using Algowars.Application.Services.Users;
-using Algowars.Application.Commands;
-using Ardalis.Result;
-using FluentValidation;
-using MediatR;
+﻿using Algowars.Application.Commands;
+using Algowars.Application.Services.Users;
 using Algowars.Domain.SeedWork;
 using Algowars.Domain.Users;
 using Algowars.Domain.Users.Entities;
 using Algowars.Domain.Users.Factories;
 using Algowars.Domain.Users.ValueObjects;
 using ApplicationCore.Commands;
+using Ardalis.Result;
+using FluentValidation;
+using MediatR;
 
 namespace Algowars.Application.Commands.Users.UpsertUser;
 

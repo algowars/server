@@ -79,7 +79,7 @@ public class UsernameTests
     public void Equality_SameReference_AreEqual()
     {
         var a = new Username("alice");
-        Assert.That(a, Is.EqualTo(a));
+        Assert.That(a.Equals(a), Is.True);
     }
 
     [Test]

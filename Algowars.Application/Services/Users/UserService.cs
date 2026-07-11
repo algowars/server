@@ -25,6 +25,6 @@ internal sealed class UserService(IMediator mediator) : IUserService
     public async Task<Result<Unit>> UpsertAccountAsync(string sub, UpsertUserDto request, CancellationToken cancellationToken)
     {
         var result = await mediator.Send(new UpsertUserCommand(sub, request.Username, request.ImageUrl, request.Bio), cancellationToken);
-        return result;  
+        return result;
     }
 }

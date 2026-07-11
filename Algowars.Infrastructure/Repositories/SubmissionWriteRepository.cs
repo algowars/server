@@ -1,4 +1,4 @@
-﻿using Algowars.Domain.Submissions;
+using Algowars.Domain.Submissions;
 using Algowars.Domain.Submissions.Entities;
 using Algowars.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
