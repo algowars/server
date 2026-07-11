@@ -21,8 +21,7 @@ internal sealed class AlgowarsDbContext(DbContextOptions<AlgowarsDbContext> opti
 
     public DbSet<User> Users { get; init; }
 
-
-    protected override void OnModelCreating
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AlgowarsDbContext).Assembly);
 
