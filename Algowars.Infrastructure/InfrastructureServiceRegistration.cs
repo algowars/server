@@ -15,11 +15,12 @@ using Algowars.Infrastructure.Persistence;
 using Algowars.Infrastructure.Persistence.Seeders;
 using Algowars.Infrastructure.Repositories;
 using Algowars.Infrastructure.Settings;
-using MassTransit;
+using Azure.Messaging.ServiceBus;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Quartz;
+using RabbitMQ.Client;
 
 namespace Algowars.Infrastructure;
 
@@ -45,39 +46,33 @@ public static class InfrastructureServiceRegistration
 
     private static IServiceCollection AddMessageBus(this IServiceCollection services, IConfiguration configuration)
     {
-        services.AddScoped<IMessagePublisher, MassTransitMessagePublisher>();
+        var opts = configuration
+            .GetSection(MessageBusOptions.SectionName)
+            .Get<MessageBusOptions>() ?? new MessageBusOptions();
 
-        services.AddMassTransit(bus =>
+        if (opts.Transport.Equals("AzureServiceBus", StringComparison.OrdinalIgnoreCase))
         {
-            bus.AddConsumer<SubmissionCreatedConsumer>();
-
-            var opts = configuration
-                .GetSection(MessageBusOptions.SectionName)
-                .Get<MessageBusOptions>() ?? new MessageBusOptions();
-
-            if (opts.Transport.Equals("AzureServiceBus", StringComparison.OrdinalIgnoreCase))
+            services.AddSingleton(new ServiceBusClient(opts.AzureServiceBus.ConnectionString));
+            services.AddScoped<IMessagePublisher, AzureServiceBusMessagePublisher>();
+            services.AddHostedService<AzureServiceBusConsumerService>();
+        }
+        else
+        {
+            services.AddSingleton<IConnection>(_ =>
             {
-                bus.UsingAzureServiceBus((ctx, cfg) =>
+                var factory = new ConnectionFactory
                 {
-                    var busOpts = ctx.GetRequiredService<MessageBusOptions>();
-                    cfg.Host(busOpts.AzureServiceBus.ConnectionString);
-                    cfg.ConfigureEndpoints(ctx);
-                });
-            }
-            else
-            {
-                bus.UsingRabbitMq((ctx, cfg) =>
-                {
-                    var busOpts = ctx.GetRequiredService<MessageBusOptions>();
-                    cfg.Host(busOpts.RabbitMQ.Host, busOpts.RabbitMQ.VirtualHost, h =>
-                    {
-                        h.Username(busOpts.RabbitMQ.Username);
-                        h.Password(busOpts.RabbitMQ.Password);
-                    });
-                    cfg.ConfigureEndpoints(ctx);
-                });
-            }
-        });
+                    HostName = opts.RabbitMQ.Host,
+                    VirtualHost = opts.RabbitMQ.VirtualHost,
+                    UserName = opts.RabbitMQ.Username,
+                    Password = opts.RabbitMQ.Password,
+                    DispatchConsumersAsync = false,
+                };
+                return factory.CreateConnection();
+            });
+            services.AddScoped<IMessagePublisher, RabbitMqMessagePublisher>();
+            services.AddHostedService<RabbitMqConsumerService>();
+        }
 
         return services;
     }

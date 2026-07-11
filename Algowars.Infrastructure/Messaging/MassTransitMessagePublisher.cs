@@ -1,11 +1,17 @@
+using System.Text.Json;
 using Algowars.Application.Messaging;
-using MassTransit;
+using Azure.Messaging.ServiceBus;
 
 namespace Algowars.Infrastructure.Messaging;
 
-internal sealed class MassTransitMessagePublisher(IPublishEndpoint publishEndpoint) : IMessagePublisher
+internal sealed class AzureServiceBusMessagePublisher(ServiceBusClient client) : IMessagePublisher
 {
-    public Task PublishAsync<T>(T message, CancellationToken cancellationToken = default)
-        where T : class =>
-        publishEndpoint.Publish(message, cancellationToken);
+    public async Task PublishAsync<T>(T message, CancellationToken cancellationToken = default)
+        where T : class
+    {
+        await using var sender = client.CreateSender(QueueNames.ForType<T>());
+        await sender.SendMessageAsync(
+            new ServiceBusMessage(JsonSerializer.Serialize(message)),
+            cancellationToken);
+    }
 }
