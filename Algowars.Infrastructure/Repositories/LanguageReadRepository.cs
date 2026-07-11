@@ -1,4 +1,4 @@
-﻿using Algowars.Application.Languages;
+using Algowars.Application.Languages;
 using Algowars.Domain.Languages.Entities;
 using Algowars.Domain.Languages.Enums;
 using Algowars.Infrastructure.Persistence;

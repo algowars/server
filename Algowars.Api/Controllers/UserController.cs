@@ -38,7 +38,7 @@ public sealed class UserController(IUserService userService, UserContext userCon
     {
         string? sub = GetSub();
 
-        if(string.IsNullOrEmpty(sub))
+        if (string.IsNullOrEmpty(sub))
         {
             return this.ToActionResult(Result<Unit>.Invalid(new ValidationError("sub", "User sub is missing")));
         }

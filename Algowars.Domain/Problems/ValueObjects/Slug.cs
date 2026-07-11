@@ -1,5 +1,5 @@
-using System.Text.RegularExpressions;
 using Algowars.Domain.Problems.Exceptions;
+using System.Text.RegularExpressions;
 
 namespace Algowars.Domain.Problems.ValueObjects;
 

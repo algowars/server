@@ -1,4 +1,4 @@
-﻿using Algowars.Domain.Users;
+using Algowars.Domain.Users;
 using Algowars.Domain.Users.Entities;
 using Algowars.Domain.Users.ValueObjects;
 using Algowars.Infrastructure.Persistence;
@@ -35,4 +35,3 @@ internal sealed class UserWriteRepository(AlgowarsDbContext context) : IUserWrit
         return await context.Users.FirstOrDefaultAsync(u => u.Username == username, cancellationToken);
     }
 }
-
