@@ -78,6 +78,7 @@ internal sealed class TwoSumProblemSeeder(AlgowarsDbContext context) : ISeeder
         {
             Problem tracked = await context.Problems
                 .IgnoreQueryFilters()
+                .Include(p => p.History)
                 .FirstAsync(p => p.Id == existingId.Value, cancellationToken);
 
             foreach ((Guid versionId, string code, string funcName) in missing)
