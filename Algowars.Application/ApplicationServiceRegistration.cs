@@ -1,5 +1,6 @@
 using Algowars.Application.Events;
 using Algowars.Application.Services.Problems;
+using Algowars.Application.Services.Submissions;
 using Algowars.Application.Services.Users;
 using Algowars.Domain.SeedWork;
 using Algowars.Domain.Submissions.Entities;
@@ -39,6 +40,7 @@ public static class ApplicationServiceRegistration
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<IUsernameGeneratorService, UsernameGeneratorService>();
         services.AddScoped<IProblemService, ProblemService>();
+        services.AddScoped<ISubmissionService, SubmissionService>();
 
         return services;
     }
