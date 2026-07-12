@@ -152,6 +152,7 @@ public static class InfrastructureServiceRegistration
         services.AddScoped<LanguageSeeder>();
         services.AddScoped<TwoSumProblemSeeder>();
         services.AddScoped<HelloOrGoodbyeProblemSeeder>();
+        services.AddScoped<DemoDataSeeder>();
         return services;
     }
 

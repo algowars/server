@@ -40,6 +40,26 @@ To apply migrations against an external database:
 dotnet ef database update --project Algowars.Infrastructure --connection "<connection string>"
 ```
 
+### Seeding
+
+Seed everything (languages + demo problems with tags):
+
+```
+dotnet run --project Algowars.Seeder -- --all
+```
+
+Seed only static data (languages):
+
+```
+dotnet run --project Algowars.Seeder -- --static
+```
+
+Seed only demo data (problems, test suites, tags):
+
+```
+dotnet run --project Algowars.Seeder -- --demo
+```
+
 ### Deployment environments
 
 The deployment workflows use GitHub Environments named `Scrum` and `Production`.

@@ -15,6 +15,8 @@ internal sealed class AlgowarsDbContext(DbContextOptions<AlgowarsDbContext> opti
 
     public DbSet<Problem> Problems { get; init; }
 
+    public DbSet<ProblemTag> Tags { get; init; }
+
     public DbSet<Submission> Submissions { get; init; }
 
     public DbSet<TestSuite> TestSuites { get; init; }

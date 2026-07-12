@@ -51,6 +51,19 @@ public sealed class Problem : AggregateRoot
         return setup;
     }
 
+    public void AddTag(ProblemTag tag)
+    {
+        ArgumentNullException.ThrowIfNull(tag);
+        if (!_tags.Contains(tag))
+            _tags.Add(tag);
+    }
+
+    public void RemoveTag(ProblemTag tag)
+    {
+        ArgumentNullException.ThrowIfNull(tag);
+        _tags.Remove(tag);
+    }
+
     private Problem()
     {
         Slug = null!;
@@ -76,7 +89,9 @@ public sealed class Problem : AggregateRoot
 
     public IReadOnlyCollection<ProblemHistory> History => _history.AsReadOnly();
     public IReadOnlyCollection<ProblemSetup> Setups => _setups.AsReadOnly();
+    public IReadOnlyCollection<ProblemTag> Tags => _tags.AsReadOnly();
 
     private readonly List<ProblemHistory> _history = [];
     private readonly List<ProblemSetup> _setups = [];
+    private readonly List<ProblemTag> _tags = [];
 }

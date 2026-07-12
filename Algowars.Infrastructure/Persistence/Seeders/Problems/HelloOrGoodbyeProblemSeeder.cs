@@ -12,10 +12,13 @@ internal sealed class HelloOrGoodbyeProblemSeeder(AlgowarsDbContext context) : I
 {
     private const string ProblemSlug = "hello-or-goodbye";
 
+    private static readonly string[] Tags = ["math", "conditionals"];
+
     public async Task SeedAsync(CancellationToken cancellationToken = default)
     {
         Guid problemId = await EnsureProblemWithSetupsAsync(cancellationToken);
         await EnsureTestSuitesLinkedAsync(problemId, cancellationToken);
+        await EnsureTagsLinkedAsync(problemId, cancellationToken);
     }
 
     private async Task<Guid> EnsureProblemWithSetupsAsync(CancellationToken cancellationToken)
@@ -125,6 +128,28 @@ internal sealed class HelloOrGoodbyeProblemSeeder(AlgowarsDbContext context) : I
                     """,
                     cancellationToken);
             }
+        }
+    }
+
+    private async Task EnsureTagsLinkedAsync(Guid problemId, CancellationToken cancellationToken)
+    {
+        foreach (string tagName in Tags)
+        {
+            await context.Database.ExecuteSqlAsync(
+                $"""
+                INSERT INTO tags (id, name)
+                VALUES ({Guid.NewGuid()}, {tagName})
+                ON CONFLICT (name) DO NOTHING
+                """,
+                cancellationToken);
+
+            await context.Database.ExecuteSqlAsync(
+                $"""
+                INSERT INTO problem_tags ("ProblemsId", "TagsId")
+                SELECT {problemId}, id FROM tags WHERE name = {tagName}
+                ON CONFLICT DO NOTHING
+                """,
+                cancellationToken);
         }
     }
 

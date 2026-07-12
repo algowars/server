@@ -12,13 +12,15 @@ internal sealed class TwoSumProblemSeeder(AlgowarsDbContext context) : ISeeder
 {
     private const string ProblemSlug = "two-sum";
 
+    private static readonly string[] Tags = ["array", "hash-table"];
+
     public async Task SeedAsync(CancellationToken cancellationToken = default)
     {
-        // Phase 1: ensure problem and setups exist
         Guid problemId = await EnsureProblemWithSetupsAsync(cancellationToken);
 
-        // Phase 2: ensure test suites exist and are linked to every setup
         await EnsureTestSuitesLinkedAsync(problemId, cancellationToken);
+
+        await EnsureTagsLinkedAsync(problemId, cancellationToken);
     }
 
     private async Task<Guid> EnsureProblemWithSetupsAsync(CancellationToken cancellationToken)
@@ -135,6 +137,28 @@ internal sealed class TwoSumProblemSeeder(AlgowarsDbContext context) : ISeeder
                     """,
                     cancellationToken);
             }
+        }
+    }
+
+    private async Task EnsureTagsLinkedAsync(Guid problemId, CancellationToken cancellationToken)
+    {
+        foreach (string tagName in Tags)
+        {
+            await context.Database.ExecuteSqlAsync(
+                $"""
+                INSERT INTO tags (id, name)
+                VALUES ({Guid.NewGuid()}, {tagName})
+                ON CONFLICT (name) DO NOTHING
+                """,
+                cancellationToken);
+
+            await context.Database.ExecuteSqlAsync(
+                $"""
+                INSERT INTO problem_tags ("ProblemsId", "TagsId")
+                SELECT {problemId}, id FROM tags WHERE name = {tagName}
+                ON CONFLICT DO NOTHING
+                """,
+                cancellationToken);
         }
     }
 
