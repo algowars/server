@@ -1,6 +1,7 @@
 using Algowars.Domain.Problems.Enums;
 using Algowars.Domain.Problems.ValueObjects;
 using Algowars.Domain.SeedWork;
+using Algowars.Domain.Users.Entities;
 
 namespace Algowars.Domain.Problems.Entities;
 
@@ -64,6 +65,13 @@ public sealed class Problem : AggregateRoot
         _tags.Remove(tag);
     }
 
+    public void SetCreatedBy(Guid userId)
+    {
+        if (userId == Guid.Empty)
+            throw new ArgumentException("User id must not be empty.", nameof(userId));
+        CreatedById = userId;
+    }
+
     private Problem()
     {
         Slug = null!;
@@ -86,6 +94,8 @@ public sealed class Problem : AggregateRoot
     public MemoryLimit MemoryLimit { get; private set; }
     public ProblemStatus Status { get; private set; }
     public DateTime CreatedAt { get; private set; }
+    public Guid? CreatedById { get; private set; }
+    public User? CreatedBy { get; private set; }
 
     public IReadOnlyCollection<ProblemHistory> History => _history.AsReadOnly();
     public IReadOnlyCollection<ProblemSetup> Setups => _setups.AsReadOnly();

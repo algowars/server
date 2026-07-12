@@ -43,7 +43,13 @@ internal sealed class GetProblemBySlugHandler(IProblemReadRepository problemRead
                     ))
                     )
                 ),
-                PublicTestCases: publicTestCases)
+                PublicTestCases: publicTestCases,
+                Author: problem.CreatedBy is null
+                    ? null
+                    : new ProblemAuthorDto(
+                        problem.CreatedBy.Username.Value,
+                        problem.CreatedBy.ImageUrl?.Value),
+                Tags: problem.Tags.Select(t => t.Name.Value))
             );
     }
 }

@@ -15,6 +15,8 @@ internal sealed class ProblemReadRepository(AlgowarsDbContext context) : IProble
         => await context.Problems
             .AsNoTracking()
             .AsSplitQuery()
+            .Include(problem => problem.CreatedBy)
+            .Include(problem => problem.Tags)
             .Include(problem => problem.Setups)
                 .ThenInclude(setup => setup.TestSuites)
                     .ThenInclude(testSuite => testSuite.TestCases)
