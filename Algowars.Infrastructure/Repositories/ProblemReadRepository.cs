@@ -18,6 +18,11 @@ internal sealed class ProblemReadRepository(AlgowarsDbContext context) : IProble
             .Include(problem => problem.Setups)
                 .ThenInclude(setup => setup.TestSuites)
                     .ThenInclude(testSuite => testSuite.TestCases)
+                        .ThenInclude(testCase => testCase.Inputs)
+            .Include(problem => problem.Setups)
+                .ThenInclude(setup => setup.TestSuites)
+                    .ThenInclude(testSuite => testSuite.TestCases)
+                        .ThenInclude(testCase => testCase.ExpectedOutputs)
             .Where(problem => problem.Slug.Value == slug)
             .SingleOrDefaultAsync(cancellationToken);
 

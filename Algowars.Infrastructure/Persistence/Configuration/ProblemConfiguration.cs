@@ -22,6 +22,9 @@ internal sealed class ProblemConfiguration : IEntityTypeConfiguration<Problem>
                 .HasColumnName("slug")
                 .HasMaxLength(Slug.MaxLength)
                 .IsRequired();
+
+            slug.HasIndex(s => s.Value)
+                .IsUnique();
         });
 
         builder.Property(p => p.Title)
