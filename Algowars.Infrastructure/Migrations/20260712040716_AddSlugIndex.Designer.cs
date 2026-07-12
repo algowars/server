@@ -3,6 +3,7 @@ using System;
 using Algowars.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Algowars.Infrastructure.Migrations
 {
     [DbContext(typeof(AlgowarsDbContext))]
-    partial class AlgowarsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260712040716_AddSlugIndex")]
+    partial class AddSlugIndex
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -93,10 +96,6 @@ namespace Algowars.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
-                    b.Property<Guid?>("CreatedById")
-                        .HasColumnType("uuid")
-                        .HasColumnName("created_by_id");
-
                     b.Property<int>("Difficulty")
                         .HasColumnType("integer")
                         .HasColumnName("difficulty");
@@ -126,8 +125,6 @@ namespace Algowars.Infrastructure.Migrations
                         .HasColumnName("title");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("CreatedById");
 
                     b.ToTable("problems", (string)null);
                 });
@@ -523,11 +520,6 @@ namespace Algowars.Infrastructure.Migrations
 
             modelBuilder.Entity("Algowars.Domain.Problems.Entities.Problem", b =>
                 {
-                    b.HasOne("Algowars.Domain.Users.Entities.User", "CreatedBy")
-                        .WithMany()
-                        .HasForeignKey("CreatedById")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.OwnsOne("Algowars.Domain.Problems.ValueObjects.Slug", "Slug", b1 =>
                         {
                             b1.Property<Guid>("ProblemId")
@@ -549,8 +541,6 @@ namespace Algowars.Infrastructure.Migrations
                             b1.WithOwner()
                                 .HasForeignKey("ProblemId");
                         });
-
-                    b.Navigation("CreatedBy");
 
                     b.Navigation("Slug")
                         .IsRequired();

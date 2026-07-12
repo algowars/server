@@ -22,6 +22,9 @@ internal sealed class ProblemConfiguration : IEntityTypeConfiguration<Problem>
                 .HasColumnName("slug")
                 .HasMaxLength(Slug.MaxLength)
                 .IsRequired();
+
+            slug.HasIndex(s => s.Value)
+                .IsUnique();
         });
 
         builder.Property(p => p.Title)
@@ -97,5 +100,15 @@ internal sealed class ProblemConfiguration : IEntityTypeConfiguration<Problem>
         builder.Navigation(p => p.Tags)
             .HasField("_tags")
             .UsePropertyAccessMode(PropertyAccessMode.Field);
+
+        builder.Property(p => p.CreatedById)
+            .HasColumnName("created_by_id")
+            .IsRequired(false);
+
+        builder.HasOne(p => p.CreatedBy)
+            .WithMany()
+            .HasForeignKey(p => p.CreatedById)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }
