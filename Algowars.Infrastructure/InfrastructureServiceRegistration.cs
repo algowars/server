@@ -151,6 +151,7 @@ public static class InfrastructureServiceRegistration
     {
         services.AddScoped<LanguageSeeder>();
         services.AddScoped<TwoSumProblemSeeder>();
+        services.AddScoped<HelloOrGoodbyeProblemSeeder>();
         return services;
     }
 
@@ -174,6 +175,10 @@ public static class InfrastructureServiceRegistration
 
             var twoSumSeeder = scope.ServiceProvider.GetRequiredService<TwoSumProblemSeeder>();
             await twoSumSeeder.SeedAsync(cancellationToken);
+            db.ChangeTracker.Clear();
+
+            var helloOrGoodbyeSeeder = scope.ServiceProvider.GetRequiredService<HelloOrGoodbyeProblemSeeder>();
+            await helloOrGoodbyeSeeder.SeedAsync(cancellationToken);
             db.ChangeTracker.Clear();
         }
 
