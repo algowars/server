@@ -8,7 +8,7 @@ namespace Algowars.Infrastructure.Messaging;
 internal sealed class RabbitMqMessagePublisher(IConnection connection) : IMessagePublisher
 {
     public Task PublishAsync<T>(T message, CancellationToken cancellationToken = default)
-        where T : class
+        where T : class, IMessage
     {
         using var channel = connection.CreateModel();
         string queueName = QueueNames.ForType<T>();
