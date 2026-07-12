@@ -23,10 +23,16 @@ internal sealed partial class AzureServiceBusConsumerService(
             await args.CompleteMessageAsync(args.Message);
         };
 
-        processor.ProcessErrorAsync += args =>
+        processor.ProcessErrorAsync += async args =>
         {
+            if (args.Exception is ServiceBusException { Reason: ServiceBusFailureReason.MessagingEntityNotFound })
+            {
+                LogQueueNotFound(args.EntityPath);
+                await processor.StopProcessingAsync();
+                return;
+            }
+
             LogProcessingError(args.Exception);
-            return Task.CompletedTask;
         };
 
         await processor.StartProcessingAsync(stoppingToken);
@@ -41,6 +47,10 @@ internal sealed partial class AzureServiceBusConsumerService(
     [LoggerMessage(Level = LogLevel.Information,
         Message = "Received SubmissionCreatedMessage for submission {SubmissionId}")]
     private partial void LogSubmissionReceived(Guid SubmissionId);
+
+    [LoggerMessage(Level = LogLevel.Critical,
+        Message = "Azure Service Bus queue '{QueueName}' not found — consumer stopped. Check queue name configuration.")]
+    private partial void LogQueueNotFound(string QueueName);
 
     [LoggerMessage(Level = LogLevel.Error,
         Message = "Error processing message from Azure Service Bus")]
