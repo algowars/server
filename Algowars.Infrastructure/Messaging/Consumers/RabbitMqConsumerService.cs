@@ -1,7 +1,9 @@
 using System.Text;
 using System.Text.Json;
 using Algowars.Application.Messaging.Messages;
+using Algowars.Infrastructure.Jobs.Submissions;
 using Algowars.Infrastructure.Messaging;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using RabbitMQ.Client;
@@ -11,6 +13,7 @@ namespace Algowars.Infrastructure.Messaging.Consumers;
 
 internal sealed partial class RabbitMqConsumerService(
     IConnection connection,
+    IServiceScopeFactory scopeFactory,
     ILogger<RabbitMqConsumerService> logger
 ) : BackgroundService
 {
@@ -28,7 +31,11 @@ internal sealed partial class RabbitMqConsumerService(
                 string body = Encoding.UTF8.GetString(ea.Body.Span);
                 var message = JsonSerializer.Deserialize<SubmissionCreatedMessage>(body);
                 if (message is not null)
+                {
                     LogSubmissionReceived(message.SubmissionId);
+                    // Fire-and-forget on the thread pool; ack after dispatching.
+                    _ = ProcessAsync(message.SubmissionId, stoppingToken);
+                }
                 channel.BasicAck(ea.DeliveryTag, multiple: false);
             }
             catch (Exception ex)
@@ -47,6 +54,20 @@ internal sealed partial class RabbitMqConsumerService(
         });
 
         return Task.CompletedTask;
+    }
+
+    private async Task ProcessAsync(Guid submissionId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            using var scope = scopeFactory.CreateScope();
+            var processor = scope.ServiceProvider.GetRequiredService<SubmissionJobProcessorService>();
+            await processor.RunAsync(cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            LogProcessingError(ex);
+        }
     }
 
     [LoggerMessage(Level = LogLevel.Information,

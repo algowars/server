@@ -24,6 +24,10 @@ internal sealed class ProblemSetupConfiguration : IEntityTypeConfiguration<Probl
             .HasColumnName("language_version_id")
             .IsRequired();
 
+        builder.Property(s => s.PipelineId)
+            .HasColumnName("pipeline_id")
+            .IsRequired(true);
+
         builder.Property(s => s.InitialCode)
             .HasColumnName("initial_code")
             .IsRequired();

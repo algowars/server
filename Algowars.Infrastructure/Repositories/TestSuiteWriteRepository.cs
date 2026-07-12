@@ -39,4 +39,16 @@ internal sealed class TestSuiteWriteRepository(AlgowarsDbContext context) : ITes
             .Select(tc => tc.Id)
             .ToListAsync(cancellationToken);
     }
+
+    public async Task<Guid?> FindPipelineIdByProblemSetupIdAsync(
+        Guid problemSetupId,
+        CancellationToken cancellationToken = default)
+    {
+        return await context.Problems
+            .AsNoTracking()
+            .SelectMany(p => p.Setups)
+            .Where(s => s.Id == problemSetupId)
+            .Select(s => (Guid?)s.PipelineId)
+            .FirstOrDefaultAsync(cancellationToken);
+    }
 }

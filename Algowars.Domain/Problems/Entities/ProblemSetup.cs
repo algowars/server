@@ -6,7 +6,7 @@ namespace Algowars.Domain.Problems.Entities;
 
 public sealed class ProblemSetup : Entity
 {
-    internal ProblemSetup(Guid languageVersionId, string initialCode, string functionName)
+    internal ProblemSetup(Guid languageVersionId, string initialCode, string functionName, Guid pipelineId)
     {
         LanguageVersionId = languageVersionId != Guid.Empty
             ? languageVersionId
@@ -19,6 +19,10 @@ public sealed class ProblemSetup : Entity
         FunctionName = !string.IsNullOrWhiteSpace(functionName)
             ? functionName
             : throw new ArgumentException("Function name must not be empty.", nameof(functionName));
+
+        PipelineId = pipelineId != Guid.Empty
+            ? pipelineId
+            : throw new ArgumentException("Pipeline id must not be empty.", nameof(pipelineId));
     }
 
     private ProblemSetup() { }
@@ -26,6 +30,7 @@ public sealed class ProblemSetup : Entity
     public IEnumerable<TestSuite> PublicTestSuites() => [.. _testSuites.Where(testSuite => testSuite.Type == TestSuiteType.Sample)];
 
     public Guid LanguageVersionId { get; private set; }
+    public Guid PipelineId { get; private set; }
     public string InitialCode { get; private set; } = null!;
     public string FunctionName { get; private set; } = null!;
 

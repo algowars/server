@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Algowars.Infrastructure.Persistence.Seeders;
 
-internal sealed class DemoDataSeeder(AlgowarsDbContext context) : ISeeder
+internal sealed class DemoDataSeeder(AlgowarsDbContext context, Judge0PipelineSeeder pipelineSeeder) : ISeeder
 {
     public async Task SeedAsync(CancellationToken cancellationToken = default)
     {
@@ -40,20 +40,25 @@ internal sealed class DemoDataSeeder(AlgowarsDbContext context) : ISeeder
 
         twoSum.Publish();
 
+        Guid pipelineId = await pipelineSeeder.GetOrCreateAsync(cancellationToken);
+
         ProblemSetup jsSetup = twoSum.AddSetup(
             jsVersion.Id,
             "function twoSum(nums, target) {\n    \n}",
-            "twoSum");
+            "twoSum",
+            pipelineId);
 
         ProblemSetup tsSetup = twoSum.AddSetup(
             tsVersion.Id,
             "function twoSum(nums: number[], target: number): number[] {\n    \n}",
-            "twoSum");
+            "twoSum",
+            pipelineId);
 
         ProblemSetup pySetup = twoSum.AddSetup(
             pyVersion.Id,
             "def two_sum(nums: list[int], target: int) -> list[int]:\n    pass",
-            "two_sum");
+            "two_sum",
+            pipelineId);
 
         context.Problems.Add(twoSum);
         await context.SaveChangesAsync(cancellationToken);
