@@ -76,21 +76,18 @@ internal sealed class TwoSumProblemSeeder(AlgowarsDbContext context) : ISeeder
 
         if (missing.Count > 0)
         {
-            // Must include ALL field-backed collections (History, Setups) when loading a
-            // tracked Problem for writing. PropertyAccessMode.Field means EF reads _history
-            // and _setups directly — if either is unloaded (empty list from constructor)
-            // EF sees a mismatch with existing DB rows and throws DbUpdateConcurrencyException.
-            Problem tracked = await context.Problems
-                .IgnoreQueryFilters()
-                .Include(p => p.History)
-                .Include(p => p.Setups)
-                .FirstAsync(p => p.Id == existingId.Value, cancellationToken);
-
+            // Bypass EF change tracking entirely for setup inserts to avoid
+            // DbUpdateConcurrencyException caused by PropertyAccessMode.Field
+            // collections (_history, _setups) being in an unresolvable state.
             foreach ((Guid versionId, string code, string funcName) in missing)
-                tracked.AddSetup(versionId, code, funcName);
-
-            await context.SaveChangesAsync(cancellationToken);
-            context.ChangeTracker.Clear();
+            {
+                await context.Database.ExecuteSqlAsync(
+                    $"""
+                    INSERT INTO problem_setups (id, problem_id, language_version_id, initial_code, function_name)
+                    VALUES ({Guid.NewGuid()}, {existingId.Value}, {versionId}, {code}, {funcName})
+                    """,
+                    cancellationToken);
+            }
         }
 
         return existingId.Value;
@@ -102,33 +99,42 @@ internal sealed class TwoSumProblemSeeder(AlgowarsDbContext context) : ISeeder
 
         foreach (TestSuite suite in desired)
         {
+            // Upsert test suite by name
             TestSuite? existing = await context.TestSuites
+                .AsNoTracking()
                 .FirstOrDefaultAsync(t => t.Name == suite.Name, cancellationToken);
 
+            Guid suiteId;
             if (existing is null)
             {
                 context.TestSuites.Add(suite);
                 await context.SaveChangesAsync(cancellationToken);
-                existing = suite;
+                context.ChangeTracker.Clear();
+                suiteId = suite.Id;
+            }
+            else
+            {
+                suiteId = existing.Id;
             }
 
-            List<ProblemSetup> setups = await context.Set<ProblemSetup>()
-                .Include(s => s.TestSuites)
+            // Get all setup IDs for this problem
+            List<Guid> setupIds = await context.Set<ProblemSetup>()
+                .AsNoTracking()
                 .Where(s => EF.Property<Guid>(s, "problem_id") == problemId)
+                .Select(s => s.Id)
                 .ToListAsync(cancellationToken);
 
-            bool anyLinked = false;
-            foreach (ProblemSetup setup in setups)
+            foreach (Guid setupId in setupIds)
             {
-                if (!setup.TestSuites.Any(t => t.Id == existing.Id))
-                {
-                    ((List<TestSuite>)setup.TestSuites).Add(existing);
-                    anyLinked = true;
-                }
+                // Insert join row only if not already linked (raw SQL to avoid field-backed collection issues)
+                await context.Database.ExecuteSqlAsync(
+                    $"""
+                    INSERT INTO problem_setup_test_suites (problem_setup_id, test_suite_id)
+                    VALUES ({setupId}, {suiteId})
+                    ON CONFLICT DO NOTHING
+                    """,
+                    cancellationToken);
             }
-
-            if (anyLinked)
-                await context.SaveChangesAsync(cancellationToken);
         }
     }
 
