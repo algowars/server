@@ -41,7 +41,7 @@ internal sealed class ProblemReadRepository(AlgowarsDbContext context) : IProble
                 Slug = p.Slug.Value,
                 Title = p.Title.Value,
                 DifficultyValue = p.Difficulty.Value,
-                p.Status
+                Tags = p.Tags.Select(t => t.Name.Value).ToList()
             })
             .ToListAsync(cancellationToken);
 
@@ -56,7 +56,7 @@ internal sealed class ProblemReadRepository(AlgowarsDbContext context) : IProble
                     : x.DifficultyValue <= Difficulty.MediumMax
                         ? DifficultyTier.Medium
                         : DifficultyTier.Hard,
-                x.Status
+                x.Tags
             ))],
             Total = total,
             Page = pagination.Page,

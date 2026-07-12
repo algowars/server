@@ -89,5 +89,13 @@ internal sealed class ProblemConfiguration : IEntityTypeConfiguration<Problem>
         builder.Navigation(p => p.Setups)
             .HasField("_setups")
             .UsePropertyAccessMode(PropertyAccessMode.Field);
+
+        builder.HasMany(p => p.Tags)
+            .WithMany(t => t.Problems)
+            .UsingEntity(j => j.ToTable("problem_tags"));
+
+        builder.Navigation(p => p.Tags)
+            .HasField("_tags")
+            .UsePropertyAccessMode(PropertyAccessMode.Field);
     }
 }
