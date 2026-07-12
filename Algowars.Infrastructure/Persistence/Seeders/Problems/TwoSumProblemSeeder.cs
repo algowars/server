@@ -76,9 +76,14 @@ internal sealed class TwoSumProblemSeeder(AlgowarsDbContext context) : ISeeder
 
         if (missing.Count > 0)
         {
+            // Must include ALL field-backed collections (History, Setups) when loading a
+            // tracked Problem for writing. PropertyAccessMode.Field means EF reads _history
+            // and _setups directly — if either is unloaded (empty list from constructor)
+            // EF sees a mismatch with existing DB rows and throws DbUpdateConcurrencyException.
             Problem tracked = await context.Problems
                 .IgnoreQueryFilters()
                 .Include(p => p.History)
+                .Include(p => p.Setups)
                 .FirstAsync(p => p.Id == existingId.Value, cancellationToken);
 
             foreach ((Guid versionId, string code, string funcName) in missing)
