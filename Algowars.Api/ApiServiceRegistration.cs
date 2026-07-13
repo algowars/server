@@ -4,6 +4,7 @@ using Algowars.Api.Settings;
 using Algowars.Infrastructure;
 using Asp.Versioning;
 using Scalar.AspNetCore;
+using System.Text.Json.Serialization;
 
 namespace Algowars.Api;
 
@@ -13,7 +14,11 @@ public static class ApiServiceRegistration
 
     public static IServiceCollection AddApi(this IServiceCollection services, IConfiguration configuration)
     {
-        services.AddControllers();
+        services.AddControllers()
+            .AddJsonOptions(options =>
+            {
+                options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+            });
         services.AddApiVersioning(options =>
         {
             options.DefaultApiVersion = new ApiVersion(1);

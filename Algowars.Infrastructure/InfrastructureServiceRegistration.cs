@@ -110,7 +110,7 @@ public static class InfrastructureServiceRegistration
             {
                 client.BaseAddress = new Uri(judge0Opts.BaseUrl.TrimEnd('/') + "/");
                 if (!string.IsNullOrWhiteSpace(judge0Opts.ApiKey))
-                    client.DefaultRequestHeaders.Add("X-Auth-Token", judge0Opts.ApiKey);
+                    client.DefaultRequestHeaders.Add("X-RapidAPI-Key", judge0Opts.ApiKey);
                 if (!string.IsNullOrWhiteSpace(judge0Opts.Host))
                     client.DefaultRequestHeaders.Add("X-RapidAPI-Host", judge0Opts.Host);
             });
@@ -135,7 +135,7 @@ public static class InfrastructureServiceRegistration
         services.AddScoped<IStepHandlerRegistry, StepHandlerRegistry>();
 
         // Processor service (scoped — uses DbContext)
-        services.AddScoped<SubmissionJobProcessorService>();
+        services.AddSingleton<SubmissionJobProcessorService>();
 
         return services;
     }

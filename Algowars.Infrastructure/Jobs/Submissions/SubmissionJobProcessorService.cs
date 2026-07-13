@@ -1,45 +1,110 @@
 using Algowars.Application.ExecutionEngine;
 using Algowars.Domain.ExecutionPipelines;
 using Algowars.Domain.SubmissionJobs;
+using Algowars.Domain.SubmissionJobs.Enums;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace Algowars.Infrastructure.Jobs.Submissions;
 
 /// <summary>
-/// Core orchestration logic: picks up a pending <see cref="SubmissionJob"/>,
-/// finds the current pipeline step, runs the appropriate <see cref="IStepHandler"/>,
-/// then advances or completes the job.
+/// Picks up pending <see cref="SubmissionJob"/> entries and processes them.
+/// Creates a new DI scope per job so each job gets its own isolated DbContext.
 /// </summary>
 internal sealed partial class SubmissionJobProcessorService(
-    ISubmissionJobRepository jobRepository,
-    IExecutionPipelineRepository pipelineRepository,
-    IStepHandlerRegistry handlerRegistry,
+    IServiceScopeFactory scopeFactory,
     ILogger<SubmissionJobProcessorService> logger)
 {
     private const int BatchSize = 20;
 
     public async Task RunAsync(CancellationToken cancellationToken)
     {
-        var jobs = await jobRepository.FindPendingAsync(BatchSize, cancellationToken);
+        IReadOnlyList<SubmissionJob> jobs;
+        using (var scope = scopeFactory.CreateScope())
+        {
+            var repo = scope.ServiceProvider.GetRequiredService<ISubmissionJobRepository>();
+            jobs = await repo.FindPendingAsync(BatchSize, cancellationToken);
+        }
 
         LogFound(jobs.Count);
 
         foreach (var job in jobs)
         {
-            try
-            {
-                await ProcessJobAsync(job, cancellationToken);
-            }
-            catch (Exception ex)
-            {
-                LogJobFailed(job.Id, ex);
-                job.Fail($"Unhandled exception: {ex.Message}");
-                await jobRepository.UpdateAsync(job, cancellationToken);
-            }
+            await ProcessInNewScopeAsync(job.Id, cancellationToken);
         }
     }
 
-    private async Task ProcessJobAsync(SubmissionJob job, CancellationToken ct)
+    public async Task RunForSubmissionAsync(Guid submissionId, CancellationToken cancellationToken)
+    {
+        Guid? jobId;
+        using (var scope = scopeFactory.CreateScope())
+        {
+            var repo = scope.ServiceProvider.GetRequiredService<ISubmissionJobRepository>();
+            var job = await repo.FindBySubmissionIdAsync(submissionId, cancellationToken);
+            if (job is null)
+            {
+                LogSubmissionJobNotFound(submissionId);
+                return;
+            }
+
+            if (job.Status is SubmissionJobStatus.Completed or SubmissionJobStatus.Failed)
+            {
+                LogJobAlreadyProcessed(job.Id);
+                return;
+            }
+
+            jobId = job.Id;
+        }
+
+        await ProcessInNewScopeAsync(jobId.Value, cancellationToken);
+    }
+
+    /// <summary>
+    /// Loads and processes a single job inside its own DI scope and DbContext.
+    /// </summary>
+    private async Task ProcessInNewScopeAsync(Guid jobId, CancellationToken ct)
+    {
+        using var scope = scopeFactory.CreateScope();
+        var sp = scope.ServiceProvider;
+
+        var jobRepository = sp.GetRequiredService<ISubmissionJobRepository>();
+        var pipelineRepository = sp.GetRequiredService<IExecutionPipelineRepository>();
+        var handlerRegistry = sp.GetRequiredService<IStepHandlerRegistry>();
+
+        var job = await jobRepository.FindByIdAsync(jobId, ct);
+        if (job is null)
+        {
+            logger.LogWarning("Job {JobId} not found when processing in isolated scope.", jobId);
+            return;
+        }
+
+        if (job.Status is SubmissionJobStatus.Completed or SubmissionJobStatus.Failed)
+        {
+            LogJobAlreadyProcessed(job.Id);
+            return;
+        }
+
+        try
+        {
+            await ProcessJobAsync(job, jobRepository, pipelineRepository, handlerRegistry, ct);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            LogJobAlreadyProcessed(job.Id);
+        }
+        catch (Exception ex)
+        {
+            LogJobFailed(job.Id, ex);
+        }
+    }
+
+    private async Task ProcessJobAsync(
+        SubmissionJob job,
+        ISubmissionJobRepository jobRepository,
+        IExecutionPipelineRepository pipelineRepository,
+        IStepHandlerRegistry handlerRegistry,
+        CancellationToken ct)
     {
         if (job.CurrentStepId is null)
         {
@@ -64,7 +129,6 @@ internal sealed partial class SubmissionJobProcessorService(
             return;
         }
 
-        // Enforce max-attempt guard
         int priorAttempts = job.AttemptCountForCurrentStep();
         if (priorAttempts >= step.MaxAttempts)
         {
@@ -74,6 +138,8 @@ internal sealed partial class SubmissionJobProcessorService(
         }
 
         var attempt = job.StartAttempt();
+
+        await jobRepository.PersistAttemptAsync(job, attempt, ct);
 
         IStepHandler handler;
         try
@@ -120,11 +186,18 @@ internal sealed partial class SubmissionJobProcessorService(
             }
             else
             {
+                job.ResetToPending();
                 LogStepRetrying(job.Id, step.Name, job.AttemptCountForCurrentStep(), step.MaxAttempts);
             }
         }
 
-        await jobRepository.UpdateAsync(job, ct);
+        try
+        {
+            await jobRepository.UpdateAsync(job, ct);
+        }catch(Exception ex)
+        {
+            Console.WriteLine(ex);
+        }
     }
 
     [LoggerMessage(Level = LogLevel.Debug, Message = "Found {Count} pending submission jobs.")]
@@ -153,4 +226,11 @@ internal sealed partial class SubmissionJobProcessorService(
     [LoggerMessage(Level = LogLevel.Error,
         Message = "Unhandled exception processing job {JobId}")]
     private partial void LogJobFailed(Guid jobId, Exception ex);
+
+    private void LogJobAlreadyProcessed(Guid jobId) =>
+        logger.LogDebug("Job {JobId} was already processed by another worker — skipping.", jobId);
+
+    private void LogSubmissionJobNotFound(Guid submissionId) =>
+        logger.LogWarning("No submission job found for submission {SubmissionId}.", submissionId);
 }
+

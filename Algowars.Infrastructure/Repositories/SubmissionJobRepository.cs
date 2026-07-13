@@ -1,4 +1,5 @@
 using Algowars.Domain.SubmissionJobs;
+using Algowars.Domain.SubmissionJobs.Entities;
 using Algowars.Domain.SubmissionJobs.Enums;
 using Algowars.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -38,7 +39,20 @@ internal sealed class SubmissionJobRepository(AlgowarsDbContext context)
 
     public async Task UpdateAsync(SubmissionJob entity, CancellationToken cancellationToken = default)
     {
-        context.SubmissionJobs.Update(entity);
+        // The attempt was already INSERT-ed by PersistAttemptAsync before the handler ran.
+        // All entities are tracked; SaveChangesAsync detects property changes via snapshot
+        // and issues only UPDATEs — no INSERT needed here.
+        await context.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task PersistAttemptAsync(SubmissionJob job, SubmissionJobAttempt attempt, CancellationToken cancellationToken = default)
+    {
+        // Explicitly track the new attempt as Added and wire up the shadow FK,
+        // then flush it to the DB immediately. This guarantees the row exists
+        // before the step handler runs so that UpdateAsync only ever does UPDATEs.
+        var entry = context.Entry(attempt);
+        entry.State = EntityState.Added;
+        entry.Property("job_id").CurrentValue = job.Id;
         await context.SaveChangesAsync(cancellationToken);
     }
 }

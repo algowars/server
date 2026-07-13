@@ -103,6 +103,13 @@ internal sealed partial class EvaluateStepHandler(
                 compileOutput: pollResult.CompileOutput);
         }
 
+        // EF cannot detect mutations on private-set properties via snapshot tracking.
+        // Explicitly mark every result and the submission itself as Modified.
+        foreach (var result in submission.Results)
+            db.Entry(result).State = EntityState.Modified;
+
+        db.Entry(submission).State = EntityState.Modified;
+
         try
         {
             submission.Complete();

@@ -67,7 +67,7 @@ internal sealed partial class Judge0ExecuteStepHandler(
             return Fail("No test cases found for this submission.");
 
         // Resolve the code template strategy by language slug
-        var languageSlug = languageInfo.Slug.Value;
+        string languageSlug = languageInfo.Slug.Value;
         ICodeTemplateStrategy template;
         try
         {
@@ -86,12 +86,12 @@ internal sealed partial class Judge0ExecuteStepHandler(
                 .Select(i => new CodeTemplateInput(i.Value, i.ValueType))
                 .ToList();
 
-            var sourceCode = template.Render(new CodeTemplateContext(
+            string sourceCode = template.Render(new CodeTemplateContext(
                 UserCode: submission.SourceCode.Value,
                 FunctionName: setup.FunctionName,
                 Inputs: inputs));
 
-            var stdin = template.BuildStdin(inputs);
+            string stdin = template.BuildStdin(inputs);
 
             return new ExecutionEngineSubmission(
                 SourceCode: sourceCode,
@@ -118,7 +118,7 @@ internal sealed partial class Judge0ExecuteStepHandler(
             .Zip(results, (tc, r) => new { tc.Id, r.Token })
             .ToDictionary(x => x.Token, x => x.Id);
 
-        var responsePayload = JsonSerializer.Serialize(tokenMap);
+        string responsePayload = JsonSerializer.Serialize(tokenMap);
 
         return new StepHandlerResult(Succeeded: true, ResponsePayload: responsePayload);
     }

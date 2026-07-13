@@ -62,7 +62,7 @@ internal sealed partial class RabbitMqConsumerService(
         {
             using var scope = scopeFactory.CreateScope();
             var processor = scope.ServiceProvider.GetRequiredService<SubmissionJobProcessorService>();
-            await processor.RunAsync(cancellationToken);
+            await processor.RunForSubmissionAsync(submissionId, cancellationToken);
         }
         catch (Exception ex)
         {

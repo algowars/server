@@ -25,7 +25,7 @@ internal sealed partial class Judge0PollStepHandler(
         var ct = context.CancellationToken;
 
         // The previous execute step stored the token→testCaseId map as its response payload
-        var previousResponse = job.Attempts
+          string? previousResponse = job.Attempts
             .Where(a => a.PipelineStepId != attempt.PipelineStepId)
             .OrderByDescending(a => a.StartedAt)
             .Select(a => a.ResponsePayload)
@@ -84,7 +84,7 @@ internal sealed partial class Judge0PollStepHandler(
             Status = r.Status.ToString()
         }).ToList();
 
-        var responsePayload = JsonSerializer.Serialize(enriched);
+        string responsePayload = JsonSerializer.Serialize(enriched);
         return new StepHandlerResult(Succeeded: true, ResponsePayload: responsePayload);
     }
 

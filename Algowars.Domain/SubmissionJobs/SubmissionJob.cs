@@ -34,6 +34,7 @@ public sealed class SubmissionJob : AggregateRoot
     public void AdvanceTo(Guid nextStepId)
     {
         CurrentStepId = nextStepId;
+        Status = SubmissionJobStatus.Pending;
     }
 
     public void Complete()
@@ -48,6 +49,11 @@ public sealed class SubmissionJob : AggregateRoot
         Status = SubmissionJobStatus.Failed;
         FailureReason = reason;
         CompletedAt = DateTime.UtcNow;
+    }
+
+    public void ResetToPending()
+    {
+        Status = SubmissionJobStatus.Pending;
     }
 
     public int AttemptCountForCurrentStep()
