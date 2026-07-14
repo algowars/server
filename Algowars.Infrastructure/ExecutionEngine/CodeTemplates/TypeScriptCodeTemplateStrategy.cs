@@ -14,21 +14,19 @@ internal sealed class TypeScriptCodeTemplateStrategy : ICodeTemplateStrategy
     {
         const string harness = """
 
-
-process.stdin.resume();
-process.stdin.setEncoding('utf8');
-let _input: string = '';
-process.stdin.on('data', (d: string) => _input += d);
-process.stdin.on('end', () => {
-    const _args: unknown[] = _input.trim().split('\n').map((line: string) => JSON.parse(line));
-    const _result = FUNCTION_NAME_PLACEHOLDER(...(_args as Parameters<typeof FUNCTION_NAME_PLACEHOLDER>));
-    console.log(JSON.stringify(_result));
+process.stdin.on("data", data => {
+    const parsed = JSON.parse(data.toString().trim());
+    const args = Array.isArray(parsed) ? parsed : [parsed];
+    const result = FUNCTION_NAME_PLACEHOLDER(...args);
+    process.stdout.write(JSON.stringify(result));
 });
 """;
-        return context.UserCode + harness.Replace("FUNCTION_NAME_PLACEHOLDER", context.FunctionName);
+        return "declare const process: any;\n\n" + context.UserCode + harness.Replace("FUNCTION_NAME_PLACEHOLDER", context.FunctionName);
     }
 
-    /// <summary>Builds the stdin payload — one JSON arg per line.</summary>
+    /// <summary>Builds the stdin payload — a JSON array of all inputs.</summary>
     public string BuildStdin(IReadOnlyList<CodeTemplateInput> inputs)
-        => string.Join('\n', inputs.Select(i => i.Value));
+        => inputs.Count == 1
+            ? inputs[0].Value
+            : $"[{string.Join(",", inputs.Select(i => i.Value))}]";
 }

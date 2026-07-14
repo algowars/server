@@ -28,7 +28,6 @@ internal sealed partial class Judge0ExecuteStepHandler(
         var job = context.Job;
         var ct = context.CancellationToken;
 
-        // Load submission with results
         var submission = await db.Submissions
             .Include(s => s.Results)
             .FirstOrDefaultAsync(s => s.Id == job.SubmissionId, ct);
@@ -36,14 +35,12 @@ internal sealed partial class Judge0ExecuteStepHandler(
         if (submission is null)
             return Fail($"Submission {job.SubmissionId} not found.");
 
-        // Load problem setup (language version id + function name + pipeline id)
         var setup = await db.Set<ProblemSetup>()
             .FirstOrDefaultAsync(ps => ps.Id == submission.ProblemSetupId, ct);
 
         if (setup is null)
             return Fail($"ProblemSetup {submission.ProblemSetupId} not found.");
 
-        // Load the language version entry to get Judge0 language id + language slug
         var languageInfo = await (
             from lv in db.Set<LanguageVersionEntry>()
             join lang in db.Languages on EF.Property<Guid>(lv, "language_id") equals lang.Id
@@ -54,7 +51,6 @@ internal sealed partial class Judge0ExecuteStepHandler(
         if (languageInfo is null)
             return Fail($"LanguageVersionEntry {setup.LanguageVersionId} not found.");
 
-        // Load test cases with inputs and expected outputs
         var testCaseIds = submission.Results.Select(r => r.TestCaseId).ToList();
 
         var testCases = await db.Set<TestCase>()
@@ -66,7 +62,6 @@ internal sealed partial class Judge0ExecuteStepHandler(
         if (testCases.Count == 0)
             return Fail("No test cases found for this submission.");
 
-        // Resolve the code template strategy by language slug
         string languageSlug = languageInfo.Slug.Value;
         ICodeTemplateStrategy template;
         try
@@ -78,7 +73,6 @@ internal sealed partial class Judge0ExecuteStepHandler(
             return Fail(ex.Message);
         }
 
-        // Build one execution submission per test case
         var submissions = testCases.Select(tc =>
         {
             var inputs = tc.Inputs
@@ -113,7 +107,6 @@ internal sealed partial class Judge0ExecuteStepHandler(
             return Fail($"Judge0 batch submit failed: {ex.Message}");
         }
 
-        // Build a map: token -> testCaseId (by index) stored as the response payload
         var tokenMap = testCases
             .Zip(results, (tc, r) => new { tc.Id, r.Token })
             .ToDictionary(x => x.Token, x => x.Id);

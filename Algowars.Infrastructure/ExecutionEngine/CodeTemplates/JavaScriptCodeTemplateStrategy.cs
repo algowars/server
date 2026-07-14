@@ -30,7 +30,9 @@ process.stdin.on('end', () => {
         return context.UserCode + harness.Replace("FUNCTION_NAME_PLACEHOLDER", context.FunctionName);
     }
 
-    /// <summary>Builds the stdin payload — one JSON arg per line.</summary>
+    /// <summary>Builds the stdin payload — a JSON array of all inputs.</summary>
     public string BuildStdin(IReadOnlyList<CodeTemplateInput> inputs)
-        => string.Join('\n', inputs.Select(i => i.Value));
+        => inputs.Count == 1
+            ? inputs[0].Value
+            : $"[{string.Join(",", inputs.Select(i => i.Value))}]";
 }
