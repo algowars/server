@@ -15,20 +15,9 @@ internal sealed partial class SubmissionCleanupJob(
     public async Task Execute(IJobExecutionContext context)
     {
         LogExecuting();
-        try
-        {
-            await cleanupService.RunAsync(context.CancellationToken);
-        }
-        catch (Exception ex)
-        {
-            LogFailed(ex);
-            throw new JobExecutionException(ex, refireImmediately: false);
-        }
+        await cleanupService.RunAsync(context.CancellationToken);
     }
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Executing SubmissionCleanupJob")]
     private partial void LogExecuting();
-
-    [LoggerMessage(Level = LogLevel.Error, Message = "SubmissionCleanupJob failed")]
-    private partial void LogFailed(Exception ex);
 }

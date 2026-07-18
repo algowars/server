@@ -1,3 +1,6 @@
+using Algowars.Domain.ExecutionPipelines;
+using Algowars.Domain.ExecutionPipelines.Entities;
+using Algowars.Domain.Submissions.Entities;
 using Algowars.Domain.SubmissionJobs;
 using Algowars.Domain.SubmissionJobs.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -17,11 +20,29 @@ internal sealed class SubmissionJobConfiguration : IEntityTypeConfiguration<Subm
         builder.Property(j => j.SubmissionId).HasColumnName("submission_id").IsRequired();
         builder.HasIndex(j => j.SubmissionId).IsUnique();
 
+        builder.HasOne<Submission>()
+            .WithOne()
+            .HasForeignKey<SubmissionJob>(j => j.SubmissionId)
+            .IsRequired()
+            .OnDelete(DeleteBehavior.Cascade);
+
         builder.Property(j => j.PipelineId).HasColumnName("pipeline_id").IsRequired();
+
+        builder.HasOne<ExecutionPipeline>()
+            .WithMany()
+            .HasForeignKey(j => j.PipelineId)
+            .IsRequired()
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder.Property(j => j.CurrentStepId)
             .HasColumnName("current_step_id")
             .IsRequired(false);
+
+        builder.HasOne<ExecutionPipelineStep>()
+            .WithMany()
+            .HasForeignKey(j => j.CurrentStepId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.SetNull);
 
         builder.Property(j => j.Status)
             .HasColumnName("status")
@@ -59,6 +80,13 @@ internal sealed class SubmissionJobAttemptConfiguration : IEntityTypeConfigurati
         builder.Property<Guid>("job_id").HasColumnName("job_id").IsRequired();
 
         builder.Property(a => a.PipelineStepId).HasColumnName("pipeline_step_id").IsRequired();
+
+        builder.HasOne<ExecutionPipelineStep>()
+            .WithMany()
+            .HasForeignKey(a => a.PipelineStepId)
+            .IsRequired()
+            .OnDelete(DeleteBehavior.Restrict);
+
         builder.Property(a => a.AttemptNumber).HasColumnName("attempt_number").IsRequired();
 
         builder.Property(a => a.Status)

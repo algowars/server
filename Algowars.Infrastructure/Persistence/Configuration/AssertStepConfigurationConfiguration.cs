@@ -1,3 +1,4 @@
+using Algowars.Domain.ExecutionPipelines.Entities;
 using Algowars.Infrastructure.ExecutionEngine.Assert;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -18,6 +19,12 @@ internal sealed class AssertStepConfigurationConfiguration : IEntityTypeConfigur
             .IsRequired();
 
         builder.HasIndex(c => c.PipelineStepId).IsUnique();
+
+        builder.HasOne<ExecutionPipelineStep>()
+            .WithOne()
+            .HasForeignKey<AssertStepConfiguration>(c => c.PipelineStepId)
+            .IsRequired()
+            .OnDelete(DeleteBehavior.Cascade);
 
         builder.Property(c => c.Strategy)
             .HasColumnName("strategy")

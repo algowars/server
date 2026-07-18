@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using Algowars.Application.ExecutionEngine;
 using Algowars.Domain.ExecutionPipelines.Enums;
 using Algowars.Domain.Submissions.Entities;

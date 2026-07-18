@@ -1,127 +1,229 @@
-using System.Net.Http.Json;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using Algowars.Application.Configuration;
 using Algowars.Application.ExecutionEngine;
+using Microsoft.AspNetCore.WebUtilities;
+using System.Net.Http.Json;
+using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Algowars.Infrastructure.ExecutionEngine.Judge0;
 
-internal sealed class Judge0ExecutionEngineStrategy(
-    HttpClient httpClient,
-    Judge0Options options) : IExecutionEngineStrategy
+internal sealed class Judge0ExecutionEngineStrategy(HttpClient http, Judge0Options options) : IExecutionEngineStrategy
 {
-    private static readonly JsonSerializerOptions JsonOptions = new()
+    private static readonly JsonSerializerOptions SerializerOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
     };
+
+    private const int BatchSize = 20;
 
     public async Task<IReadOnlyList<ExecutionEngineResult>> SubmitBatchAsync(
         IReadOnlyList<ExecutionEngineSubmission> submissions,
         CancellationToken cancellationToken = default)
     {
-        var payload = submissions.Select(s => new Judge0SubmissionRequest(
-            SourceCode: options.IsEncoded ? Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(s.SourceCode)) : s.SourceCode,
-            LanguageId: s.LanguageId,
-            Stdin: s.Stdin is null ? null : (options.IsEncoded ? Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(s.Stdin)) : s.Stdin),
-            CpuTimeLimit: s.TimeLimitMs.HasValue ? (double?)s.TimeLimitMs.Value / 1000.0 : null,
-            MemoryLimit: s.MemoryLimitKb
-        )).ToList();
-
-        string url = $"submissions/batch?base64_encoded={options.IsEncoded.ToString().ToLower()}&wait={options.ShouldWait.ToString().ToLower()}";
-
-        using var response = await httpClient.PostAsJsonAsync(url, new { submissions = payload }, JsonOptions, cancellationToken);
-        response.EnsureSuccessStatusCode();
-
-        var tokens = await response.Content.ReadFromJsonAsync<List<Judge0TokenResponse>>(JsonOptions, cancellationToken)
-            ?? [];
-
-        if (options.ShouldWait)
+        try
         {
-            return await PollBatchAsync(tokens.Select(t => t.Token).ToList(), cancellationToken);
-        }
+            List<ExecutionEngineResult> allResults = [];
 
-        return tokens.Select(t => new ExecutionEngineResult(
-            Token: t.Token,
-            Stdout: null,
-            Stderr: null,
-            CompileOutput: null,
-            RuntimeMs: null,
-            MemoryUsedKb: null,
-            Status: ExecutionEngineResultStatus.Queued
-        )).ToList();
+            foreach (var batch in submissions.Chunk(BatchSize))
+            {
+                var query = new Dictionary<string, string?>
+                {
+                    ["base64_encoded"] = options.IsEncoded.ToString().ToLowerInvariant(),
+                    ["fields"] = "*",
+                };
+
+                string uri = QueryHelpers.AddQueryString("submissions/batch", query);
+
+                var payload = new Judge0BatchRequest
+                {
+                    Submissions = [.. batch.Select(s => new Judge0SubmissionRequest
+                    {
+                        SourceCode = Encode(s.SourceCode),
+                        LanguageId = s.LanguageId,
+                        StdIn = Encode(s.Stdin),
+                        CpuTimeLimit = s.TimeLimitMs.HasValue ? (double?)s.TimeLimitMs.Value / 1000.0 : null,
+                        MemoryLimit = s.MemoryLimitKb
+                    }),]
+                };
+
+                var response = await http.PostAsJsonAsync(uri, payload, SerializerOptions, cancellationToken);
+                response.EnsureSuccessStatusCode();
+
+                var body = await response.Content.ReadFromJsonAsync<List<Judge0TokenResponse>>(
+                    SerializerOptions, cancellationToken);
+
+                if (body is { Count: > 0 })
+                {
+                    allResults.AddRange(body.Select(t => new ExecutionEngineResult(
+                        Token: t.Token,
+                        Stdout: null,
+                        Stderr: null,
+                        CompileOutput: null,
+                        RuntimeMs: null,
+                        MemoryUsedKb: null,
+                        Status: ExecutionEngineResultStatus.Queued)));
+                }
+            }
+
+            return allResults;
+        }
+        catch (HttpRequestException ex)
+        {
+            throw new InvalidOperationException($"HTTP request failed: {ex.Message}", ex);
+        }
+        catch (JsonException ex)
+        {
+            throw new InvalidOperationException($"JSON deserialization failed: {ex.Message}", ex);
+        }
     }
 
     public async Task<IReadOnlyList<ExecutionEngineResult>> PollBatchAsync(
-        IReadOnlyList<string> tokens,
-        CancellationToken cancellationToken = default)
+    IReadOnlyList<string> tokens,
+    CancellationToken cancellationToken = default)
     {
-        string joined = string.Join(",", tokens);
-        string url = $"submissions/batch?tokens={joined}&base64_encoded={options.IsEncoded.ToString().ToLower()}&fields=token,stdout,stderr,compile_output,time,memory,status";
+        try
+        {
+            List<ExecutionEngineResult> allResults = [];
 
-        using var response = await httpClient.GetAsync(url, cancellationToken);
-        response.EnsureSuccessStatusCode();
+            foreach (string[] batch in tokens.Chunk(BatchSize))
+            {
+                var query = new Dictionary<string, string?>
+                {
+                    ["tokens"] = string.Join(",", batch),
+                    ["base64_encoded"] = options.IsEncoded.ToString().ToLowerInvariant(),
+                    ["fields"] = "token,stdout,stderr,compile_output,time,memory,status",
+                };
 
-        var result = await response.Content.ReadFromJsonAsync<Judge0BatchResponse>(JsonOptions, cancellationToken);
+                string uri = QueryHelpers.AddQueryString("submissions/batch", query);
 
-        return result?.Submissions.Select(MapResult).ToList()
-            ?? [];
+                var response = await http.GetAsync(uri, cancellationToken);
+                response.EnsureSuccessStatusCode();
+
+                var batchResult = await response.Content.ReadFromJsonAsync<Judge0BatchGetResponse>(
+                    SerializerOptions, cancellationToken);
+
+                if (batchResult?.Submissions is { Count: > 0 })
+                {
+                    allResults.AddRange(batchResult.Submissions.Select(s => new ExecutionEngineResult(
+                        Token: s.Token,
+                        Stdout: Decode(s.Stdout),
+                        Stderr: Decode(s.Stderr),
+                        CompileOutput: Decode(s.CompileOutput),
+                        RuntimeMs: s.Time.HasValue ? (int?)(s.Time.Value * 1000) : null,
+                        MemoryUsedKb: s.Memory,
+                        Status: MapStatus(s.Status?.Id ?? 0))));
+                }
+            }
+
+            return allResults;
+        }
+        catch (HttpRequestException ex)
+        {
+            throw new InvalidOperationException($"HTTP request failed: {ex.Message}", ex);
+        }
+        catch (JsonException ex)
+        {
+            throw new InvalidOperationException($"JSON deserialization failed: {ex.Message}", ex);
+        }
     }
 
-    private ExecutionEngineResult MapResult(Judge0SubmissionResponse r)
-    {
-        string? Decode(string? value) =>
-            value is null ? null
-            : options.IsEncoded ? System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(value))
+    private string? Encode(string? value) =>
+    value is null
+        ? null
+        : options.IsEncoded
+            ? Convert.ToBase64String(Encoding.UTF8.GetBytes(value))
             : value;
 
-        var status = r.Status?.Id switch
-        {
-            1 or 2 => ExecutionEngineResultStatus.Queued,
-            3 => ExecutionEngineResultStatus.Accepted,
-            4 => ExecutionEngineResultStatus.WrongAnswer,
-            5 => ExecutionEngineResultStatus.TimeLimitExceeded,
-            6 => ExecutionEngineResultStatus.CompilationError,
-            >= 7 and <= 12 => ExecutionEngineResultStatus.RuntimeError,
-            _ => ExecutionEngineResultStatus.InternalError
-        };
 
-        return new ExecutionEngineResult(
-            Token: r.Token ?? string.Empty,
-            Stdout: Decode(r.Stdout),
-            Stderr: Decode(r.Stderr),
-            CompileOutput: Decode(r.CompileOutput),
-            RuntimeMs: r.Time.HasValue ? (int)(r.Time.Value * 1000) : null,
-            MemoryUsedKb: r.Memory,
-            Status: status
-        );
+    private string? Decode(string? value)
+    {
+        if (value is null) return null;
+        if (!options.IsEncoded) return value;
+
+        try
+        {
+            return Encoding.UTF8.GetString(Convert.FromBase64String(value));
+        }
+        catch (FormatException)
+        {
+            // Judge0 occasionally returns non-base64 diagnostic text even in encoded mode
+            return value;
+        }
     }
 
-    // ── Judge0 request/response shapes ──────────────────────────────────────
+    private static ExecutionEngineResult MapResult(Judge0SubmissionResponse s) => new(
+        Token: s.Token,
+        Stdout: s.Stdout,
+        Stderr: s.Stderr,
+        CompileOutput: s.CompileOutput,
+        RuntimeMs: s.Time.HasValue ? (int?)(s.Time.Value * 1000) : null,
+        MemoryUsedKb: s.Memory,
+        Status: MapStatus(s.Status?.Id ?? 0));
 
-    private sealed record Judge0SubmissionRequest(
-        [property: JsonPropertyName("source_code")] string SourceCode,
-        [property: JsonPropertyName("language_id")] int LanguageId,
-        [property: JsonPropertyName("stdin")] string? Stdin,
-        [property: JsonPropertyName("cpu_time_limit")] double? CpuTimeLimit,
-        [property: JsonPropertyName("memory_limit")] int? MemoryLimit);
+    private static ExecutionEngineResultStatus MapStatus(int id) => id switch
+    {
+        1 => ExecutionEngineResultStatus.Queued,
+        2 => ExecutionEngineResultStatus.Processing,
+        3 => ExecutionEngineResultStatus.Accepted,
+        4 => ExecutionEngineResultStatus.WrongAnswer,
+        5 => ExecutionEngineResultStatus.TimeLimitExceeded,
+        6 => ExecutionEngineResultStatus.CompilationError,
+        >= 7 and <= 12 => ExecutionEngineResultStatus.RuntimeError,
+        _ => ExecutionEngineResultStatus.InternalError,
+    };
 
-    private sealed record Judge0TokenResponse(
-        [property: JsonPropertyName("token")] string Token);
+    private sealed class  Judge0BatchRequest
+    {
+        [JsonPropertyName("submissions")]
+        public required IEnumerable<Judge0SubmissionRequest> Submissions { get; init; }
+    }
 
-    private sealed record Judge0BatchResponse(
-        [property: JsonPropertyName("submissions")] List<Judge0SubmissionResponse> Submissions);
 
-    private sealed record Judge0SubmissionResponse(
-        [property: JsonPropertyName("token")] string? Token,
-        [property: JsonPropertyName("stdout")] string? Stdout,
-        [property: JsonPropertyName("stderr")] string? Stderr,
-        [property: JsonPropertyName("compile_output")] string? CompileOutput,
-        [property: JsonPropertyName("time")] double? Time,
-        [property: JsonPropertyName("memory")] int? Memory,
-        [property: JsonPropertyName("status")] Judge0StatusResponse? Status);
+    private sealed class Judge0SubmissionRequest
+    {
+        [JsonPropertyName("language_id")]
+        public int LanguageId { get; init; }
 
-    private sealed record Judge0StatusResponse(
-        [property: JsonPropertyName("id")] int Id,
-        [property: JsonPropertyName("description")] string Description);
+        [JsonPropertyName("source_code")]
+        public string? SourceCode { get; init; }
+
+        [JsonPropertyName("stdin")]
+        public string? StdIn { get; init; }
+
+        [JsonPropertyName("expected_output")]
+        public string? ExpectedOutput { get; init; }
+
+        [JsonPropertyName("cpu_time_limit")]
+        public double? CpuTimeLimit { get; init; }
+
+        [JsonPropertyName("memory_limit")]
+        public int? MemoryLimit { get; init; }
+    }
+
+    private sealed record Judge0TokenResponse(string Token);
+
+    private sealed class Judge0BatchGetResponse
+    {
+        public List<Judge0SubmissionResponse> Submissions { get; set; } = [];
+    }
+
+    private sealed class Judge0SubmissionResponse
+    {
+        public string Token { get; set; } = string.Empty;
+        public string? Stdout { get; set; }
+        public string? Stderr { get; set; }
+        public string? CompileOutput { get; set; }
+        [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
+        public double? Time { get; set; }
+        public int? Memory { get; set; }
+        public Judge0StatusResponse? Status { get; set; }
+    }
+
+    private sealed class Judge0StatusResponse
+    {
+        public int Id { get; set; }
+        public string Description { get; set; } = string.Empty;
+    }
 }

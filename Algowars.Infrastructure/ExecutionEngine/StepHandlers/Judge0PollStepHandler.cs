@@ -1,7 +1,7 @@
-using System.Text.Json;
-using Algowars.Application.ExecutionEngine;
+﻿using Algowars.Application.ExecutionEngine;
 using Algowars.Domain.ExecutionPipelines.Enums;
 using Microsoft.Extensions.Logging;
+using System.Text.Json;
 
 namespace Algowars.Infrastructure.ExecutionEngine.StepHandlers;
 
@@ -11,12 +11,9 @@ namespace Algowars.Infrastructure.ExecutionEngine.StepHandlers;
 /// the queued/processing state. The processor should retry (up to MaxAttempts) if still pending.
 /// Stores the polled results JSON in <see cref="StepHandlerResult.ResponsePayload"/>.
 /// </summary>
-internal sealed partial class Judge0PollStepHandler(
-    IExecutionEngineStrategy engine,
-    ILogger<Judge0PollStepHandler> logger) : IStepHandler
+internal sealed partial class Judge0PollStepHandler(IExecutionEngineStrategy engine, ILogger<Judge0PollStepHandler> logger) : IStepHandler
 {
-    public bool CanHandle(ExecutionPipelineStepType stepType)
-        => stepType == ExecutionPipelineStepType.Judge0Poll;
+    public bool CanHandle(ExecutionPipelineStepType stepType) => stepType == ExecutionPipelineStepType.Judge0Poll;
 
     public async Task<StepHandlerResult> ExecuteAsync(StepHandlerContext context)
     {
@@ -24,8 +21,7 @@ internal sealed partial class Judge0PollStepHandler(
         var attempt = context.Attempt;
         var ct = context.CancellationToken;
 
-        // The previous execute step stored the token→testCaseId map as its response payload
-          string? previousResponse = job.Attempts
+        string? previousResponse = job.Attempts
             .Where(a => a.PipelineStepId != attempt.PipelineStepId)
             .OrderByDescending(a => a.StartedAt)
             .Select(a => a.ResponsePayload)
@@ -60,8 +56,8 @@ internal sealed partial class Judge0PollStepHandler(
         }
 
         bool allDone = results.All(r =>
-            r.Status != ExecutionEngineResultStatus.Queued &&
-            r.Status != ExecutionEngineResultStatus.Processing);
+              r.Status != ExecutionEngineResultStatus.Queued &&
+              r.Status != ExecutionEngineResultStatus.Processing);
 
         if (!allDone)
         {
@@ -71,7 +67,6 @@ internal sealed partial class Judge0PollStepHandler(
             return new StepHandlerResult(Succeeded: false, Error: "Submissions still processing; will retry.");
         }
 
-        // Attach the testCaseId back into each result for the evaluate step
         var enriched = results.Select(r => new
         {
             r.Token,

@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using Algowars.Application.Messaging;
 using Algowars.Application.Messaging.Messages;
 using Algowars.Infrastructure.Jobs.Submissions;
 using Algowars.Infrastructure.Messaging;
@@ -20,7 +21,35 @@ internal sealed partial class RabbitMqConsumerService(
     protected override Task ExecuteAsync(CancellationToken stoppingToken)
     {
         var channel = connection.CreateModel();
-        string queueName = QueueNames.ForType<SubmissionCreatedMessage>();
+
+        SubscribeSubmissionMessages<SubmissionCreatedMessage>(
+            channel, m => m.SubmissionId, stoppingToken);
+
+        SubscribeSubmissionMessages<SubmissionJobContinuationMessage>(
+            channel, m => m.SubmissionId, stoppingToken);
+
+        stoppingToken.Register(() =>
+        {
+            channel.Close();
+            channel.Dispose();
+        });
+
+        return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Declares the queue for <typeparamref name="TMessage"/> and wires up a consumer that
+    /// dispatches to <see cref="SubmissionJobProcessorService.RunForSubmissionAsync"/> for the
+    /// submission id extracted from the message. Used for both the initial "submission created"
+    /// queue and the "job continuation" queue published after each pipeline step.
+    /// </summary>
+    private void SubscribeSubmissionMessages<TMessage>(
+        IModel channel,
+        Func<TMessage, Guid> getSubmissionId,
+        CancellationToken stoppingToken)
+        where TMessage : IMessage
+    {
+        string queueName = QueueNames.ForType<TMessage>();
         channel.QueueDeclare(queueName, durable: true, exclusive: false, autoDelete: false);
 
         var consumer = new EventingBasicConsumer(channel);
@@ -29,12 +58,13 @@ internal sealed partial class RabbitMqConsumerService(
             try
             {
                 string body = Encoding.UTF8.GetString(ea.Body.Span);
-                var message = JsonSerializer.Deserialize<SubmissionCreatedMessage>(body);
+                var message = JsonSerializer.Deserialize<TMessage>(body);
                 if (message is not null)
                 {
-                    LogSubmissionReceived(message.SubmissionId);
+                    Guid submissionId = getSubmissionId(message);
+                    LogSubmissionReceived(typeof(TMessage).Name, submissionId);
                     // Fire-and-forget on the thread pool; ack after dispatching.
-                    _ = ProcessAsync(message.SubmissionId, stoppingToken);
+                    _ = ProcessAsync(submissionId, stoppingToken);
                 }
                 channel.BasicAck(ea.DeliveryTag, multiple: false);
             }
@@ -46,14 +76,6 @@ internal sealed partial class RabbitMqConsumerService(
         };
 
         channel.BasicConsume(queueName, autoAck: false, consumer);
-
-        stoppingToken.Register(() =>
-        {
-            channel.Close();
-            channel.Dispose();
-        });
-
-        return Task.CompletedTask;
     }
 
     private async Task ProcessAsync(Guid submissionId, CancellationToken cancellationToken)
@@ -71,8 +93,8 @@ internal sealed partial class RabbitMqConsumerService(
     }
 
     [LoggerMessage(Level = LogLevel.Information,
-        Message = "Received SubmissionCreatedMessage for submission {SubmissionId}")]
-    private partial void LogSubmissionReceived(Guid SubmissionId);
+        Message = "Received {MessageType} for submission {SubmissionId}")]
+    private partial void LogSubmissionReceived(string messageType, Guid submissionId);
 
     [LoggerMessage(Level = LogLevel.Error,
         Message = "Error processing message from RabbitMQ")]

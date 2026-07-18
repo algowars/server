@@ -1,3 +1,4 @@
+using Algowars.Domain.ExecutionPipelines.Entities;
 using Algowars.Infrastructure.ExecutionEngine.Judge0;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -18,6 +19,12 @@ internal sealed class Judge0StepConfigurationConfiguration : IEntityTypeConfigur
             .IsRequired();
 
         builder.HasIndex(c => c.PipelineStepId).IsUnique();
+
+        builder.HasOne<ExecutionPipelineStep>()
+            .WithOne()
+            .HasForeignKey<Judge0StepConfiguration>(c => c.PipelineStepId)
+            .IsRequired()
+            .OnDelete(DeleteBehavior.Cascade);
 
         builder.Property(c => c.IsEncoded).HasColumnName("is_encoded").IsRequired();
         builder.Property(c => c.ShouldWait).HasColumnName("should_wait").IsRequired();

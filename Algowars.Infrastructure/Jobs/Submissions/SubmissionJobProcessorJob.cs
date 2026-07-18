@@ -13,20 +13,10 @@ internal sealed partial class SubmissionJobProcessorJob(
     public async Task Execute(IJobExecutionContext context)
     {
         LogExecuting();
-        try
-        {
-            await processorService.RunAsync(context.CancellationToken);
-        }
-        catch (Exception ex)
-        {
-            LogFailed(ex);
-            throw new JobExecutionException(ex, refireImmediately: false);
-        }
+
+        await processorService.RunAsync(context.CancellationToken);
     }
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Executing SubmissionJobProcessorJob")]
     private partial void LogExecuting();
-
-    [LoggerMessage(Level = LogLevel.Error, Message = "SubmissionJobProcessorJob failed")]
-    private partial void LogFailed(Exception ex);
 }

@@ -11,7 +11,7 @@ namespace Algowars.Infrastructure.Repositories;
 
 internal sealed class ProblemReadRepository(AlgowarsDbContext context) : IProblemReadRepository
 {
-    public async Task<Problem?> FindBySlugAsync(string slug, CancellationToken cancellationToken)
+    public async Task<Problem?> FindBySlugAsync(string slug, CancellationToken cancellationToken = default)
         => await context.Problems
             .AsNoTracking()
             .AsSplitQuery()

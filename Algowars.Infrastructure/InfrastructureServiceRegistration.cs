@@ -19,7 +19,9 @@ using Algowars.Infrastructure.Messaging;
 using Algowars.Infrastructure.Messaging.Consumers;
 using Algowars.Infrastructure.Persistence;
 using Algowars.Infrastructure.Persistence.Seeders;
-using Algowars.Infrastructure.Persistence.Seeders.Problems;using Algowars.Infrastructure.Repositories;
+using Algowars.Infrastructure.Persistence.Seeders.Problems;
+using Algowars.Infrastructure.Repositories;
+using Algowars.Domain.Problems;
 using Algowars.Infrastructure.Settings;
 using Azure.Messaging.ServiceBus;
 using Microsoft.EntityFrameworkCore;
@@ -129,7 +131,7 @@ public static class InfrastructureServiceRegistration
         services.AddScoped<ICodeTemplateStrategyResolver, CodeTemplateStrategyResolver>();
 
         // Step handlers and registry
-        services.AddScoped<IStepHandler, Judge0ExecuteStepHandler>();
+        services.AddScoped<IStepHandler, Judge0ExecutionStepHandler>();
         services.AddScoped<IStepHandler, Judge0PollStepHandler>();
         services.AddScoped<IStepHandler, EvaluateStepHandler>();
         services.AddScoped<IStepHandlerRegistry, StepHandlerRegistry>();
@@ -193,6 +195,7 @@ public static class InfrastructureServiceRegistration
     {
         services.AddScoped<ILanguageReadRepository, LanguageReadRepository>();
         services.AddScoped<IProblemReadRepository, ProblemReadRepository>();
+        services.AddScoped<IProblemRepository, ProblemRepository>();
         services.AddScoped<ISubmissionWriteRepository, SubmissionWriteRepository>();
         services.AddScoped<ISubmissionJobRepository, SubmissionJobRepository>();
         services.AddScoped<IExecutionPipelineRepository, ExecutionPipelineRepository>();

@@ -1,4 +1,4 @@
-namespace Algowars.Infrastructure.ExecutionEngine.Assert;
+﻿namespace Algowars.Infrastructure.ExecutionEngine.Assert;
 
 public enum AssertStrategy
 {

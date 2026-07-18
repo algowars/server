@@ -1,8 +1,9 @@
 using Algowars.Application.ExecutionEngine;
+using Algowars.Application.Messaging;
+using Algowars.Application.Messaging.Messages;
 using Algowars.Domain.ExecutionPipelines;
 using Algowars.Domain.SubmissionJobs;
 using Algowars.Domain.SubmissionJobs.Enums;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -71,6 +72,7 @@ internal sealed partial class SubmissionJobProcessorService(
         var jobRepository = sp.GetRequiredService<ISubmissionJobRepository>();
         var pipelineRepository = sp.GetRequiredService<IExecutionPipelineRepository>();
         var handlerRegistry = sp.GetRequiredService<IStepHandlerRegistry>();
+        var messagePublisher = sp.GetRequiredService<IMessagePublisher>();
 
         var job = await jobRepository.FindByIdAsync(jobId, ct);
         if (job is null)
@@ -85,18 +87,7 @@ internal sealed partial class SubmissionJobProcessorService(
             return;
         }
 
-        try
-        {
-            await ProcessJobAsync(job, jobRepository, pipelineRepository, handlerRegistry, ct);
-        }
-        catch (DbUpdateConcurrencyException)
-        {
-            LogJobAlreadyProcessed(job.Id);
-        }
-        catch (Exception ex)
-        {
-            LogJobFailed(job.Id, ex);
-        }
+        await ProcessJobAsync(job, jobRepository, pipelineRepository, handlerRegistry, messagePublisher, ct);
     }
 
     private async Task ProcessJobAsync(
@@ -104,6 +95,7 @@ internal sealed partial class SubmissionJobProcessorService(
         ISubmissionJobRepository jobRepository,
         IExecutionPipelineRepository pipelineRepository,
         IStepHandlerRegistry handlerRegistry,
+        IMessagePublisher messagePublisher,
         CancellationToken ct)
     {
         if (job.CurrentStepId is null)
@@ -191,12 +183,25 @@ internal sealed partial class SubmissionJobProcessorService(
             }
         }
 
-        try
+        await jobRepository.UpdateAsync(job, ct);
+
+        // The job still has a step to run (advanced to the next step, or reset to
+        // pending for a retry) — publish a message so it gets picked up immediately
+        // instead of sitting idle until the fallback cron sweep runs.
+        if (job.Status == SubmissionJobStatus.Pending)
         {
-            await jobRepository.UpdateAsync(job, ct);
-        }catch(Exception ex)
-        {
-            Console.WriteLine(ex);
+            // If this is a retry of the *same* polling step (e.g. waiting on Judge0),
+            // back off for the step's configured interval before checking again.
+            // Without this, retries fire back-to-back and burn through MaxAttempts
+            // in a couple of seconds — long before Judge0 has actually finished.
+            bool isRetryOfSameStep = job.CurrentStepId == step.Id;
+            if (isRetryOfSameStep && step.IsPolling)
+            {
+                await Task.Delay(TimeSpan.FromSeconds(step.TimeoutSeconds), ct);
+            }
+
+            await messagePublisher.PublishAsync(
+                new SubmissionJobContinuationMessage(job.SubmissionId), ct);
         }
     }
 
@@ -227,10 +232,11 @@ internal sealed partial class SubmissionJobProcessorService(
         Message = "Unhandled exception processing job {JobId}")]
     private partial void LogJobFailed(Guid jobId, Exception ex);
 
-    private void LogJobAlreadyProcessed(Guid jobId) =>
-        logger.LogDebug("Job {JobId} was already processed by another worker — skipping.", jobId);
+    [LoggerMessage(Level = LogLevel.Debug,
+        Message = "Job {JobId} was already processed by another worker — skipping.")]
+    private partial void LogJobAlreadyProcessed(Guid jobId);
 
-    private void LogSubmissionJobNotFound(Guid submissionId) =>
-        logger.LogWarning("No submission job found for submission {SubmissionId}.", submissionId);
+    [LoggerMessage(Level = LogLevel.Warning,
+        Message = "No submission job found for submission {SubmissionId}.")]
+    private partial void LogSubmissionJobNotFound(Guid submissionId);
 }
-

@@ -1,5 +1,7 @@
-﻿using Algowars.Domain.Submissions.Entities;
+﻿using Algowars.Domain.Problems.Entities;
+using Algowars.Domain.Submissions.Entities;
 using Algowars.Domain.Submissions.ValueObjects;
+using Algowars.Domain.Users.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -26,10 +28,12 @@ internal sealed class SubmissionConfiguration : IEntityTypeConfiguration<Submiss
 
         builder.Property(s => s.Type)
             .HasColumnName("type")
+            .HasConversion<int>()
             .IsRequired();
 
         builder.Property(s => s.Status)
             .HasColumnName("status")
+            .HasConversion<int>()
             .IsRequired();
 
         builder.Property(s => s.SourceCode)
@@ -39,6 +43,18 @@ internal sealed class SubmissionConfiguration : IEntityTypeConfiguration<Submiss
             .HasColumnName("source_code")
             .HasMaxLength(SourceCode.MaxLength)
             .IsRequired();
+
+        builder.HasOne<User>()
+            .WithMany()
+            .HasForeignKey(s => s.UserId)
+            .IsRequired()
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne<ProblemSetup>()
+            .WithMany()
+            .HasForeignKey(s => s.ProblemSetupId)
+            .IsRequired()
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasMany(s => s.Results)
             .WithOne()
