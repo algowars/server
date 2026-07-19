@@ -14,6 +14,8 @@ using Algowars.Domain.Users;
 using Algowars.Infrastructure.ExecutionEngine.CodeTemplates;
 using Algowars.Infrastructure.ExecutionEngine.Judge0;
 using Algowars.Infrastructure.ExecutionEngine.StepHandlers;
+using Algowars.Infrastructure.FeatureToggles.Configuration;
+using Algowars.Infrastructure.FeatureToggles.Providers;
 using Algowars.Infrastructure.Jobs.Submissions;
 using Algowars.Infrastructure.Messaging;
 using Algowars.Infrastructure.Messaging.Consumers;
@@ -60,6 +62,8 @@ public static class InfrastructureServiceRegistration
         IConfiguration configuration)
     {
         services.AddOption<ConnectionStringOptions>(configuration);
+        services.Configure<FeatureToggleOptions>(configuration.GetSection("FeatureToggles"));
+        services.AddSingleton<IFeatureToggleProvider, ConfigurationFeatureToggleProvider>();
         services.AddPersistence();
         services.AddSeeder();
 
@@ -174,6 +178,8 @@ public static class InfrastructureServiceRegistration
     {
         services.AddOption<ConnectionStringOptions>(configuration);
         services.AddOption<MessageBusOptions>(configuration);
+        services.Configure<FeatureToggleOptions>(configuration.GetSection("FeatureToggles"));
+        services.AddSingleton<IFeatureToggleProvider, ConfigurationFeatureToggleProvider>();
 
         return services;
     }

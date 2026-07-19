@@ -1,4 +1,5 @@
 using Algowars.Application.Events;
+using Algowars.Application.Services.FeatureToggles;
 using Algowars.Application.Services.Problems;
 using Algowars.Application.Services.Submissions;
 using Algowars.Application.Services.Users;
@@ -41,6 +42,7 @@ public static class ApplicationServiceRegistration
         services.AddScoped<IUsernameGeneratorService, UsernameGeneratorService>();
         services.AddScoped<IProblemService, ProblemService>();
         services.AddScoped<ISubmissionService, SubmissionService>();
+        services.AddScoped<IFeatureToggleService, FeatureToggleService>();
 
         return services;
     }
