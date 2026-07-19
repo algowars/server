@@ -20,7 +20,11 @@ internal sealed partial class RabbitMqConsumerService(
 {
     protected override Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        var channel = connection.CreateModel();
+        IModel channel = connection.CreateModel();
+
+        // Limit to 1 unacknowledged message per consumer so each subscription
+        // processes one message at a time — prevents unbounded parallelism.
+        channel.BasicQos(prefetchSize: 0, prefetchCount: 1, global: false);
 
         SubscribeSubmissionMessages<SubmissionCreatedMessage>(
             channel, m => m.SubmissionId, stoppingToken);
@@ -38,10 +42,10 @@ internal sealed partial class RabbitMqConsumerService(
     }
 
     /// <summary>
-    /// Declares the queue for <typeparamref name="TMessage"/> and wires up a consumer that
+    /// Declares the queue for <typeparamref name="TMessage"/> and wires up an async consumer that
     /// dispatches to <see cref="SubmissionJobProcessorService.RunForSubmissionAsync"/> for the
-    /// submission id extracted from the message. Used for both the initial "submission created"
-    /// queue and the "job continuation" queue published after each pipeline step.
+    /// submission id extracted from the message. The message is acknowledged only after processing
+    /// succeeds; on failure it is nacked and requeued so it is not lost.
     /// </summary>
     private void SubscribeSubmissionMessages<TMessage>(
         IModel channel,
@@ -52,26 +56,26 @@ internal sealed partial class RabbitMqConsumerService(
         string queueName = QueueNames.ForType<TMessage>();
         channel.QueueDeclare(queueName, durable: true, exclusive: false, autoDelete: false);
 
-        var consumer = new EventingBasicConsumer(channel);
-        consumer.Received += (_, ea) =>
+        AsyncEventingBasicConsumer consumer = new(channel);
+        consumer.Received += async (_, ea) =>
         {
             try
             {
                 string body = Encoding.UTF8.GetString(ea.Body.Span);
-                var message = JsonSerializer.Deserialize<TMessage>(body);
+                TMessage? message = JsonSerializer.Deserialize<TMessage>(body);
                 if (message is not null)
                 {
                     Guid submissionId = getSubmissionId(message);
                     LogSubmissionReceived(typeof(TMessage).Name, submissionId);
-                    // Fire-and-forget on the thread pool; ack after dispatching.
-                    _ = ProcessAsync(submissionId, stoppingToken);
+                    await ProcessAsync(submissionId, stoppingToken);
                 }
                 channel.BasicAck(ea.DeliveryTag, multiple: false);
             }
             catch (Exception ex)
             {
                 LogProcessingError(ex);
-                channel.BasicNack(ea.DeliveryTag, multiple: false, requeue: false);
+                // Requeue so a transient failure does not permanently drop the message.
+                channel.BasicNack(ea.DeliveryTag, multiple: false, requeue: true);
             }
         };
 

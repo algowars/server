@@ -88,7 +88,7 @@ public static class InfrastructureServiceRegistration
                     VirtualHost = opts.RabbitMQ.VirtualHost,
                     UserName = opts.RabbitMQ.Username,
                     Password = opts.RabbitMQ.Password,
-                    DispatchConsumersAsync = false,
+                    DispatchConsumersAsync = true,
                 };
                 return factory.CreateConnection();
             });
