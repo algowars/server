@@ -21,9 +21,9 @@ internal sealed partial class CreateSubmissionHandler(
     ISubmissionJobRepository submissionJobRepository,
     IExecutionPipelineRepository pipelineRepository,
     ITestSuiteWriteRepository testSuiteRepository,
-    IDomainEventDispatcher domainEventDispatcher) : AbstractCommandHandler<CreateSubmissionCommand, Unit>(validator)
+    IDomainEventDispatcher domainEventDispatcher) : AbstractCommandHandler<CreateSubmissionCommand, Guid>(validator)
 {
-    protected override async Task<Result<Unit>> HandleValidated(CreateSubmissionCommand request, CancellationToken cancellationToken)
+    protected override async Task<Result<Guid>> HandleValidated(CreateSubmissionCommand request, CancellationToken cancellationToken)
     {
         var testCaseIds = await testSuiteRepository.FindTestCaseIdsByProblemSetupIdAsync(
             request.ProblemSetupId, cancellationToken);
@@ -32,15 +32,15 @@ internal sealed partial class CreateSubmissionHandler(
             request.ProblemSetupId, cancellationToken);
 
         if (pipelineId is null)
-            return Result.NotFound($"No pipeline configured for problem setup {request.ProblemSetupId}.");
+            return Result<Guid>.NotFound($"No pipeline configured for problem setup {request.ProblemSetupId}.");
 
         var pipeline = await pipelineRepository.FindByIdWithStepsAsync(pipelineId.Value, cancellationToken);
         if (pipeline is null)
-            return Result.NotFound($"Pipeline {pipelineId.Value} not found.");
+            return Result<Guid>.NotFound($"Pipeline {pipelineId.Value} not found.");
 
         var firstStep = pipeline.FirstStep();
         if (firstStep is null)
-            return Result.Error($"Pipeline {pipelineId.Value} has no steps configured.");
+            return Result<Guid>.Error($"Pipeline {pipelineId.Value} has no steps configured.");
 
         var submission = submissionFactory.Create(new CreateSubmissionParams(
             request.CreatedById,
@@ -56,6 +56,6 @@ internal sealed partial class CreateSubmissionHandler(
 
         await domainEventDispatcher.DispatchAsync(submission.PopDomainEvents(), cancellationToken);
 
-        return Result.Success();
+        return Result<Guid>.Success(submission.Id);
     }
 }

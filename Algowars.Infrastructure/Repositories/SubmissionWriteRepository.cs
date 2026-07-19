@@ -15,7 +15,9 @@ internal sealed class SubmissionWriteRepository(AlgowarsDbContext context) : ISu
 
     public async Task<Submission?> FindByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        return await context.Submissions.FirstOrDefaultAsync(s => s.Id == id, cancellationToken);
+        return await context.Submissions
+            .Include(s => s.Results)
+            .FirstOrDefaultAsync(s => s.Id == id, cancellationToken);
     }
 
     public async Task UpdateAsync(Submission entity, CancellationToken cancellationToken = default)

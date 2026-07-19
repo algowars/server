@@ -7,4 +7,4 @@ internal sealed record CreateSubmissionCommand(
     Guid ProblemSetupId,
     SubmissionType Type,
     string Code,
-    Guid CreatedById) : ICommand<Unit>;
+    Guid CreatedById) : ICommand<Guid>;

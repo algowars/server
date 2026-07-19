@@ -6,7 +6,6 @@ using Algowars.Application.Services.Submissions;
 using Algowars.Application.Submissions.Dtos;
 using Ardalis.Result;
 using Ardalis.Result.AspNetCore;
-using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 
@@ -22,11 +21,11 @@ public sealed class SubmissionController(ISubmissionService submissionService, U
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<ActionResult<Unit>> CreateSubmission(
+    public async Task<ActionResult<Guid>> CreateSubmission(
         [FromBody] CreateSubmissionRequest request, CancellationToken cancellationToken)
     {
         if (userContext.User is null)
-            return this.ToActionResult(Result<Unit>.Unauthorized());
+            return this.ToActionResult(Result<Guid>.Unauthorized());
 
         return this.ToActionResult(await submissionService.CreateSubmissionAsync(
             new CreateSubmissionDto(
@@ -34,6 +33,24 @@ public sealed class SubmissionController(ISubmissionService submissionService, U
                 request.Type,
                 request.Code,
                 userContext.User.Id),
+            cancellationToken));
+    }
+
+    [HttpGet("{submissionId:guid}")]
+    [RequireUser]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<SubmissionStatusDto>> GetSubmissionStatus(
+        Guid submissionId,
+        CancellationToken cancellationToken)
+    {
+        if (userContext.User is null)
+            return this.ToActionResult(Result<SubmissionStatusDto>.Unauthorized());
+
+        return this.ToActionResult(await submissionService.GetSubmissionStatusAsync(
+            submissionId,
+            userContext.User.Id,
             cancellationToken));
     }
 }
