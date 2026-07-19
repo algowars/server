@@ -19,9 +19,11 @@ public sealed class RabbitMqOptions
     public string VirtualHost { get; init; } = "/";
     public string Username { get; init; } = "guest";
     public string Password { get; init; } = "guest";
+    public int ConsumerConcurrency { get; init; } = 2;
 }
 
 public sealed class AzureServiceBusOptions
 {
     public string ConnectionString { get; init; } = string.Empty;
+    public int MaxConcurrentCalls { get; init; } = 2;
 }

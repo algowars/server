@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Algowars.Application.Configuration;
 using Algowars.Application.Messaging;
 using Algowars.Application.Messaging.Messages;
 using Algowars.Infrastructure.Jobs.Submissions;
@@ -11,14 +12,22 @@ namespace Algowars.Infrastructure.Messaging.Consumers;
 
 internal sealed partial class AzureServiceBusConsumerService(
     ServiceBusClient client,
+    MessageBusOptions options,
     IServiceScopeFactory scopeFactory,
     ILogger<AzureServiceBusConsumerService> logger
 ) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        var createdProcessor = client.CreateProcessor(QueueNames.ForType<SubmissionCreatedMessage>());
-        var continuationProcessor = client.CreateProcessor(QueueNames.ForType<SubmissionJobContinuationMessage>());
+        int maxConcurrentCalls = Math.Max(1, options.AzureServiceBus.MaxConcurrentCalls);
+        var processorOptions = new ServiceBusProcessorOptions
+        {
+            MaxConcurrentCalls = maxConcurrentCalls,
+            AutoCompleteMessages = false
+        };
+
+        var createdProcessor = client.CreateProcessor(QueueNames.ForType<SubmissionCreatedMessage>(), processorOptions);
+        var continuationProcessor = client.CreateProcessor(QueueNames.ForType<SubmissionJobContinuationMessage>(), processorOptions);
 
         WireUp<SubmissionCreatedMessage>(createdProcessor, m => m.SubmissionId);
         WireUp<SubmissionJobContinuationMessage>(continuationProcessor, m => m.SubmissionId);
