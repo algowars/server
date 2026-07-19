@@ -22,6 +22,124 @@ namespace Algowars.Infrastructure.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("Algowars.Domain.Authorization.Rbac.Entities.Group", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("name");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("groups", (string)null);
+                });
+
+            modelBuilder.Entity("Algowars.Domain.Authorization.Rbac.Entities.Permission", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("code");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("description");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.ToTable("permissions", (string)null);
+                });
+
+            modelBuilder.Entity("Algowars.Domain.Authorization.Rbac.Entities.Role", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("name");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("roles", (string)null);
+                });
+
+            modelBuilder.Entity("Algowars.Domain.Authorization.Rbac.Entities.RolePermission", b =>
+                {
+                    b.Property<Guid>("PermissionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("permission_id");
+
+                    b.Property<Guid>("role_id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("role_id");
+
+                    b.Property<string>("Effect")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("effect");
+
+                    b.HasKey("PermissionId", "role_id");
+
+                    b.HasIndex("PermissionId")
+                        .HasDatabaseName("IX_role_permissions_permission_id");
+
+                    b.HasIndex("role_id")
+                        .HasDatabaseName("IX_role_permissions_role_id");
+
+                    b.ToTable("role_permissions", (string)null);
+                });
+
+            modelBuilder.Entity("Algowars.Domain.Authorization.Security.Entities.SecurityRestriction", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("DetectionEventId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Effect")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PermissionCode")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "PermissionCode");
+
+                    b.ToTable("security_restrictions", (string)null);
+                });
+
             modelBuilder.Entity("Algowars.Domain.ExecutionPipelines.Entities.ExecutionPipelineStep", b =>
                 {
                     b.Property<Guid>("Id")
@@ -746,6 +864,24 @@ namespace Algowars.Infrastructure.Migrations
                     b.ToTable("problem_tags", (string)null);
                 });
 
+            modelBuilder.Entity("group_roles", b =>
+                {
+                    b.Property<Guid>("group_id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("group_id");
+
+                    b.Property<Guid>("role_id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("role_id");
+
+                    b.HasKey("group_id", "role_id");
+
+                    b.HasIndex("role_id")
+                        .HasDatabaseName("IX_group_roles_role_id");
+
+                    b.ToTable("group_roles", (string)null);
+                });
+
             modelBuilder.Entity("problem_setup_test_suites", b =>
                 {
                     b.Property<Guid>("problem_setup_id")
@@ -759,6 +895,39 @@ namespace Algowars.Infrastructure.Migrations
                     b.HasIndex("test_suite_id");
 
                     b.ToTable("problem_setup_test_suites", (string)null);
+                });
+
+            modelBuilder.Entity("user_groups", b =>
+                {
+                    b.Property<Guid>("user_id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.Property<Guid>("group_id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("group_id");
+
+                    b.HasKey("user_id", "group_id");
+
+                    b.HasIndex("group_id")
+                        .HasDatabaseName("IX_user_groups_group_id");
+
+                    b.ToTable("user_groups", (string)null);
+                });
+
+            modelBuilder.Entity("Algowars.Domain.Authorization.Rbac.Entities.RolePermission", b =>
+                {
+                    b.HasOne("Algowars.Domain.Authorization.Rbac.Entities.Permission", null)
+                        .WithMany()
+                        .HasForeignKey("PermissionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Algowars.Domain.Authorization.Rbac.Entities.Role", null)
+                        .WithMany("Permissions")
+                        .HasForeignKey("role_id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Algowars.Domain.ExecutionPipelines.Entities.ExecutionPipelineStep", b =>
@@ -969,6 +1138,21 @@ namespace Algowars.Infrastructure.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("group_roles", b =>
+                {
+                    b.HasOne("Algowars.Domain.Authorization.Rbac.Entities.Group", null)
+                        .WithMany()
+                        .HasForeignKey("group_id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Algowars.Domain.Authorization.Rbac.Entities.Role", null)
+                        .WithMany()
+                        .HasForeignKey("role_id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("problem_setup_test_suites", b =>
                 {
                     b.HasOne("Algowars.Domain.Problems.Entities.ProblemSetup", null)
@@ -982,6 +1166,26 @@ namespace Algowars.Infrastructure.Migrations
                         .HasForeignKey("test_suite_id")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("user_groups", b =>
+                {
+                    b.HasOne("Algowars.Domain.Authorization.Rbac.Entities.Group", null)
+                        .WithMany()
+                        .HasForeignKey("group_id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Algowars.Domain.Users.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("user_id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Algowars.Domain.Authorization.Rbac.Entities.Role", b =>
+                {
+                    b.Navigation("Permissions");
                 });
 
             modelBuilder.Entity("Algowars.Domain.ExecutionPipelines.ExecutionPipeline", b =>

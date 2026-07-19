@@ -14,6 +14,7 @@ public sealed class UserFactory : IAggregateFactory<User, CreateUserParams>
         var imageUrl = parameters.ImageUrl is not null ? new ImageUrl(parameters.ImageUrl) : null;
         var user = new User(username, parameters.Sub);
         user.UpdateImageUrl(imageUrl);
+        user.MarkCreated();
         return user;
     }
 }

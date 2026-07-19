@@ -8,4 +8,5 @@ public interface IUserWriteRepository : IRepository<User>
 {
     Task<User?> FindBySubAsync(string sub, CancellationToken cancellationToken = default);
     Task<User?> FindByUsername(Username username, CancellationToken cancellationToken = default);
+    Task AddToGroupAsync(Guid userId, string groupName, CancellationToken cancellationToken = default);
 }

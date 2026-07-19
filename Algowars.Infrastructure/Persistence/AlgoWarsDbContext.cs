@@ -1,3 +1,5 @@
+using Algowars.Domain.Authorization.Rbac.Entities;
+using Algowars.Domain.Authorization.Security.Entities;
 using Algowars.Domain.ExecutionPipelines;
 using Algowars.Domain.Languages.Entities;
 using Algowars.Domain.Languages.Enums;
@@ -17,11 +19,21 @@ internal sealed class AlgowarsDbContext(DbContextOptions<AlgowarsDbContext> opti
 {
     public DbSet<ExecutionPipeline> ExecutionPipelines { get; init; }
 
+    public DbSet<Group> Groups { get; init; }
+
     public DbSet<Language> Languages { get; init; }
+
+    public DbSet<Permission> Permissions { get; init; }
 
     public DbSet<Problem> Problems { get; init; }
 
     public DbSet<ProblemTag> Tags { get; init; }
+
+    public DbSet<Role> Roles { get; init; }
+
+    public DbSet<RolePermission> RolePermissions { get; init; }
+
+    public DbSet<SecurityRestriction> SecurityRestrictions { get; init; }
 
     public DbSet<Submission> Submissions { get; init; }
 
@@ -34,6 +46,7 @@ internal sealed class AlgowarsDbContext(DbContextOptions<AlgowarsDbContext> opti
     // Infrastructure-only — not domain aggregates
     public DbSet<Judge0StepConfiguration> Judge0StepConfigurations { get; init; }
     public DbSet<AssertStepConfiguration> AssertStepConfigurations { get; init; }
+
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

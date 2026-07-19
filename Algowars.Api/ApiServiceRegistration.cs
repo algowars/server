@@ -1,3 +1,4 @@
+using Algowars.Api.Authorization;
 using Algowars.Api.Extensions;
 using Algowars.Api.Middleware;
 using Algowars.Api.RateLimiting;

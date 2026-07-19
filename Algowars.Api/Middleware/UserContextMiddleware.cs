@@ -21,19 +21,19 @@ public partial class AccountContextMiddleware(
 
         if (requiresUser && !string.IsNullOrEmpty(sub))
         {
-            var result = await userService.GetBySubAsync(sub, context.RequestAborted);
+            var result = await userService.GetAccessContextBySubAsync(sub, context.RequestAborted);
             if (result.IsSuccess)
             {
-                userContext.User = result.Value;
-                userContext.Permissions = [.. context.User
-                    .FindAll("permissions")
-                    .Select(c => c.Value)];
+                userContext.User = result.Value.User;
+                userContext.Permissions = result.Value.Permissions;
+                userContext.Roles = result.Value.Roles;
 
                 var requestTelemetry = context.Features.Get<RequestTelemetry>();
                 if (requestTelemetry is not null)
                 {
                     requestTelemetry.Properties.TryAdd("account.id", userContext.User.Id.ToString());
                     requestTelemetry.Properties.TryAdd("account.username", userContext.User.Username);
+                    requestTelemetry.Properties.TryAdd("account.roles", string.Join(", ", userContext.Roles));
                 }
             }
             else
