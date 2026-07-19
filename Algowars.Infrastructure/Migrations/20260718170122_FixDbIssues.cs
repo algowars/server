@@ -10,6 +10,31 @@ namespace Algowars.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.Sql(@"
+                INSERT INTO execution_pipelines (id, name, description)
+                SELECT '2d8d6f9f-0cb6-4c85-924e-3038f7f89f58'::uuid,
+                       'Default Judge0 Pipeline',
+                       'Backfilled by migration to satisfy existing problem setup pipeline references.'
+                WHERE NOT EXISTS (SELECT 1 FROM execution_pipelines);
+            ");
+
+            migrationBuilder.Sql(@"
+                UPDATE problem_setups AS ps
+                SET pipeline_id = fallback.id
+                FROM (
+                    SELECT id
+                    FROM execution_pipelines
+                    ORDER BY name
+                    LIMIT 1
+                ) AS fallback
+                WHERE ps.pipeline_id = '00000000-0000-0000-0000-000000000000'::uuid
+                   OR NOT EXISTS (
+                       SELECT 1
+                       FROM execution_pipelines ep
+                       WHERE ep.id = ps.pipeline_id
+                   );
+            ");
+
             migrationBuilder.CreateIndex(
                 name: "IX_submissions_problem_setup_id",
                 table: "submissions",
