@@ -6,6 +6,8 @@ using Algowars.Domain.Problems;
 using Algowars.Domain.Problems.Entities;
 using Algowars.Domain.Submissions;
 using Algowars.Domain.TestSuites.Entities;
+using Algowars.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 
 namespace Algowars.Infrastructure.ExecutionEngine.StepHandlers;
@@ -19,7 +21,8 @@ internal sealed partial class Judge0ExecutionStepHandler(
     IProblemRepository problemRepository,
     ILanguageReadRepository languageReadRepository,
     ICodeTemplateStrategyResolver templateResolver,
-    IExecutionEngineStrategy executionEngine) : IStepHandler
+    IExecutionEngineStrategy executionEngine,
+    AlgowarsDbContext db) : IStepHandler
 {
     public bool CanHandle(ExecutionPipelineStepType stepType) => stepType == ExecutionPipelineStepType.Judge0Execute;
 
@@ -42,15 +45,28 @@ internal sealed partial class Judge0ExecutionStepHandler(
 
         var templateStrategy = templateResolver.Resolve(languageResult.Language!.Name.Value);
 
+        var orderedTestCaseIds = submission.Results.Select(r => r.TestCaseId).ToList();
+        var testCaseMap = await db.Set<TestCase>()
+            .AsNoTracking()
+            .Include(tc => tc.Inputs)
+            .Where(tc => orderedTestCaseIds.Contains(tc.Id))
+            .ToDictionaryAsync(tc => tc.Id, ct);
+
+        if (testCaseMap.Count != orderedTestCaseIds.Count)
+            return Fail("One or more submission test cases could not be loaded.");
+
+        var orderedTestCases = orderedTestCaseIds.Select(id => testCaseMap[id]).ToList();
+
         var submissions = BuildSubmissions(
             Setup!,
+            orderedTestCases,
             submission.SourceCode.Value,
             templateStrategy,
             languageResult.VersionEntry!.Judge0Id.Value);
 
         var results = await executionEngine.SubmitBatchAsync(submissions, ct);
 
-        var tokenMap = BuildTokenMap([.. Setup!.TestSuites.SelectMany(ts => ts.TestCases)], results);
+        var tokenMap = BuildTokenMap(orderedTestCases, results);
 
         return new StepHandlerResult(Succeeded: true, ResponsePayload: JsonSerializer.Serialize(tokenMap));
     }
@@ -84,30 +100,29 @@ internal sealed partial class Judge0ExecutionStepHandler(
 
     private static List<ExecutionEngineSubmission> BuildSubmissions(
         ProblemSetup setup,
+        IReadOnlyCollection<TestCase> testCases,
         string userCode,
         ICodeTemplateStrategy templateStrategy,
         int judge0LanguageId)
     {
-        return [.. setup.TestSuites
-            .SelectMany(ts => ts.TestCases)
-            .Select(testCase =>
-            {
-                var inputs = testCase.Inputs
-                    .Select(i => new CodeTemplateInput(i.Value, i.ValueType))
-                    .ToList();
+        return [.. testCases.Select(testCase =>
+        {
+            var inputs = testCase.Inputs
+                .Select(i => new CodeTemplateInput(i.Value, i.ValueType))
+                .ToList();
 
-                var templateContext = new CodeTemplateContext(
-                    UserCode: userCode,
-                    FunctionName: setup.FunctionName,
-                    Inputs: inputs);
+            var templateContext = new CodeTemplateContext(
+                UserCode: userCode,
+                FunctionName: setup.FunctionName,
+                Inputs: inputs);
 
-                return new ExecutionEngineSubmission(
-                    SourceCode: templateStrategy.Render(templateContext),
-                    LanguageId: judge0LanguageId,
-                    Stdin: templateStrategy.BuildStdin(inputs),
-                    TimeLimitMs: null,
-                    MemoryLimitKb: null);
-            })];
+            return new ExecutionEngineSubmission(
+                SourceCode: templateStrategy.Render(templateContext),
+                LanguageId: judge0LanguageId,
+                Stdin: templateStrategy.BuildStdin(inputs),
+                TimeLimitMs: null,
+                MemoryLimitKb: null);
+        })];
     }
 
     private static Dictionary<string, Guid> BuildTokenMap(

@@ -6,6 +6,9 @@ namespace Algowars.Domain.TestSuites;
 public interface ITestSuiteWriteRepository : IRepository<TestSuite>
 {
     Task<IReadOnlyList<Guid>> FindTestCaseIdsByProblemSetupIdAsync(Guid problemSetupId, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<Guid>> FindPublicTestCaseIdsByProblemSetupIdAsync(Guid problemSetupId, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<Guid>> FindRandomHiddenTestCaseIdsByProblemSetupIdAsync(Guid problemSetupId, int maxCases, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<Guid>> CreateAdHocTestCasesAsync(IReadOnlyCollection<IReadOnlyCollection<string>> customTestCaseInputs, CancellationToken cancellationToken = default);
     Task<Dictionary<Guid, string>> FindExpectedOutputsByTestCaseIdsAsync(IEnumerable<Guid> testCaseIds, CancellationToken cancellationToken = default);
     Task<Guid?> FindPipelineIdByProblemSetupIdAsync(Guid problemSetupId, CancellationToken cancellationToken = default);
 }

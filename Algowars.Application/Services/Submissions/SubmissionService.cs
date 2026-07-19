@@ -18,7 +18,12 @@ internal sealed class SubmissionService(IMediator mediator) : ISubmissionService
     public async Task<Result<Guid>> CreateSubmissionAsync(CreateSubmissionDto dto, CancellationToken cancellationToken)
     {
         return await mediator.Send(
-            new CreateSubmissionCommand(dto.ProblemSetupId, dto.Type, dto.Code, dto.CreatedById),
+            new CreateSubmissionCommand(
+                dto.ProblemSetupId,
+                dto.Type,
+                dto.Code,
+                dto.CreatedById,
+                dto.CustomTestCases),
             cancellationToken);
     }
 

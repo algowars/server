@@ -1,3 +1,4 @@
+using System.Linq;
 using Algowars.Api.Attributes;
 using Algowars.Api.RateLimiting;
 using Algowars.Api.Requests.Submission;
@@ -16,13 +17,13 @@ namespace Algowars.Api.Controllers;
 [EnableRateLimiting(WellKnownPolicies.Submissions)]
 public sealed class SubmissionController(ISubmissionService submissionService, UserContext userContext) : ControllerBase
 {
-    [HttpPost]
+    [HttpPost("run")]
     [RequireUser]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<ActionResult<Guid>> CreateSubmission(
-        [FromBody] CreateSubmissionRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult<Guid>> CreateRunSubmission(
+        [FromBody] CreateRunSubmissionRequest request, CancellationToken cancellationToken)
     {
         if (userContext.User is null)
             return this.ToActionResult(Result<Guid>.Unauthorized());
@@ -30,9 +31,31 @@ public sealed class SubmissionController(ISubmissionService submissionService, U
         return this.ToActionResult(await submissionService.CreateSubmissionAsync(
             new CreateSubmissionDto(
                 request.ProblemSetupId,
-                request.Type,
+                Domain.Submissions.Enums.SubmissionType.Run,
                 request.Code,
-                userContext.User.Id),
+                userContext.User.Id,
+                request.CustomTestCases?.Select(tc => new CreateSubmissionCustomTestCaseDto(tc.Inputs)).ToArray()),
+            cancellationToken));
+    }
+
+    [HttpPost("grade")]
+    [RequireUser]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<Guid>> CreateGradeSubmission(
+        [FromBody] CreateGradeSubmissionRequest request, CancellationToken cancellationToken)
+    {
+        if (userContext.User is null)
+            return this.ToActionResult(Result<Guid>.Unauthorized());
+
+        return this.ToActionResult(await submissionService.CreateSubmissionAsync(
+            new CreateSubmissionDto(
+                request.ProblemSetupId,
+                Domain.Submissions.Enums.SubmissionType.Submit,
+                request.Code,
+                userContext.User.Id,
+                null),
             cancellationToken));
     }
 

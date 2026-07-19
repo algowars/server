@@ -1,8 +1,10 @@
-﻿using Algowars.Application.Events;
+﻿using System.Linq;
+using Algowars.Application.Events;
 using Algowars.Domain.ExecutionPipelines;
 using Algowars.Domain.SeedWork;
 using Algowars.Domain.Submissions;
 using Algowars.Domain.Submissions.Entities;
+using Algowars.Domain.Submissions.Enums;
 using Algowars.Domain.Submissions.Factories;
 using Algowars.Domain.Submissions.ValueObjects;
 using Algowars.Domain.SubmissionJobs;
@@ -23,10 +25,33 @@ internal sealed partial class CreateSubmissionHandler(
     ITestSuiteWriteRepository testSuiteRepository,
     IDomainEventDispatcher domainEventDispatcher) : AbstractCommandHandler<CreateSubmissionCommand, Guid>(validator)
 {
+    private const int OfficialRandomCaseCount = 20;
+
     protected override async Task<Result<Guid>> HandleValidated(CreateSubmissionCommand request, CancellationToken cancellationToken)
     {
-        var testCaseIds = await testSuiteRepository.FindTestCaseIdsByProblemSetupIdAsync(
-            request.ProblemSetupId, cancellationToken);
+        IReadOnlyList<Guid> testCaseIds;
+        if (request.Type == SubmissionType.Run)
+        {
+            var publicCaseIds = await testSuiteRepository.FindPublicTestCaseIdsByProblemSetupIdAsync(
+                request.ProblemSetupId,
+                cancellationToken);
+
+            var customCaseIds = await testSuiteRepository.CreateAdHocTestCasesAsync(
+                request.CustomTestCases?.Select(tc => (IReadOnlyCollection<string>)tc.Inputs).ToArray() ?? [],
+                cancellationToken);
+
+            testCaseIds = [.. publicCaseIds, .. customCaseIds];
+        }
+        else
+        {
+            testCaseIds = await testSuiteRepository.FindRandomHiddenTestCaseIdsByProblemSetupIdAsync(
+                request.ProblemSetupId,
+                OfficialRandomCaseCount,
+                cancellationToken);
+        }
+
+        if (testCaseIds.Count == 0)
+            return Result<Guid>.Error("No test cases are available for this submission mode.");
 
         var pipelineId = await testSuiteRepository.FindPipelineIdByProblemSetupIdAsync(
             request.ProblemSetupId, cancellationToken);

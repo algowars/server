@@ -87,9 +87,11 @@ internal sealed partial class EvaluateStepHandler(
                     .Select(e => e.Value)
                     .FirstOrDefault();
 
-                string? actual = pollResult.ActualOutput?.TrimEnd('\n', '\r', ' ');
-
-                status = Evaluate(actual, expected, assertConfig);
+                if (submission.Type != SubmissionType.Run || expected is not null)
+                {
+                    string? actual = pollResult.ActualOutput?.TrimEnd('\n', '\r', ' ');
+                    status = Evaluate(actual, expected, assertConfig);
+                }
             }
 
             submission.UpdateResult(
