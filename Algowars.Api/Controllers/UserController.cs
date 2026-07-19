@@ -1,4 +1,5 @@
 using Algowars.Api.Attributes;
+using Algowars.Api.RateLimiting;
 using Algowars.Api.Requests.User;
 using Algowars.Api.Responses.User;
 using Algowars.Application;
@@ -8,12 +9,14 @@ using Ardalis.Result;
 using Ardalis.Result.AspNetCore;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using System.Security.Claims;
 
 namespace Algowars.Api.Controllers;
 
 [ApiController]
 [Route("api/v{version:apiVersion}/[controller]")]
+[EnableRateLimiting(WellKnownPolicies.General)]
 public sealed class UserController(IUserService userService, UserContext userContext) : ControllerBase
 {
     [HttpGet]
