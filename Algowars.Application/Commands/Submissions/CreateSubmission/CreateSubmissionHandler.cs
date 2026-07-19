@@ -32,15 +32,15 @@ internal sealed partial class CreateSubmissionHandler(
             request.ProblemSetupId, cancellationToken);
 
         if (pipelineId is null)
-            return Result<Guid>.NotFound($"No pipeline configured for problem setup {request.ProblemSetupId}.");
+            return Result<Guid>.NotFound("Submission pipeline is not available.");
 
         var pipeline = await pipelineRepository.FindByIdWithStepsAsync(pipelineId.Value, cancellationToken);
         if (pipeline is null)
-            return Result<Guid>.NotFound($"Pipeline {pipelineId.Value} not found.");
+            return Result<Guid>.NotFound("Submission pipeline is not available.");
 
         var firstStep = pipeline.FirstStep();
         if (firstStep is null)
-            return Result<Guid>.Error($"Pipeline {pipelineId.Value} has no steps configured.");
+            return Result<Guid>.Error("Submission pipeline is temporarily unavailable. Please try again later.");
 
         var submission = submissionFactory.Create(new CreateSubmissionParams(
             request.CreatedById,

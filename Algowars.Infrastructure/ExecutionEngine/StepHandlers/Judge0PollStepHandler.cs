@@ -67,21 +67,53 @@ internal sealed partial class Judge0PollStepHandler(IExecutionEngineStrategy eng
             return new StepHandlerResult(Succeeded: false, Error: "Submissions still processing; will retry.");
         }
 
-        var enriched = results.Select(r => new
+        var enriched = results.Select(r =>
         {
-            r.Token,
-            TestCaseId = tokenMap.TryGetValue(r.Token, out var id) ? id : Guid.Empty,
-            r.Stdout,
-            r.Stderr,
-            r.CompileOutput,
-            r.RuntimeMs,
-            r.MemoryUsedKb,
-            Status = r.Status.ToString()
+            var parsedOutput = ParseOutput(r.Stdout);
+
+            return new
+            {
+                r.Token,
+                TestCaseId = tokenMap.TryGetValue(r.Token, out var id) ? id : Guid.Empty,
+                Stdout = parsedOutput.UserLogs,
+                ActualOutput = parsedOutput.ActualResult,
+                r.Stderr,
+                r.CompileOutput,
+                r.RuntimeMs,
+                r.MemoryUsedKb,
+                Status = r.Status.ToString()
+            };
         }).ToList();
 
         string responsePayload = JsonSerializer.Serialize(enriched);
         return new StepHandlerResult(Succeeded: true, ResponsePayload: responsePayload);
     }
+
+    private static ParsedOutput ParseOutput(string? stdout)
+    {
+        if (string.IsNullOrEmpty(stdout))
+            return new ParsedOutput(UserLogs: null, ActualResult: null);
+
+        string[] lines = stdout.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
+
+        // If only one line, it's the result with no logs
+        if (lines.Length == 1)
+            return new ParsedOutput(UserLogs: null, ActualResult: lines[0]);
+
+        // Last line is the result, everything before is logs (comma-joined)
+        string actualResult = lines[^1];
+        string[] logLines = lines[..^1];
+
+        string userLogs = logLines.Length == 0 
+            ? null 
+            : string.Join(",", logLines);
+
+        return new ParsedOutput(
+            UserLogs: userLogs,
+            ActualResult: string.IsNullOrWhiteSpace(actualResult) ? null : actualResult);
+    }
+
+    private sealed record ParsedOutput(string? UserLogs, string? ActualResult);
 
     [LoggerMessage(Level = LogLevel.Information,
         Message = "Polling {Count} Judge0 tokens for submission {SubmissionId}")]

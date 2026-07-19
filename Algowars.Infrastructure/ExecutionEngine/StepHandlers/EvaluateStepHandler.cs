@@ -87,7 +87,7 @@ internal sealed partial class EvaluateStepHandler(
                     .Select(e => e.Value)
                     .FirstOrDefault();
 
-                string? actual = pollResult.Stdout?.TrimEnd('\n', '\r', ' ');
+                string? actual = pollResult.ActualOutput?.TrimEnd('\n', '\r', ' ');
 
                 status = Evaluate(actual, expected, assertConfig);
             }
@@ -97,7 +97,7 @@ internal sealed partial class EvaluateStepHandler(
                 status: status,
                 runtime: pollResult.RuntimeMs,
                 memoryUsed: pollResult.MemoryUsedKb,
-                actualOutput: pollResult.Stdout,
+                actualOutput: pollResult.ActualOutput,
                 standardOutput: pollResult.Stdout,
                 standardError: pollResult.Stderr,
                 compileOutput: pollResult.CompileOutput);
@@ -190,6 +190,7 @@ internal sealed partial class EvaluateStepHandler(
     private sealed record PollResultEntry(
         Guid TestCaseId,
         string? Stdout,
+        string? ActualOutput,
         string? Stderr,
         string? CompileOutput,
         int? RuntimeMs,

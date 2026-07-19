@@ -41,8 +41,8 @@ internal sealed class Judge0PipelineSeeder(AlgowarsDbContext context) : ISeeder
         pipeline.AddStep(
             stepType: ExecutionPipelineStepType.Judge0Poll,
             stepOrder: 2,
-            maxAttempts: 10,
-            timeoutSeconds: 10,
+            maxAttempts: 30,
+            timeoutSeconds: 2,
             isPolling: true,
             name: "Poll Judge0 Results");
 
