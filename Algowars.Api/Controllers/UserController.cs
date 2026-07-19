@@ -28,7 +28,7 @@ public sealed class UserController(IUserService userService, UserContext userCon
         if (userContext.User is null)
             return NotFound();
 
-        return Ok(UserResponse.FromDto(userContext.User));
+        return Ok(UserResponse.FromDto(userContext.User, userContext.Permissions, userContext.Roles));
     }
 
     [HttpPut]

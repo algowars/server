@@ -8,6 +8,8 @@ public sealed class UserContext
 
     public IReadOnlyList<string> Permissions { get; set; } = [];
 
+    public IReadOnlyList<string> Roles { get; set; } = [];
+
     public bool IsAuthenticated => User is not null;
 
     public bool HasPermission(string permission) =>

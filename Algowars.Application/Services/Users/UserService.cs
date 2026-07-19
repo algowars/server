@@ -1,4 +1,5 @@
 using Algowars.Application.Commands.Users.UpsertUser;
+using Algowars.Application.Queries.Permissions.GetUserAccessContext;
 using Algowars.Application.Queries.Users.GetUserBySub;
 using Algowars.Application.Users.Dtos;
 using Ardalis.Result;
@@ -10,13 +11,22 @@ public interface IUserService
 {
     Task<Result<UserDto>> GetBySubAsync(string sub, CancellationToken cancellationToken);
 
+    Task<Result<UserAccessContextDto>> GetAccessContextBySubAsync(string sub, CancellationToken cancellationToken);
+
     Task<Result<Unit>> UpsertAccountAsync(string sub, UpsertUserDto request, CancellationToken cancellationToken);
 }
 
 
 internal sealed class UserService(IMediator mediator) : IUserService
 {
-    public async Task<Result<UserDto>> GetBySubAsync(string sub, CancellationToken cancellationToken = default)
+    public async Task<Result<UserAccessContextDto>> GetAccessContextBySubAsync(string sub, CancellationToken cancellationToken)
+    {
+        var result = await mediator.Send(new GetUserAccessContextQuery(sub), cancellationToken);
+
+        return result;
+    }
+
+    public async Task<Result<UserDto>> GetBySubAsync(string sub, CancellationToken cancellationToken)
     {
         var result = await mediator.Send(new GetUserBySubQuery(sub), cancellationToken);
         return result;
