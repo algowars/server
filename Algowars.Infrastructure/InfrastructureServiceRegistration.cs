@@ -1,21 +1,27 @@
 using Algowars.Application.Configuration;
+using Algowars.Application.ExecutionEngine;
 using Algowars.Application.Jobs.Submissions;
 using Algowars.Application.Languages;
 using Algowars.Application.Messaging;
 using Algowars.Application.Problems;
 using Algowars.Application.Settings;
 using Algowars.Application.Users;
+using Algowars.Domain.ExecutionPipelines;
 using Algowars.Domain.Submissions;
+using Algowars.Domain.SubmissionJobs;
 using Algowars.Domain.TestSuites;
 using Algowars.Domain.Users;
+using Algowars.Infrastructure.ExecutionEngine.CodeTemplates;
+using Algowars.Infrastructure.ExecutionEngine.Judge0;
+using Algowars.Infrastructure.ExecutionEngine.StepHandlers;
 using Algowars.Infrastructure.Jobs.Submissions;
 using Algowars.Infrastructure.Messaging;
 using Algowars.Infrastructure.Messaging.Consumers;
 using Algowars.Infrastructure.Persistence;
 using Algowars.Infrastructure.Persistence.Seeders;
 using Algowars.Infrastructure.Persistence.Seeders.Problems;
-
 using Algowars.Infrastructure.Repositories;
+using Algowars.Domain.Problems;
 using Algowars.Infrastructure.Settings;
 using Azure.Messaging.ServiceBus;
 using Microsoft.EntityFrameworkCore;
@@ -36,6 +42,7 @@ public static class InfrastructureServiceRegistration
 
         services.AddPersistence();
         services.AddRepositories();
+        services.AddExecutionEngine(configuration);
 
         services.AddMessageBus(configuration);
         services.AddJobs(configuration);
@@ -81,13 +88,56 @@ public static class InfrastructureServiceRegistration
                     VirtualHost = opts.RabbitMQ.VirtualHost,
                     UserName = opts.RabbitMQ.Username,
                     Password = opts.RabbitMQ.Password,
-                    DispatchConsumersAsync = false,
+                    DispatchConsumersAsync = true,
                 };
                 return factory.CreateConnection();
             });
             services.AddScoped<IMessagePublisher, RabbitMqMessagePublisher>();
             services.AddHostedService<RabbitMqConsumerService>();
         }
+
+        return services;
+    }
+
+    private static IServiceCollection AddExecutionEngine(this IServiceCollection services, IConfiguration configuration)
+    {
+        var opts = configuration
+            .GetSection(ExecutionEngineOptions.SectionName)
+            .Get<ExecutionEngineOptions>() ?? new ExecutionEngineOptions();
+
+        if (opts.Judge0.Enabled)
+        {
+            var judge0Opts = opts.Judge0;
+            services.AddHttpClient(nameof(Judge0ExecutionEngineStrategy), client =>
+            {
+                client.BaseAddress = new Uri(judge0Opts.BaseUrl.TrimEnd('/') + "/");
+                if (!string.IsNullOrWhiteSpace(judge0Opts.ApiKey))
+                    client.DefaultRequestHeaders.Add("X-RapidAPI-Key", judge0Opts.ApiKey);
+                if (!string.IsNullOrWhiteSpace(judge0Opts.Host))
+                    client.DefaultRequestHeaders.Add("X-RapidAPI-Host", judge0Opts.Host);
+            });
+            services.AddScoped<IExecutionEngineStrategy>(sp =>
+            {
+                var httpFactory = sp.GetRequiredService<IHttpClientFactory>();
+                var http = httpFactory.CreateClient(nameof(Judge0ExecutionEngineStrategy));
+                return new Judge0ExecutionEngineStrategy(http, judge0Opts);
+            });
+        }
+
+        // Code template strategies
+        services.AddScoped<ICodeTemplateStrategy, JavaScriptCodeTemplateStrategy>();
+        services.AddScoped<ICodeTemplateStrategy, TypeScriptCodeTemplateStrategy>();
+        services.AddScoped<ICodeTemplateStrategy, PythonCodeTemplateStrategy>();
+        services.AddScoped<ICodeTemplateStrategyResolver, CodeTemplateStrategyResolver>();
+
+        // Step handlers and registry
+        services.AddScoped<IStepHandler, Judge0ExecutionStepHandler>();
+        services.AddScoped<IStepHandler, Judge0PollStepHandler>();
+        services.AddScoped<IStepHandler, EvaluateStepHandler>();
+        services.AddScoped<IStepHandlerRegistry, StepHandlerRegistry>();
+
+        // Processor service (scoped — uses DbContext)
+        services.AddSingleton<SubmissionJobProcessorService>();
 
         return services;
     }
@@ -107,6 +157,12 @@ public static class InfrastructureServiceRegistration
                 .ForJob(SubmissionCleanupJob.Key)
                 .WithIdentity("SubmissionCleanupJob-trigger")
                 .WithCronSchedule(opts.SubmissionCleanupJob.CronExpression));
+
+            q.AddJob<SubmissionJobProcessorJob>(SubmissionJobProcessorJob.Key, j => j.StoreDurably());
+            q.AddTrigger(t => t
+                .ForJob(SubmissionJobProcessorJob.Key)
+                .WithIdentity("SubmissionJobProcessorJob-trigger")
+                .WithCronSchedule(opts.SubmissionJobProcessorJob.CronExpression));
         });
 
         services.AddQuartzHostedService(q => q.WaitForJobsToComplete = true);
@@ -139,7 +195,10 @@ public static class InfrastructureServiceRegistration
     {
         services.AddScoped<ILanguageReadRepository, LanguageReadRepository>();
         services.AddScoped<IProblemReadRepository, ProblemReadRepository>();
+        services.AddScoped<IProblemRepository, ProblemRepository>();
         services.AddScoped<ISubmissionWriteRepository, SubmissionWriteRepository>();
+        services.AddScoped<ISubmissionJobRepository, SubmissionJobRepository>();
+        services.AddScoped<IExecutionPipelineRepository, ExecutionPipelineRepository>();
         services.AddScoped<ITestSuiteWriteRepository, TestSuiteWriteRepository>();
         services.AddScoped<IUserReadRepository, UserReadRepository>();
         services.AddScoped<IUserWriteRepository, UserWriteRepository>();
@@ -149,6 +208,7 @@ public static class InfrastructureServiceRegistration
 
     private static IServiceCollection AddSeeder(this IServiceCollection services)
     {
+        services.AddScoped<Judge0PipelineSeeder>();
         services.AddScoped<LanguageSeeder>();
         services.AddScoped<TwoSumProblemSeeder>();
         services.AddScoped<HelloOrGoodbyeProblemSeeder>();
@@ -170,6 +230,10 @@ public static class InfrastructureServiceRegistration
 
         if (options.SeedStaticData)
         {
+            var pipelineSeeder = scope.ServiceProvider.GetRequiredService<Judge0PipelineSeeder>();
+            await pipelineSeeder.SeedAsync(cancellationToken);
+            db.ChangeTracker.Clear();
+
             var languageSeeder = scope.ServiceProvider.GetRequiredService<LanguageSeeder>();
             await languageSeeder.SeedAsync(cancellationToken);
             db.ChangeTracker.Clear();

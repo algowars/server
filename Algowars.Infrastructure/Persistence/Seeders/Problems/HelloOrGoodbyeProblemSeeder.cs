@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Algowars.Infrastructure.Persistence.Seeders.Problems;
 
-internal sealed class HelloOrGoodbyeProblemSeeder(AlgowarsDbContext context) : ISeeder
+internal sealed class HelloOrGoodbyeProblemSeeder(AlgowarsDbContext context, Judge0PipelineSeeder pipelineSeeder) : ISeeder
 {
     private const string ProblemSlug = "hello-or-goodbye";
 
@@ -23,6 +23,8 @@ internal sealed class HelloOrGoodbyeProblemSeeder(AlgowarsDbContext context) : I
 
     private async Task<Guid> EnsureProblemWithSetupsAsync(CancellationToken cancellationToken)
     {
+        Guid pipelineId = await pipelineSeeder.GetOrCreateAsync(cancellationToken);
+
         LanguageVersionEntry jsVersion = await GetVersionAsync("javascript", cancellationToken);
         LanguageVersionEntry tsVersion = await GetVersionAsync("typescript", cancellationToken);
         LanguageVersionEntry pyVersion = await GetVersionAsync("python", cancellationToken);
@@ -56,7 +58,7 @@ internal sealed class HelloOrGoodbyeProblemSeeder(AlgowarsDbContext context) : I
             problem.Publish();
 
             foreach ((Guid versionId, string code, string funcName) in desiredSetups)
-                problem.AddSetup(versionId, code, funcName);
+                problem.AddSetup(versionId, code, funcName, pipelineId);
 
             context.Problems.Add(problem);
             await context.SaveChangesAsync(cancellationToken);
@@ -79,8 +81,8 @@ internal sealed class HelloOrGoodbyeProblemSeeder(AlgowarsDbContext context) : I
             {
                 await context.Database.ExecuteSqlAsync(
                     $"""
-                    INSERT INTO problem_setups (id, problem_id, language_version_id, initial_code, function_name)
-                    VALUES ({Guid.NewGuid()}, {existingId.Value}, {versionId}, {code}, {funcName})
+                    INSERT INTO problem_setups (id, problem_id, language_version_id, initial_code, function_name, pipeline_id)
+                    VALUES ({Guid.NewGuid()}, {existingId.Value}, {versionId}, {code}, {funcName}, {pipelineId})
                     """,
                     cancellationToken);
             }

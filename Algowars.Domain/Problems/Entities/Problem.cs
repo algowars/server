@@ -45,9 +45,9 @@ public sealed class Problem : AggregateRoot
         Slug = slug ?? throw new ArgumentNullException(nameof(slug));
     }
 
-    public ProblemSetup AddSetup(Guid languageVersionId, string initialCode, string functionName)
+    public ProblemSetup AddSetup(Guid languageVersionId, string initialCode, string functionName, Guid pipelineId)
     {
-        var setup = new ProblemSetup(languageVersionId, initialCode, functionName);
+        var setup = new ProblemSetup(languageVersionId, initialCode, functionName, pipelineId);
         _setups.Add(setup);
         return setup;
     }

@@ -22,6 +22,72 @@ namespace Algowars.Infrastructure.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("Algowars.Domain.ExecutionPipelines.Entities.ExecutionPipelineStep", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<bool>("IsPolling")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_polling");
+
+                    b.Property<int>("MaxAttempts")
+                        .HasColumnType("integer")
+                        .HasColumnName("max_attempts");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("name");
+
+                    b.Property<int>("StepOrder")
+                        .HasColumnType("integer")
+                        .HasColumnName("step_order");
+
+                    b.Property<int>("StepType")
+                        .HasColumnType("integer")
+                        .HasColumnName("step_type");
+
+                    b.Property<int>("TimeoutSeconds")
+                        .HasColumnType("integer")
+                        .HasColumnName("timeout_seconds");
+
+                    b.Property<Guid>("pipeline_id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("pipeline_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("pipeline_id");
+
+                    b.ToTable("execution_pipeline_steps", (string)null);
+                });
+
+            modelBuilder.Entity("Algowars.Domain.ExecutionPipelines.ExecutionPipeline", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text")
+                        .HasColumnName("description");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("name");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("execution_pipelines", (string)null);
+                });
+
             modelBuilder.Entity("Algowars.Domain.Languages.Entities.Language", b =>
                 {
                     b.Property<Guid>("Id")
@@ -200,11 +266,19 @@ namespace Algowars.Infrastructure.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("language_version_id");
 
+                    b.Property<Guid>("PipelineId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("pipeline_id");
+
                     b.Property<Guid>("problem_id")
                         .HasColumnType("uuid")
                         .HasColumnName("problem_id");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("LanguageVersionId");
+
+                    b.HasIndex("PipelineId");
 
                     b.HasIndex("problem_id");
 
@@ -230,6 +304,109 @@ namespace Algowars.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("tags", (string)null);
+                });
+
+            modelBuilder.Entity("Algowars.Domain.SubmissionJobs.Entities.SubmissionJobAttempt", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<int>("AttemptNumber")
+                        .HasColumnType("integer")
+                        .HasColumnName("attempt_number");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("completed_at");
+
+                    b.Property<int?>("DurationMs")
+                        .HasColumnType("integer")
+                        .HasColumnName("duration_ms");
+
+                    b.Property<string>("Error")
+                        .HasColumnType("text")
+                        .HasColumnName("error");
+
+                    b.Property<Guid>("PipelineStepId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("pipeline_step_id");
+
+                    b.Property<string>("RequestPayload")
+                        .HasColumnType("text")
+                        .HasColumnName("request_payload");
+
+                    b.Property<string>("ResponsePayload")
+                        .HasColumnType("text")
+                        .HasColumnName("response_payload");
+
+                    b.Property<DateTime>("StartedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("started_at");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer")
+                        .HasColumnName("status");
+
+                    b.Property<Guid>("job_id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("job_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PipelineStepId");
+
+                    b.HasIndex("job_id");
+
+                    b.ToTable("submission_job_attempts", (string)null);
+                });
+
+            modelBuilder.Entity("Algowars.Domain.SubmissionJobs.SubmissionJob", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("completed_at");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CurrentStepId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("current_step_id");
+
+                    b.Property<string>("FailureReason")
+                        .HasColumnType("text")
+                        .HasColumnName("failure_reason");
+
+                    b.Property<Guid>("PipelineId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("pipeline_id");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer")
+                        .HasColumnName("status");
+
+                    b.Property<Guid>("SubmissionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("submission_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CurrentStepId");
+
+                    b.HasIndex("PipelineId");
+
+                    b.HasIndex("SubmissionId")
+                        .IsUnique();
+
+                    b.ToTable("submission_jobs", (string)null);
                 });
 
             modelBuilder.Entity("Algowars.Domain.Submissions.Entities.Submission", b =>
@@ -262,6 +439,10 @@ namespace Algowars.Infrastructure.Migrations
                         .HasColumnName("user_id");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ProblemSetupId");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("submissions", (string)null);
                 });
@@ -320,6 +501,8 @@ namespace Algowars.Infrastructure.Migrations
                         .HasColumnName("submission_id");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("TestCaseId");
 
                     b.HasIndex("submission_id");
 
@@ -482,6 +665,72 @@ namespace Algowars.Infrastructure.Migrations
                     b.ToTable("users", (string)null);
                 });
 
+            modelBuilder.Entity("Algowars.Infrastructure.ExecutionEngine.Assert.AssertStepConfiguration", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<bool>("CaseSensitive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("case_sensitive");
+
+                    b.Property<Guid>("PipelineStepId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("pipeline_step_id");
+
+                    b.Property<int>("Strategy")
+                        .HasColumnType("integer")
+                        .HasColumnName("strategy");
+
+                    b.Property<decimal?>("Tolerance")
+                        .HasColumnType("numeric")
+                        .HasColumnName("tolerance");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PipelineStepId")
+                        .IsUnique();
+
+                    b.ToTable("assert_step_configurations", (string)null);
+                });
+
+            modelBuilder.Entity("Algowars.Infrastructure.ExecutionEngine.Judge0.Judge0StepConfiguration", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<int>("DefaultTimeoutSeconds")
+                        .HasColumnType("integer")
+                        .HasColumnName("default_timeout_seconds");
+
+                    b.Property<bool>("IsEncoded")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_encoded");
+
+                    b.Property<Guid>("PipelineStepId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("pipeline_step_id");
+
+                    b.Property<bool>("ShouldWait")
+                        .HasColumnType("boolean")
+                        .HasColumnName("should_wait");
+
+                    b.Property<bool>("StripWhitespace")
+                        .HasColumnType("boolean")
+                        .HasColumnName("strip_whitespace");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PipelineStepId")
+                        .IsUnique();
+
+                    b.ToTable("judge0_step_configurations", (string)null);
+                });
+
             modelBuilder.Entity("ProblemProblemTag", b =>
                 {
                     b.Property<Guid>("ProblemsId")
@@ -510,6 +759,15 @@ namespace Algowars.Infrastructure.Migrations
                     b.HasIndex("test_suite_id");
 
                     b.ToTable("problem_setup_test_suites", (string)null);
+                });
+
+            modelBuilder.Entity("Algowars.Domain.ExecutionPipelines.Entities.ExecutionPipelineStep", b =>
+                {
+                    b.HasOne("Algowars.Domain.ExecutionPipelines.ExecutionPipeline", null)
+                        .WithMany("Steps")
+                        .HasForeignKey("pipeline_id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Algowars.Domain.Languages.Entities.LanguageVersionEntry", b =>
@@ -567,6 +825,18 @@ namespace Algowars.Infrastructure.Migrations
 
             modelBuilder.Entity("Algowars.Domain.Problems.Entities.ProblemSetup", b =>
                 {
+                    b.HasOne("Algowars.Domain.Languages.Entities.LanguageVersionEntry", null)
+                        .WithMany()
+                        .HasForeignKey("LanguageVersionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Algowars.Domain.ExecutionPipelines.ExecutionPipeline", null)
+                        .WithMany()
+                        .HasForeignKey("PipelineId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("Algowars.Domain.Problems.Entities.Problem", null)
                         .WithMany("Setups")
                         .HasForeignKey("problem_id")
@@ -574,8 +844,64 @@ namespace Algowars.Infrastructure.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Algowars.Domain.SubmissionJobs.Entities.SubmissionJobAttempt", b =>
+                {
+                    b.HasOne("Algowars.Domain.ExecutionPipelines.Entities.ExecutionPipelineStep", null)
+                        .WithMany()
+                        .HasForeignKey("PipelineStepId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Algowars.Domain.SubmissionJobs.SubmissionJob", null)
+                        .WithMany("Attempts")
+                        .HasForeignKey("job_id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Algowars.Domain.SubmissionJobs.SubmissionJob", b =>
+                {
+                    b.HasOne("Algowars.Domain.ExecutionPipelines.Entities.ExecutionPipelineStep", null)
+                        .WithMany()
+                        .HasForeignKey("CurrentStepId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("Algowars.Domain.ExecutionPipelines.ExecutionPipeline", null)
+                        .WithMany()
+                        .HasForeignKey("PipelineId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Algowars.Domain.Submissions.Entities.Submission", null)
+                        .WithOne()
+                        .HasForeignKey("Algowars.Domain.SubmissionJobs.SubmissionJob", "SubmissionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Algowars.Domain.Submissions.Entities.Submission", b =>
+                {
+                    b.HasOne("Algowars.Domain.Problems.Entities.ProblemSetup", null)
+                        .WithMany()
+                        .HasForeignKey("ProblemSetupId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Algowars.Domain.Users.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Algowars.Domain.Submissions.Entities.SubmissionResult", b =>
                 {
+                    b.HasOne("Algowars.Domain.TestSuites.Entities.TestCase", null)
+                        .WithMany()
+                        .HasForeignKey("TestCaseId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("Algowars.Domain.Submissions.Entities.Submission", null)
                         .WithMany("Results")
                         .HasForeignKey("submission_id")
@@ -610,6 +936,24 @@ namespace Algowars.Infrastructure.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Algowars.Infrastructure.ExecutionEngine.Assert.AssertStepConfiguration", b =>
+                {
+                    b.HasOne("Algowars.Domain.ExecutionPipelines.Entities.ExecutionPipelineStep", null)
+                        .WithOne()
+                        .HasForeignKey("Algowars.Infrastructure.ExecutionEngine.Assert.AssertStepConfiguration", "PipelineStepId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Algowars.Infrastructure.ExecutionEngine.Judge0.Judge0StepConfiguration", b =>
+                {
+                    b.HasOne("Algowars.Domain.ExecutionPipelines.Entities.ExecutionPipelineStep", null)
+                        .WithOne()
+                        .HasForeignKey("Algowars.Infrastructure.ExecutionEngine.Judge0.Judge0StepConfiguration", "PipelineStepId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("ProblemProblemTag", b =>
                 {
                     b.HasOne("Algowars.Domain.Problems.Entities.Problem", null)
@@ -640,6 +984,11 @@ namespace Algowars.Infrastructure.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Algowars.Domain.ExecutionPipelines.ExecutionPipeline", b =>
+                {
+                    b.Navigation("Steps");
+                });
+
             modelBuilder.Entity("Algowars.Domain.Languages.Entities.Language", b =>
                 {
                     b.Navigation("Versions");
@@ -650,6 +999,11 @@ namespace Algowars.Infrastructure.Migrations
                     b.Navigation("History");
 
                     b.Navigation("Setups");
+                });
+
+            modelBuilder.Entity("Algowars.Domain.SubmissionJobs.SubmissionJob", b =>
+                {
+                    b.Navigation("Attempts");
                 });
 
             modelBuilder.Entity("Algowars.Domain.Submissions.Entities.Submission", b =>

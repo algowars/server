@@ -140,7 +140,7 @@ public class ProblemTests
     {
         ProblemEntity problem = CreateProblem();
 
-        problem.AddSetup(Guid.NewGuid(), "def twoSum():", "twoSum");
+        problem.AddSetup(Guid.NewGuid(), "def twoSum():", "twoSum", Guid.NewGuid());
 
         Assert.That(problem.Setups, Has.Count.EqualTo(1));
     }
@@ -151,7 +151,7 @@ public class ProblemTests
         ProblemEntity problem = CreateProblem();
         Guid langVersionId = Guid.NewGuid();
 
-        Algowars.Domain.Problems.Entities.ProblemSetup setup = problem.AddSetup(langVersionId, "def twoSum():", "twoSum");
+        Algowars.Domain.Problems.Entities.ProblemSetup setup = problem.AddSetup(langVersionId, "def twoSum():", "twoSum", Guid.NewGuid());
 
         using (Assert.EnterMultipleScope())
         {

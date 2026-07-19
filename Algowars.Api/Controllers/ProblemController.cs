@@ -1,14 +1,18 @@
 ﻿
+using Algowars.Api.RateLimiting;
 using Algowars.Api.Requests.Problem;
 using Algowars.Application.Pagination;
 using Algowars.Application.Problems.Dtos;
 using Algowars.Application.Services.Problems;
 using Ardalis.Result.AspNetCore;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
+
 namespace Algowars.Api.Controllers;
 
 [ApiController]
 [Route("api/v{version:apiVersion}/[controller]")]
+[EnableRateLimiting(WellKnownPolicies.General)]
 public sealed class ProblemController(IProblemService problemService) : ControllerBase
 {
     [HttpGet]

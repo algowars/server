@@ -1,4 +1,5 @@
 using Algowars.Domain.Submissions.Entities;
+using Algowars.Domain.TestSuites.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -23,28 +24,40 @@ internal sealed class SubmissionResultConfiguration : IEntityTypeConfiguration<S
             .HasColumnName("test_case_id")
             .IsRequired();
 
+        builder.HasOne<TestCase>()
+            .WithMany()
+            .HasForeignKey(r => r.TestCaseId)
+            .IsRequired()
+            .OnDelete(DeleteBehavior.Restrict);
+
         builder.Property(r => r.Status)
             .HasColumnName("status")
             .HasConversion<int>()
             .IsRequired();
 
         builder.Property(r => r.Runtime)
-            .HasColumnName("runtime");
+            .HasColumnName("runtime")
+            .IsRequired(false);
 
         builder.Property(r => r.MemoryUsed)
-            .HasColumnName("memory_used");
+            .HasColumnName("memory_used")
+            .IsRequired(false);
 
         builder.Property(r => r.ActualOutput)
-            .HasColumnName("actual_output");
+            .HasColumnName("actual_output")
+            .IsRequired(false);
 
         builder.Property(r => r.StandardOutput)
-            .HasColumnName("standard_output");
+            .HasColumnName("standard_output")
+            .IsRequired(false);
 
         builder.Property(r => r.StandardError)
-            .HasColumnName("standard_error");
+            .HasColumnName("standard_error")
+            .IsRequired(false);
 
         builder.Property(r => r.CompileOutput)
-            .HasColumnName("compile_output");
+            .HasColumnName("compile_output")
+            .IsRequired(false);
 
         builder.Property<string?>("execution_id")
             .HasColumnName("execution_id")

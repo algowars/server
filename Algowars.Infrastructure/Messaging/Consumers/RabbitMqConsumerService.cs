@@ -1,7 +1,10 @@
 using System.Text;
 using System.Text.Json;
+using Algowars.Application.Messaging;
 using Algowars.Application.Messaging.Messages;
+using Algowars.Infrastructure.Jobs.Submissions;
 using Algowars.Infrastructure.Messaging;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using RabbitMQ.Client;
@@ -11,34 +14,23 @@ namespace Algowars.Infrastructure.Messaging.Consumers;
 
 internal sealed partial class RabbitMqConsumerService(
     IConnection connection,
+    IServiceScopeFactory scopeFactory,
     ILogger<RabbitMqConsumerService> logger
 ) : BackgroundService
 {
     protected override Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        var channel = connection.CreateModel();
-        string queueName = QueueNames.ForType<SubmissionCreatedMessage>();
-        channel.QueueDeclare(queueName, durable: true, exclusive: false, autoDelete: false);
+        IModel channel = connection.CreateModel();
 
-        var consumer = new EventingBasicConsumer(channel);
-        consumer.Received += (_, ea) =>
-        {
-            try
-            {
-                string body = Encoding.UTF8.GetString(ea.Body.Span);
-                var message = JsonSerializer.Deserialize<SubmissionCreatedMessage>(body);
-                if (message is not null)
-                    LogSubmissionReceived(message.SubmissionId);
-                channel.BasicAck(ea.DeliveryTag, multiple: false);
-            }
-            catch (Exception ex)
-            {
-                LogProcessingError(ex);
-                channel.BasicNack(ea.DeliveryTag, multiple: false, requeue: false);
-            }
-        };
+        // Limit to 1 unacknowledged message per consumer so each subscription
+        // processes one message at a time — prevents unbounded parallelism.
+        channel.BasicQos(prefetchSize: 0, prefetchCount: 1, global: false);
 
-        channel.BasicConsume(queueName, autoAck: false, consumer);
+        SubscribeSubmissionMessages<SubmissionCreatedMessage>(
+            channel, m => m.SubmissionId, stoppingToken);
+
+        SubscribeSubmissionMessages<SubmissionJobContinuationMessage>(
+            channel, m => m.SubmissionId, stoppingToken);
 
         stoppingToken.Register(() =>
         {
@@ -49,9 +41,64 @@ internal sealed partial class RabbitMqConsumerService(
         return Task.CompletedTask;
     }
 
+    /// <summary>
+    /// Declares the queue for <typeparamref name="TMessage"/> and wires up an async consumer that
+    /// dispatches to <see cref="SubmissionJobProcessorService.RunForSubmissionAsync"/> for the
+    /// submission id extracted from the message. The message is acknowledged only after processing
+    /// succeeds; on failure it is nacked and requeued so it is not lost.
+    /// </summary>
+    private void SubscribeSubmissionMessages<TMessage>(
+        IModel channel,
+        Func<TMessage, Guid> getSubmissionId,
+        CancellationToken stoppingToken)
+        where TMessage : IMessage
+    {
+        string queueName = QueueNames.ForType<TMessage>();
+        channel.QueueDeclare(queueName, durable: true, exclusive: false, autoDelete: false);
+
+        AsyncEventingBasicConsumer consumer = new(channel);
+        consumer.Received += async (_, ea) =>
+        {
+            try
+            {
+                string body = Encoding.UTF8.GetString(ea.Body.Span);
+                TMessage? message = JsonSerializer.Deserialize<TMessage>(body);
+                if (message is not null)
+                {
+                    Guid submissionId = getSubmissionId(message);
+                    LogSubmissionReceived(typeof(TMessage).Name, submissionId);
+                    await ProcessAsync(submissionId, stoppingToken);
+                }
+                channel.BasicAck(ea.DeliveryTag, multiple: false);
+            }
+            catch (Exception ex)
+            {
+                LogProcessingError(ex);
+                // Requeue so a transient failure does not permanently drop the message.
+                channel.BasicNack(ea.DeliveryTag, multiple: false, requeue: true);
+            }
+        };
+
+        channel.BasicConsume(queueName, autoAck: false, consumer);
+    }
+
+    private async Task ProcessAsync(Guid submissionId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            using var scope = scopeFactory.CreateScope();
+            var processor = scope.ServiceProvider.GetRequiredService<SubmissionJobProcessorService>();
+            await processor.RunForSubmissionAsync(submissionId, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            LogProcessingError(ex);
+        }
+    }
+
     [LoggerMessage(Level = LogLevel.Information,
-        Message = "Received SubmissionCreatedMessage for submission {SubmissionId}")]
-    private partial void LogSubmissionReceived(Guid SubmissionId);
+        Message = "Received {MessageType} for submission {SubmissionId}")]
+    private partial void LogSubmissionReceived(string messageType, Guid submissionId);
 
     [LoggerMessage(Level = LogLevel.Error,
         Message = "Error processing message from RabbitMQ")]

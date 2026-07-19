@@ -6,7 +6,7 @@ namespace Algowars.Application.Problems;
 
 public interface IProblemReadRepository
 {
-    Task<PageResult<ProblemDto>> GetPagedAsync(PaginationRequest pagination, CancellationToken cancellationToken = default);
-
     Task<Problem?> FindBySlugAsync(string slug, CancellationToken cancellationToken = default);
+
+    Task<PageResult<ProblemDto>> GetPagedAsync(PaginationRequest pagination, CancellationToken cancellationToken = default);
 }
