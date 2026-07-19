@@ -6,9 +6,11 @@ using Algowars.Application.Messaging;
 using Algowars.Application.Problems;
 using Algowars.Application.Settings;
 using Algowars.Application.Users;
+using Algowars.Domain.Authorization;
 using Algowars.Domain.ExecutionPipelines;
-using Algowars.Domain.Submissions;
+using Algowars.Domain.Problems;
 using Algowars.Domain.SubmissionJobs;
+using Algowars.Domain.Submissions;
 using Algowars.Domain.TestSuites;
 using Algowars.Domain.Users;
 using Algowars.Infrastructure.ExecutionEngine.CodeTemplates;
@@ -21,7 +23,6 @@ using Algowars.Infrastructure.Persistence;
 using Algowars.Infrastructure.Persistence.Seeders;
 using Algowars.Infrastructure.Persistence.Seeders.Problems;
 using Algowars.Infrastructure.Repositories;
-using Algowars.Domain.Problems;
 using Algowars.Infrastructure.Settings;
 using Azure.Messaging.ServiceBus;
 using Microsoft.EntityFrameworkCore;
@@ -193,6 +194,7 @@ public static class InfrastructureServiceRegistration
 
     private static IServiceCollection AddRepositories(this IServiceCollection services)
     {
+        services.AddScoped<IAuthorizationReadRepository, AuthorizationReadRepository>();
         services.AddScoped<ILanguageReadRepository, LanguageReadRepository>();
         services.AddScoped<IProblemReadRepository, ProblemReadRepository>();
         services.AddScoped<IProblemRepository, ProblemRepository>();
@@ -208,6 +210,7 @@ public static class InfrastructureServiceRegistration
 
     private static IServiceCollection AddSeeder(this IServiceCollection services)
     {
+        services.AddScoped<AuthorizationSeeder>();
         services.AddScoped<Judge0PipelineSeeder>();
         services.AddScoped<LanguageSeeder>();
         services.AddScoped<TwoSumProblemSeeder>();
@@ -230,6 +233,10 @@ public static class InfrastructureServiceRegistration
 
         if (options.SeedStaticData)
         {
+            var authorizationSeeder = scope.ServiceProvider.GetRequiredService<AuthorizationSeeder>();
+            await authorizationSeeder.SeedAsync(cancellationToken);
+            db.ChangeTracker.Clear();
+
             var pipelineSeeder = scope.ServiceProvider.GetRequiredService<Judge0PipelineSeeder>();
             await pipelineSeeder.SeedAsync(cancellationToken);
             db.ChangeTracker.Clear();

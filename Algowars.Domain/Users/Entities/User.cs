@@ -1,4 +1,5 @@
 using Algowars.Domain.SeedWork;
+using Algowars.Domain.Users.Events;
 using Algowars.Domain.Users.Exceptions;
 using Algowars.Domain.Users.ValueObjects;
 
@@ -25,6 +26,8 @@ public sealed class User(Username username, string sub) : AggregateRoot
     {
         ImageUrl = imageUrl;
     }
+
+    public void MarkCreated() => AddDomainEvent(new UserCreatedDomainEvent(Id));
 
     public Bio? Bio { get; private set; }
 

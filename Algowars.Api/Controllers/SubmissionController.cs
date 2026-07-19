@@ -1,5 +1,6 @@
 using System.Linq;
 using Algowars.Api.Attributes;
+using Algowars.Api.Authorization;
 using Algowars.Api.RateLimiting;
 using Algowars.Api.Requests.Submission;
 using Algowars.Application;
@@ -19,6 +20,7 @@ public sealed class SubmissionController(ISubmissionService submissionService, U
 {
     [HttpPost("run")]
     [RequireUser]
+    [RequirePermission(WellKnownPermissions.CreateSubmission)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -40,6 +42,7 @@ public sealed class SubmissionController(ISubmissionService submissionService, U
 
     [HttpPost("grade")]
     [RequireUser]
+    [RequirePermission(WellKnownPermissions.CreateSubmission)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
