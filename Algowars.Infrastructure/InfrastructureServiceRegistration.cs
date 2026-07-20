@@ -5,6 +5,7 @@ using Algowars.Application.Languages;
 using Algowars.Application.Messaging;
 using Algowars.Application.Problems;
 using Algowars.Application.Settings;
+using Algowars.Application.Submissions;
 using Algowars.Application.Users;
 using Algowars.Domain.Authorization;
 using Algowars.Domain.ExecutionPipelines;
@@ -199,6 +200,7 @@ public static class InfrastructureServiceRegistration
         services.AddScoped<IProblemReadRepository, ProblemReadRepository>();
         services.AddScoped<IProblemRepository, ProblemRepository>();
         services.AddScoped<ISubmissionWriteRepository, SubmissionWriteRepository>();
+        services.AddScoped<ISubmissionReadRepository, SubmissionReadRepository>();
         services.AddScoped<ISubmissionJobRepository, SubmissionJobRepository>();
         services.AddScoped<IExecutionPipelineRepository, ExecutionPipelineRepository>();
         services.AddScoped<ITestSuiteWriteRepository, TestSuiteWriteRepository>();
