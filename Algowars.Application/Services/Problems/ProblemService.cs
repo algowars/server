@@ -18,7 +18,7 @@ public interface IProblemService
 
     Task<Result<ProblemWithSetupsDto>> GetProblemWithSetupsBySlug(string slug, CancellationToken cancellationToken);
 
-    Task<Result<ProblemSubmissionsPageResult>> GetProblemSubmissionsAsync(Guid problemId, PaginationRequest paginationRequest, Guid? userId, bool includeAllSubmissions, CancellationToken cancellationToken);
+    Task<Result<ProblemSubmissionsPageResult>> GetProblemSubmissionsAsync(string slug, PaginationRequest paginationRequest, Guid? userId, bool includeAllSubmissions, CancellationToken cancellationToken);
 }
 
 internal sealed class ProblemService(IMediator mediator) : IProblemService
@@ -44,10 +44,14 @@ internal sealed class ProblemService(IMediator mediator) : IProblemService
         return result;
     }
 
-    public async Task<Result<ProblemSubmissionsPageResult>> GetProblemSubmissionsAsync(Guid problemId, PaginationRequest paginationRequest, Guid? userId, bool includeAllSubmissions, CancellationToken cancellationToken)
+    public async Task<Result<ProblemSubmissionsPageResult>> GetProblemSubmissionsAsync(string slug, PaginationRequest paginationRequest, Guid? userId, bool includeAllSubmissions, CancellationToken cancellationToken)
     {
-        var result = await mediator.Send(new GetProblemSubmissionsQuery(problemId, paginationRequest, userId, includeAllSubmissions), cancellationToken);
-
-        return result;
+        var problem = await mediator.Send(new GetProblemBySlugQuery(slug), cancellationToken);
+        if (problem.IsSuccess)
+        {
+            var result = await mediator.Send(new GetProblemSubmissionsQuery(problem.Value.Id, paginationRequest, userId, includeAllSubmissions), cancellationToken);
+            return result;
+        }
+        return Result.NotFound();
     }
 }

@@ -1,5 +1,4 @@
-﻿
-using Algowars.Api.Attributes;
+﻿using Algowars.Api.Attributes;
 using Algowars.Api.RateLimiting;
 using Algowars.Api.Requests.Problem;
 using Algowars.Application;
@@ -19,6 +18,15 @@ namespace Algowars.Api.Controllers;
 [EnableRateLimiting(WellKnownPolicies.General)]
 public sealed class ProblemController(IProblemService problemService, UserContext userContext) : ControllerBase
 {
+    [HttpGet("{slug}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ProblemWithSetupsDto>> GetProblemBySlug(
+        string slug, CancellationToken cancellationToken)
+    {
+        return this.ToActionResult(await problemService.GetProblemWithSetupsBySlug(slug, cancellationToken));
+    }
+
     [HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<ActionResult<PageResult<ProblemDto>>> GetProblems(
@@ -32,30 +40,23 @@ public sealed class ProblemController(IProblemService problemService, UserContex
         }, cancellationToken));
     }
 
-    [HttpGet("{slug}")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<ProblemWithSetupsDto>> GetProblemBySlug(string slug, CancellationToken cancellationToken)
-    {
-        return this.ToActionResult(await problemService.GetProblemWithSetupsBySlug(slug, cancellationToken));
-    }
-
     [HttpGet("{slug}/setup")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<ProblemSetupDto>> GetProblemSetup(string slug, [FromQuery] Guid languageVersionId, CancellationToken cancellationToken)
+    public async Task<ActionResult<ProblemSetupDto>> GetProblemSetup(
+        string slug, [FromQuery] Guid languageVersionId, CancellationToken cancellationToken)
     {
         return this.ToActionResult(await problemService.GetProblemSetupAsync(slug, languageVersionId, cancellationToken));
     }
 
-    [HttpGet("submissions")]
+    [HttpGet("{slug}/submissions")]
     [RequireUser]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ProblemSubmissionsPageResult>> GetSubmissions(
-        [FromQuery] GetProblemSubmissionsRequest query,
-        CancellationToken cancellationToken)
+        string slug, [FromQuery] GetProblemSubmissionsRequest query, CancellationToken cancellationToken)
     {
         if (userContext.User is null)
             return this.ToActionResult(Result.Unauthorized());
@@ -63,7 +64,7 @@ public sealed class ProblemController(IProblemService problemService, UserContex
         bool includeAllSubmissions = query.Filter == SubmissionFilterType.All;
 
         return this.ToActionResult(await problemService.GetProblemSubmissionsAsync(
-            query.ProblemId,
+            slug,
             new PaginationRequest
             {
                 Page = query.Page,
