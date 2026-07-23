@@ -5,9 +5,10 @@ namespace Algowars.Application.Submissions;
 
 public interface ISubmissionReadRepository
 {
-    Task<ProblemSubmissionsPageResult> GetProblemSubmissionsPagedAsync(
+    Task<PageResult<ProblemSubmissionDto>> GetProblemSubmissionsPagedAsync(
         Guid problemId,
-        Guid? userId,
         PaginationRequest paginationRequest,
+        Guid? userId,
+        bool includeAllSubmissions = true,
         CancellationToken cancellationToken = default);
 }

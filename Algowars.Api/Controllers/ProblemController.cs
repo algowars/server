@@ -5,6 +5,7 @@ using Algowars.Application;
 using Algowars.Application.Pagination;
 using Algowars.Application.Problems.Dtos;
 using Algowars.Application.Services.Problems;
+using Algowars.Application.Services.Submissions;
 using Algowars.Application.Submissions.Dtos;
 using Ardalis.Result;
 using Ardalis.Result.AspNetCore;
@@ -16,7 +17,7 @@ namespace Algowars.Api.Controllers;
 [ApiController]
 [Route("api/v{version:apiVersion}/[controller]")]
 [EnableRateLimiting(WellKnownPolicies.General)]
-public sealed class ProblemController(IProblemService problemService, UserContext userContext) : ControllerBase
+public sealed class ProblemController(IProblemService problemService, ISubmissionService submissionService, UserContext userContext) : ControllerBase
 {
     [HttpGet("{slug}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -55,7 +56,7 @@ public sealed class ProblemController(IProblemService problemService, UserContex
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<ProblemSubmissionsPageResult>> GetSubmissions(
+    public async Task<ActionResult<PageResult<ProblemSubmissionDto>>> GetSubmissions(
         string slug, [FromQuery] GetProblemSubmissionsRequest query, CancellationToken cancellationToken)
     {
         if (userContext.User is null)
@@ -63,7 +64,7 @@ public sealed class ProblemController(IProblemService problemService, UserContex
 
         bool includeAllSubmissions = query.Filter == SubmissionFilterType.All;
 
-        return this.ToActionResult(await problemService.GetProblemSubmissionsAsync(
+        return this.ToActionResult(await submissionService.GetSubmissionsByProblemSlugAsync(
             slug,
             new PaginationRequest
             {

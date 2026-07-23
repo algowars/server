@@ -13,10 +13,3 @@ public sealed record ProblemSubmissionDto(
     SubmissionStatus Status,
     DateTime CreatedAt,
     SubmissionUserDto User);
-
-public sealed record ProblemSubmissionsPageResult(
-    IReadOnlyCollection<ProblemSubmissionDto> Submissions,
-    int Page,
-    int Size,
-    int Total,
-    DateTime Timestamp);

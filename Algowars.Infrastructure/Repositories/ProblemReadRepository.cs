@@ -28,6 +28,9 @@ internal sealed class ProblemReadRepository(AlgowarsDbContext context) : IProble
             .Where(problem => problem.Slug.Value == slug)
             .SingleOrDefaultAsync(cancellationToken);
 
+    public async Task<Guid?> GetIdBySlugAsync(string slug, CancellationToken cancellationToken = default)
+        => await context.Problems.AsNoTracking().Where(p => p.Slug == slug).Select(p => p.Id).SingleOrDefaultAsync(cancellationToken);
+
     public async Task<PageResult<ProblemDto>> GetPagedAsync(PaginationRequest pagination, CancellationToken cancellationToken = default)
     {
         int offset = (pagination.Page - 1) * pagination.Size;

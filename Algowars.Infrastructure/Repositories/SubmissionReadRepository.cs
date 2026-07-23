@@ -1,6 +1,7 @@
 using Algowars.Application.Pagination;
 using Algowars.Application.Submissions;
 using Algowars.Application.Submissions.Dtos;
+using Algowars.Domain.Submissions.Enums;
 using Algowars.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,10 +9,11 @@ namespace Algowars.Infrastructure.Repositories;
 
 internal sealed class SubmissionReadRepository(AlgowarsDbContext context) : ISubmissionReadRepository
 {
-    public async Task<ProblemSubmissionsPageResult> GetProblemSubmissionsPagedAsync(
+    public async Task<PageResult<ProblemSubmissionDto>> GetProblemSubmissionsPagedAsync(
         Guid problemId,
-        Guid? userId,
         PaginationRequest paginationRequest,
+        Guid? userId,
+        bool includeAllSubmissions,
         CancellationToken cancellationToken = default)
     {
         int offset = (paginationRequest.Page - 1) * paginationRequest.Size;
@@ -32,6 +34,12 @@ internal sealed class SubmissionReadRepository(AlgowarsDbContext context) : ISub
         {
             query = query.Where(s => s.UserId == userId.Value);
         }
+
+        if (!includeAllSubmissions)
+        {
+            query = query.Where(s => s.Status == SubmissionStatus.Accepted);
+        }
+
 
         int total = await query.CountAsync(cancellationToken);
 
@@ -54,11 +62,12 @@ internal sealed class SubmissionReadRepository(AlgowarsDbContext context) : ISub
                         user.ImageUrl != null ? user.ImageUrl.Value : null)))
             .ToListAsync(cancellationToken);
 
-        return new ProblemSubmissionsPageResult(
-            items,
-            paginationRequest.Page,
-            paginationRequest.Size,
-            total,
-            paginationRequest.Timestamp);
+        return new PageResult<ProblemSubmissionDto>
+        {
+            Results = items,
+            Total = total,
+            Page = paginationRequest.Page,
+            Size = paginationRequest.Size,
+        };
     }
 }

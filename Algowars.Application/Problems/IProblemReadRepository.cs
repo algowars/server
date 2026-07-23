@@ -8,5 +8,7 @@ public interface IProblemReadRepository
 {
     Task<Problem?> FindBySlugAsync(string slug, CancellationToken cancellationToken = default);
 
+    Task<Guid?> GetIdBySlugAsync(string slug, CancellationToken cancellationToken = default);
+
     Task<PageResult<ProblemDto>> GetPagedAsync(PaginationRequest pagination, CancellationToken cancellationToken = default);
 }
