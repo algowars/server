@@ -20,6 +20,7 @@ public sealed class Submission : AggregateRoot
         Type = type;
         SourceCode = sourceCode ?? throw new ArgumentNullException(nameof(sourceCode));
         Status = SubmissionStatus.Queued;
+        CreatedAt = DateTime.UtcNow;
 
         foreach (Guid testCaseId in testCaseIds)
             _results.Add(new SubmissionResult(testCaseId));
@@ -63,12 +64,19 @@ public sealed class Submission : AggregateRoot
 
     private Submission() { }
 
+    public DateTime CreatedAt { get; private set; }
+
+    public int? ExecutionTime => Results.Max(r => r.Runtime);
+
+    public int? MemoryUsage => Results.Max(r => r.MemoryUsed);
+
     public Guid ProblemSetupId { get; private set; }
     public IReadOnlyCollection<SubmissionResult> Results => _results.AsReadOnly();
     public SourceCode SourceCode { get; private set; } = null!;
     public SubmissionStatus Status { get; private set; }
     public SubmissionType Type { get; private set; }
     public Guid UserId { get; private set; }
+
 
     private readonly List<SubmissionResult> _results = [];
 }

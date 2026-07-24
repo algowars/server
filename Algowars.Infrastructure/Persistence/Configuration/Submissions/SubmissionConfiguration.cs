@@ -36,6 +36,10 @@ internal sealed class SubmissionConfiguration : IEntityTypeConfiguration<Submiss
             .HasConversion<int>()
             .IsRequired();
 
+        builder.Property(s => s.CreatedAt)
+            .HasColumnName("created_at")
+            .IsRequired();
+
         builder.Property(s => s.SourceCode)
             .HasConversion(
                 v => v.Value,

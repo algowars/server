@@ -3,13 +3,20 @@ using Algowars.Domain.Submissions.Enums;
 namespace Algowars.Application.Submissions.Dtos;
 
 public sealed record SubmissionUserDto(
-    Guid Id,
     string Username,
     string? ImageUrl);
 
+public sealed record SubmissionLanguageDto(
+    Guid Id,
+    string Name,
+    string Version);
+
 public sealed record ProblemSubmissionDto(
     Guid Id,
-    SubmissionType Type,
     SubmissionStatus Status,
+    SubmissionLanguageDto Language,
+    string Code,
     DateTime CreatedAt,
-    SubmissionUserDto User);
+    SubmissionUserDto User,
+    int? MemoryUsage,
+    int? ExecutionTime);
